@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('client_health_profiles', function (Blueprint $table) {
+            $table->id();
+
+            $table->unsignedBigInteger('client_id')->unique();
+
+            // Contacto / ubicación
+            $table->string('state', 100)->nullable();
+            $table->string('city', 120)->nullable();
+            $table->string('zip_code', 20)->nullable();
+
+            // Personales
+            $table->date('birth_date')->nullable();
+            $table->string('gender', 30)->nullable();
+
+            // Antropometría base
+            $table->unsignedSmallInteger('height_cm')->nullable();
+
+            $table->timestamps();
+
+            $table->foreign('client_id')
+                ->references('id')
+                ->on('clients')
+                ->onDelete('cascade');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('client_health_profiles');
+    }
+};
