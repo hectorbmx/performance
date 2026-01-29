@@ -40,4 +40,8 @@ class UserApp extends Authenticatable
     {
         return $this->belongsTo(Client::class, 'client_id');
     }
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class, 'user_id');
+    }
 }

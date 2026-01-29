@@ -80,5 +80,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ClientMembership::class, 'coach_id');
     }
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+    }
 
 }

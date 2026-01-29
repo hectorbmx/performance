@@ -10,6 +10,7 @@ class TrainingAssignment extends Model
     protected $fillable = [
         'training_session_id',
         'client_id',
+        'scheduled_for',
         'status',
     ];
     protected $casts = [

@@ -26,7 +26,10 @@ class TrainingsController extends Controller
         $from   = $request->query('from');
         $to     = $request->query('to');
         $status = $request->query('status');
-        $includeFree = filter_var($request->query('include') === 'free', FILTER_VALIDATE_BOOL);
+        // $includeFree = filter_var($request->query('include') === 'free', FILTER_VALIDATE_BOOL);
+        // $includeFree = $request->query('include') === 'free';
+        $includeFree = $request->query('include') !== 'no-free';
+
 
         $pivotTable = 'client_group';
 
@@ -86,12 +89,9 @@ class TrainingsController extends Controller
         $personal = DB::table('training_assignments as ta')
             ->join('training_sessions as ts', 'ts.id', '=', 'ta.training_session_id')
             ->where('ta.client_id', $clientId)
-            ->whereNull('ta.scheduled_for')
+            ->whereNull('ts.deleted_at')
+            ->whereNotNull('ta.scheduled_for')
             ->when($status, fn($q) => $q->where('ta.status', $status))
-            // Si quieres filtrar por fecha y estás usando training_sessions.scheduled_at:
-            // ->when($from, fn($q) => $q->whereDate('ts.scheduled_at', '>=', $from))
-            // ->when($to, fn($q) => $q->whereDate('ts.scheduled_at', '<=', $to))
-
             ->when($from, fn($q) => $q->whereDate(DB::raw('COALESCE(ta.scheduled_for, ts.scheduled_at)'), '>=', $from))
             ->when($to, fn($q) => $q->whereDate(DB::raw('COALESCE(ta.scheduled_for, ts.scheduled_at)'), '<=', $to))
 
@@ -139,7 +139,7 @@ class TrainingsController extends Controller
                 ->where('ta.client_id', $clientId)
                 ->whereNotNull('ta.scheduled_for')
                 ->where('gc.client_id', $clientId)
-
+                ->whereNull('ts.deleted_at')
                 ->when($status, fn($q) => $q->where('ta.status', $status))
                 ->when($from, fn($q) => $q->whereDate('ta.scheduled_for', '>=', $from))
                 ->when($to, fn($q) => $q->whereDate('ta.scheduled_for', '<=', $to))
@@ -170,6 +170,7 @@ class TrainingsController extends Controller
         // -----------------------------
         $free = DB::table('training_sessions as ts')
             ->where('ts.visibility', 'free')
+            ->whereNull('ts.deleted_at')
             // Nota: por tu diseño, "cada coach tiene su set público".
             // Para filtrar por coach del cliente necesitaríamos resolver coach_id del cliente.
             // Aquí lo dejo sin filtro; lo conectamos cuando me digas cómo obtienes coach_id.
@@ -177,7 +178,9 @@ class TrainingsController extends Controller
                 DB::raw("'free' as source"),
                 DB::raw("NULL as assignment_id"),
                 DB::raw("NULL as status"),
-                DB::raw("NULL as scheduled_for"),
+                // DB::raw("NULL as scheduled_for"),
+                DB::raw("DATE(ts.scheduled_at) as scheduled_for"), // ✅ antes NULL
+
 
                 'ts.id as training_session_id',
                 'ts.coach_id',
@@ -189,6 +192,8 @@ class TrainingsController extends Controller
                 'ts.type',
                 'ts.visibility',
                 'ts.notes',
+                DB::raw("NULL as group_id"),    // ✅ agregado
+                DB::raw("NULL as group_name"),  // ✅ agregado
             ]);
 
         // Unificamos personal + group (+ free opcional)
@@ -233,8 +238,12 @@ class TrainingsController extends Controller
             ->groupBy('training_session_id')
             ->pluck('total', 'training_session_id');
 
-        $data = $rows->map(function ($r) use ($sectionsTotalBySession) {
-            $sectionsTotal = (int)($sectionsTotalBySession[$r->training_session_id] ?? 0);
+        // // $data = $rows->map(function ($r) use ($sectionsTotalBySession) {
+            // $sectionsTotal = (int)($sectionsTotalBySession[$r->training_session_id] ?? 0);
+                // $data = $rows->map(function ($r) use ($sectionsTotalBySession, $sectionsWithResultsByAssignment) {
+                $data = $rows->map(function ($r) use ($sectionsTotalBySession, $sectionsWithResultsByAssignment) {
+
+    $sectionsTotal = (int)($sectionsTotalBySession[$r->training_session_id] ?? 0); // ✅ ESTA LÍNEA
 
                $completed = (int)($sectionsWithResultsByAssignment[$r->assignment_id] ?? 0);
                 $pct = $sectionsTotal > 0

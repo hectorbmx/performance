@@ -62,4 +62,13 @@ class TrainingSession extends Model
     {
         return $this->belongsTo(TrainingTypeCatalog::class, 'training_type_catalog_id');
     }
+    public function clients()
+        {
+            return $this->assignments()->whereNotNull('client_id');
+        }
+
+        public function groups()
+        {
+            return $this->assignments()->whereNotNull('group_id');
+        }
 }

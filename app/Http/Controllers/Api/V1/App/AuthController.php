@@ -10,6 +10,9 @@ use App\Models\CoachTrainingMetric;
 use App\Models\ClientMetricRecord;
 use App\Models\TrainingMetric;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Models\UserDevice;
+
 
 
 class AuthController extends Controller
@@ -529,6 +532,85 @@ public function storeMetricRecord(Request $request)
         ],
     ], 201);
 }
+//registro de dispositivo para notificaciones push
+public function registerDevice(Request $request)
+{
+    $data = $request->validate([
+        'token'       => ['required', 'string'],
+        'platform'    => ['required', 'in:ios,android'],
+        'device_name' => ['nullable', 'string', 'max:100'],
+        'device_model'=> ['nullable', 'string', 'max:100'],
+        'app_version' => ['nullable', 'string', 'max:30'],
+    ]);
 
+    $user = $request->user();
+
+    $result = DB::transaction(function () use ($data, $user) {
+        // 1) Upsert por token (token es unique)
+        $device = UserDevice::query()->where('token', $data['token'])->first();
+
+        if ($device) {
+            // si el token existía con otro user (caso raro), se reasigna al usuario actual
+            $device->user_id      = $user->id;
+            $device->platform     = $data['platform'];
+            $device->device_name  = $data['device_name'] ?? $device->device_name;
+            $device->device_model = $data['device_model'] ?? $device->device_model;
+            $device->app_version  = $data['app_version'] ?? $device->app_version;
+            $device->is_enabled   = true;
+            $device->last_seen_at = now();
+            $device->save();
+        } else {
+            $device = UserDevice::query()->create([
+                'user_id'      => $user->id,
+                'platform'     => $data['platform'],
+                'token'        => $data['token'],
+                'is_enabled'   => true,
+                'last_seen_at' => now(),
+                'device_name'  => $data['device_name'] ?? null,
+                'device_model' => $data['device_model'] ?? null,
+                'app_version'  => $data['app_version'] ?? null,
+            ]);
+        }
+
+        // 2) Límite: máximo 2 devices activos por usuario (auto-reemplazo del más antiguo)
+        $activeDevices = UserDevice::query()
+            ->where('user_id', $user->id)
+            ->where('is_enabled', true)
+            ->orderByDesc('last_seen_at')
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $disabledCount = 0;
+
+        if ($activeDevices->count() > 2) {
+            $toDisable = $activeDevices->slice(2); // del 3ro en adelante
+            $idsToDisable = $toDisable->pluck('id')->all();
+
+            $disabledCount = UserDevice::query()
+                ->whereIn('id', $idsToDisable)
+                ->update(['is_enabled' => false]);
+        }
+
+        // 3) Respuesta
+        $activeDevicesNow = UserDevice::query()
+            ->where('user_id', $user->id)
+            ->where('is_enabled', true)
+            ->orderByDesc('last_seen_at')
+            ->limit(2)
+            ->get(['id','platform','is_enabled','last_seen_at','device_name','device_model','app_version','created_at','updated_at']);
+
+        return [
+            'device' => $device->only(['id','platform','is_enabled','last_seen_at','device_name','device_model','app_version']),
+            'active_devices' => $activeDevicesNow,
+            'disabled_count' => $disabledCount,
+        ];
+    });
+
+    return response()->json([
+        'ok' => true,
+        'message' => 'Device registered',
+        'data' => $result,
+    ], 200);
+}
 }
 

@@ -308,22 +308,25 @@
                             </div>
 
                             <div class="flex items-end gap-3">
-                                <label class="inline-flex items-center gap-2 text-sm">
+                                {{-- <label class="inline-flex items-center gap-2 text-sm">
                                     <input type="checkbox" class="secAccepts rounded border-gray-300" />
                                     Acepta resultados
-                                </label>
+                                </label> --}}
+                                <input type="hidden" class="secAccepts" value="1" />
 
-                                <div class="flex-1">
+                               <div class="flex-1">
                                     <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
-                                    <select class="secResultType w-full h-10 rounded-lg border-gray-300" disabled>
-                                        <option value="">Seleccionar...</option>
+                                    <select class="secResultType w-full h-10 rounded-lg border-gray-300">
+                                        <option value="" selected>Sin resultados</option>
+
                                         <option value="kg">Kilos (kg)</option>
                                         <option value="lb">Libras (lb)</option>
                                         <option value="time">Tiempo</option>
                                         <option value="distance">Distancia</option>
                                         <option value="reps">Repeticiones</option>
                                     </select>
-                                </div>
+                                    </div>
+
                             </div>
 
                             <div class="md:col-span-2">

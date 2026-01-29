@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\V1\App\AuthController;
 use App\Http\Controllers\Client\TrainingsController;
 use App\Http\Controllers\Client\TrainingAssignmentsController;
 use App\Http\Controllers\Api\V1\App\Client\ProfileController;
+use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
+USE App\Http\Controllers\Api\V1\App\Client\TrainingSessionsController;
 use App\Models\UserApp;
 
 
@@ -42,10 +44,19 @@ Route::prefix('v1')->group(function () {
         Route::post('/app/training-assignments/{assignment}/complete',[TrainingAssignmentsController::class, 'complete']);
         Route::post('/app/training-sections/{section}/results',[TrainingSectionResultsController::class, 'store']);
         Route::post('/app/training-assignments/{assignment}/sections/{section}/complete', [TrainingAssignmentsController::class, 'completeSection']);
+        
+        Route::get('/app/training-sessions/{session}', [TrainingSessionsController::class, 'show']);
+        Route::post('/app/training-sessions/{trainingSession}/start', [TrainingSessionsController::class, 'start']);
+
 
         Route::patch('/app/me/health-profile', [AuthController::class, 'updateHealthProfile']);
         Route::post('/app/me/body-records', [AuthController::class, 'storeBodyRecord']);
         Route::post('/app/me/metric-records', [AuthController::class, 'storeMetricRecord']);
+
+        Route::post ('/app/register-device', [AuthController::class, 'registerDevice']);
+
+        //test de envio de notificaciones
+        Route::post('/app/test/push',[PushTestController::class,'send']);
 
 
         //obtiene la foto del atleta

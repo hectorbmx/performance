@@ -105,10 +105,99 @@ return view('coach.trainings.create', compact('date','types','clients','assigned
     /**
      * Store a newly created resource in storage.
      */
- public function store(Request $request)
+//  public function store(Request $request)
+// {
+//     $coachId = auth()->id();
+    
+//     $data = $request->validate([
+//         'title'            => ['required','string','max:150'],
+//         'scheduled_at'     => ['required','date'],
+//         'duration_minutes' => ['nullable','integer','min:1','max:600'],
+
+//         'level'            => ['required','in:beginner,intermediate,advanced'],
+//         'goal'             => ['required','in:strength,cardio,technique,mobility,mixed'],
+//         // 'type'             => ['required','in:fitness,functional_fitness,weightlifting,home_training'],
+//         'training_type_catalog_id' => ['nullable','integer'],
+
+
+//         'visibility'       => ['required','in:free,assigned'],
+//         'notes'            => ['nullable','string'],
+//         'tag_color'        => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+//         'cover_image' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
+        
+
+//         // sections[]
+//         'sections'                         => ['required','array','min:1'],
+//         'sections.*.name'                  => ['required','string','max:100'],
+//         'sections.*.description'           => ['nullable','string'],
+//         'sections.*.video_url'             => ['nullable','url','max:255'],
+
+//         'sections.*.accepts_results'       => ['nullable','boolean'],
+//         'sections.*.result_type'           => ['nullable','string','max:30'],
+//     ]);
+//             if (!empty($data['training_type_catalog_id'])) {
+//             $exists = \App\Models\TrainingTypeCatalog::query()
+//                 ->where('id', $data['training_type_catalog_id'])
+//                 ->where('coach_id', $coachId)
+//                 ->exists();
+
+//             if (!$exists) {
+//                 return back()
+//                     ->withErrors(['training_type_catalog_id' => 'El tipo seleccionado no es válido.'])
+//                     ->withInput();
+//             }
+//         }
+
+
+//     return DB::transaction(function () use ($data, $coachId,$request) {
+//     $coverPath = null;
+//         if ($request->hasFile('cover_image')) {
+//             $coverPath = $request->file('cover_image')->store('training-covers', 'public');
+//         }
+//             $training = TrainingSession::create([
+//                 'coach_id'                 => $coachId,
+//                 'title'                    => $data['title'],
+//                 'scheduled_at'             => $data['scheduled_at'],
+//                 'duration_minutes'         => $data['duration_minutes'] ?? null,
+//                 'level'                    => $data['level'],
+//                 'goal'                     => $data['goal'],
+//                 // 'type'                     => $data['type'],
+//                 'training_type_catalog_id' => ['nullable','integer'],
+//                 'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
+//                 // 'type' => $data['type'] ?? $training->type, // fallback
+
+//                 'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
+//                 'visibility'               => $data['visibility'],
+//                 'notes'                    => $data['notes'] ?? null,
+//                 'tag_color'                => $data['tag_color'] ?? null,
+//                 'cover_image'              => $coverPath,
+//             ]);
+
+//         // Guardar secciones con order
+//         $order = 1;
+//         foreach ($data['sections'] as $s) {
+//             $accepts = !empty($s['accepts_results']);
+
+//             $training->sections()->create([
+//                 'order'           => $order++,
+//                 'name'            => $s['name'],
+//                 'description'     => $s['description'] ?? null,
+//                 'video_url' => $s['video_url'] ?? null,
+
+//                 'accepts_results' => $accepts,
+//                 'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
+//             ]);
+//         }
+
+//         return redirect()
+//             ->route('coach.trainings.index')
+//             ->with('success', 'Entrenamiento creado correctamente.');
+//     });
+// }
+public function store(Request $request)
 {
     $coachId = auth()->id();
-    
+
     $data = $request->validate([
         'title'            => ['required','string','max:150'],
         'scheduled_at'     => ['required','date'],
@@ -116,64 +205,75 @@ return view('coach.trainings.create', compact('date','types','clients','assigned
 
         'level'            => ['required','in:beginner,intermediate,advanced'],
         'goal'             => ['required','in:strength,cardio,technique,mobility,mixed'],
-        // 'type'             => ['required','in:fitness,functional_fitness,weightlifting,home_training'],
         'training_type_catalog_id' => ['nullable','integer'],
-
 
         'visibility'       => ['required','in:free,assigned'],
         'notes'            => ['nullable','string'],
-        'tag_color'        => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-        'cover_image' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
-        
+        'tag_color'        => ['nullable','regex:/^#[0-9A-Fa-f]{6}$/'],
+        'cover_image'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
+
+        // ✅ asignaciones (vienen del blade)
+        'assigned_clients'   => ['nullable','array'],
+        'assigned_clients.*' => ['integer'],
+
+        'assigned_groups'    => ['nullable','array'],
+        'assigned_groups.*'  => ['integer'],
 
         // sections[]
         'sections'                         => ['required','array','min:1'],
         'sections.*.name'                  => ['required','string','max:100'],
         'sections.*.description'           => ['nullable','string'],
         'sections.*.video_url'             => ['nullable','url','max:255'],
-
         'sections.*.accepts_results'       => ['nullable','boolean'],
         'sections.*.result_type'           => ['nullable','string','max:30'],
     ]);
-            if (!empty($data['training_type_catalog_id'])) {
-            $exists = \App\Models\TrainingTypeCatalog::query()
-                ->where('id', $data['training_type_catalog_id'])
-                ->where('coach_id', $coachId)
-                ->exists();
 
-            if (!$exists) {
-                return back()
-                    ->withErrors(['training_type_catalog_id' => 'El tipo seleccionado no es válido.'])
-                    ->withInput();
-            }
+    // Validar que el type catalog pertenezca al coach
+    if (!empty($data['training_type_catalog_id'])) {
+        $exists = \App\Models\TrainingTypeCatalog::query()
+            ->where('id', $data['training_type_catalog_id'])
+            ->where('coach_id', $coachId)
+            ->exists();
+
+        if (!$exists) {
+            return back()
+                ->withErrors(['training_type_catalog_id' => 'El tipo seleccionado no es válido.'])
+                ->withInput();
         }
+    }
 
+    // ✅ regla: si es assigned debe traer al menos 1 atleta o 1 grupo
+    $clientIds = $data['assigned_clients'] ?? [];
+    $groupIds  = $data['assigned_groups'] ?? [];
 
-    return DB::transaction(function () use ($data, $coachId,$request) {
-    $coverPath = null;
+    if (($data['visibility'] ?? 'free') === 'assigned' && count($clientIds) === 0 && count($groupIds) === 0) {
+        return back()
+            ->withErrors(['visibility' => 'Si el entrenamiento es Asignado, debes asignar al menos 1 atleta o 1 grupo.'])
+            ->withInput();
+    }
+
+    return DB::transaction(function () use ($data, $coachId, $request, $clientIds, $groupIds) {
+
+        $coverPath = null;
         if ($request->hasFile('cover_image')) {
             $coverPath = $request->file('cover_image')->store('training-covers', 'public');
         }
-            $training = TrainingSession::create([
-                'coach_id'                 => $coachId,
-                'title'                    => $data['title'],
-                'scheduled_at'             => $data['scheduled_at'],
-                'duration_minutes'         => $data['duration_minutes'] ?? null,
-                'level'                    => $data['level'],
-                'goal'                     => $data['goal'],
-                // 'type'                     => $data['type'],
-                'training_type_catalog_id' => ['nullable','integer'],
-                'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
-                // 'type' => $data['type'] ?? $training->type, // fallback
 
-                'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
-                'visibility'               => $data['visibility'],
-                'notes'                    => $data['notes'] ?? null,
-                'tag_color'                => $data['tag_color'] ?? null,
-                'cover_image'              => $coverPath,
-            ]);
+        $training = TrainingSession::create([
+            'coach_id'                 => $coachId,
+            'title'                    => $data['title'],
+            'scheduled_at'             => $data['scheduled_at'],
+            'duration_minutes'         => $data['duration_minutes'] ?? null,
+            'level'                    => $data['level'],
+            'goal'                     => $data['goal'],
+            'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
+            'visibility'               => $data['visibility'],
+            'notes'                    => $data['notes'] ?? null,
+            'tag_color'                => $data['tag_color'] ?? null,
+            'cover_image'              => $coverPath,
+        ]);
 
-        // Guardar secciones con order
+        // Secciones
         $order = 1;
         foreach ($data['sections'] as $s) {
             $accepts = !empty($s['accepts_results']);
@@ -182,24 +282,47 @@ return view('coach.trainings.create', compact('date','types','clients','assigned
                 'order'           => $order++,
                 'name'            => $s['name'],
                 'description'     => $s['description'] ?? null,
-                'video_url' => $s['video_url'] ?? null,
-
+                'video_url'       => $s['video_url'] ?? null,
                 'accepts_results' => $accepts,
                 'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
             ]);
         }
+
+        // ✅ Asignaciones (ESTO era lo que ya no existía)
+       // ✅ Asignaciones (según tu modelo real)
+if ($training->visibility === 'assigned') {
+
+    // Clientes
+    foreach (array_unique($clientIds) as $clientId) {
+        $training->assignments()->create([
+            'client_id'     => $clientId,
+            'scheduled_for' => $training->scheduled_at, // ✅
+            'status'        => 'scheduled',             // ✅ recomendado
+        ]);
+    }
+
+    // Grupos -> OJO: es otra tabla
+    foreach (array_unique($groupIds) as $groupId) {
+        \App\Models\GroupTrainingAssignment::create([
+            'group_id'           => $groupId,
+            'training_session_id'=> $training->id,
+            'scheduled_for'      => $training->scheduled_at, // ✅
+            'notes'              => null,
+        ]);
+    }
+
+} else {
+    $training->assignments()->delete();
+    \App\Models\GroupTrainingAssignment::where('training_session_id', $training->id)->delete();
+}
+
+
 
         return redirect()
             ->route('coach.trainings.index')
             ->with('success', 'Entrenamiento creado correctamente.');
     });
 }
-
-    public function show(TrainingSession $training)
-    {
-        abort(501);
-    }
-
 
 
 public function edit(TrainingSession $training)
