@@ -1,0 +1,82 @@
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-container">
+    <!-- Background Image -->
+    <div class="background-image"></div>
+    
+    <!-- Overlay oscuro -->
+    <div class="overlay"></div>
+    
+    <!-- Login Card -->
+    <div class="login-card">
+      <!-- Logo y título -->
+      <div class="header-section">
+        <h1 class="main-title">ATHLETE CORE</h1>
+        <h2 class="sub-title">COACH</h2>
+        <p class="portal-text">PERFORMANCE PORTAL</p>
+      </div>
+
+      <!-- Formulario -->
+      <form class="login-form" (ngSubmit)="handleLogin()">
+        <!-- Email -->
+        <div class="input-group">
+          <label class="input-label">Email Address</label>
+          <div class="input-wrapper">
+            <input
+              type="email"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="coach@athletecore.com"
+              class="custom-input"
+              autocomplete="email"
+            />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="input-group">
+          <label class="input-label">Password</label>
+          <div class="input-wrapper password-wrapper">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              placeholder="••••••••"
+              class="custom-input"
+              autocomplete="current-password"
+            />
+            <ion-icon
+              [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              class="eye-icon"
+              (click)="togglePasswordVisibility()"
+            ></ion-icon>
+          </div>
+        </div>
+
+        <!-- Stay logged in & Forgot password -->
+        <div class="options-row">
+          <label class="checkbox-label">
+            <input type="checkbox" class="custom-checkbox" />
+            <span>Stay logged in</span>
+          </label>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <!-- Sign In Button -->
+        <button type="submit" class="sign-in-btn">
+          Sign in to Dashboard
+        </button>
+
+        <!-- Contact Administrator -->
+<p class="contact-text">
+  ¿Nuevo en la plataforma?
+  <a class="contact-link" role="button" tabindex="0"
+     (click)="goToActivacion(); $event.preventDefault(); $event.stopPropagation();">
+    Activa tu cuenta
+  </a>
+</p>
+
+
+      </form>
+    </div>
+  </div>
+</ion-content>

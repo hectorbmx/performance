@@ -1,0 +1,35 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ metric?.name }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()">Cerrar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item lines="none">
+    <ion-label position="stacked">Valor ({{ metric?.unit ?? '' }})</ion-label>
+    <ion-input
+      type="number"
+      inputmode="decimal"
+      [(ngModel)]="value"
+      placeholder="Ej. 120"
+    ></ion-input>
+  </ion-item>
+
+  <ion-item lines="none">
+    <ion-label position="stacked">Notas (opcional)</ion-label>
+    <ion-textarea
+      autoGrow="true"
+      [(ngModel)]="notes"
+      placeholder="Ej. PR con belt"
+    ></ion-textarea>
+  </ion-item>
+
+  <div class="actions">
+    <ion-button expand="block" (click)="save()" [disabled]="saving || value === null">
+      Guardar
+    </ion-button>
+  </div>
+</ion-content>

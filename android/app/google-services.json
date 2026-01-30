@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "313092640386",
+    "project_id": "performance-26b25",
+    "storage_bucket": "performance-26b25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313092640386:android:b8f89aa4e6d2140ac32e9b",
+        "android_client_info": {
+          "package_name": "com.bmxmexico.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8cJWHhPZDNrV3BnwxPPsrDiLo8a03r94"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313092640386:android:65ed5f38807a8249c32e9b",
+        "android_client_info": {
+          "package_name": "io.ionic.starter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8cJWHhPZDNrV3BnwxPPsrDiLo8a03r94"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

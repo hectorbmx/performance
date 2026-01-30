@@ -1,0 +1,278 @@
+.timer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+  gap: 20px;
+}
+
+// Segmento de modos
+ion-segment {
+  margin-bottom: 20px;
+  --background: transparent;
+  
+  ion-segment-button {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    --background: #2a2a2a;
+    --background-checked: #4a4a4a;
+    --color: #888888;
+    --color-checked: #ffffff;
+    --indicator-color: transparent;
+    border-radius: 10px;
+    margin: 0 4px;
+    min-height: 36px;
+    font-weight: 600;
+  }
+}
+
+// Display del timer
+.timer-display {
+  background: linear-gradient(135deg, #6B8BFF 0%, #5B7AEE 100%);
+  border-radius: 30px;
+  padding: 80px 40px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(107, 139, 255, 0.3);
+  position: relative;
+  min-height: auto;
+  flex: none;
+
+  &.timer-primary {
+    background: linear-gradient(135deg, #6B8BFF 0%, #5B7AEE 100%);
+  }
+
+  &.timer-secondary {
+    background: linear-gradient(135deg, #FF8B6B 0%, #EE7A5B 100%);
+  }
+
+  &.timer-success {
+    background: linear-gradient(135deg, #6BFF8B 0%, #5BEE7A 100%);
+  }
+
+  &.timer-dark {
+    background: linear-gradient(135deg, #6B8BFF 0%, #5B7AEE 100%);
+  }
+}
+
+.round-info {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  ion-badge {
+    font-size: 12px;
+    padding: 6px 12px;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+  }
+}
+
+.phase-text {
+  margin-bottom: 15px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 0;
+    color: #000000;
+    text-transform: uppercase;
+  }
+}
+
+.time-text {
+  font-size: 72px;
+  font-weight: 700;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 8px;
+  color: #000000;
+  font-variant-numeric: tabular-nums;
+
+  @media (max-width: 576px) {
+    font-size: 64px;
+  }
+}
+
+.state-text {
+  margin-top: 15px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: rgba(0, 0, 0, 0.7);
+  text-transform: uppercase;
+}
+
+// Sección de configuración
+.config-section {
+  ion-card {
+    margin: 0 0 15px 0;
+    background-color: #1a1a1a;
+    border-radius: 15px;
+    box-shadow: none;
+  }
+
+  ion-card-content {
+    padding: 20px;
+  }
+
+  ion-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --background: transparent;
+    --border-color: transparent;
+    --color: #ffffff;
+    margin-bottom: 15px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  ion-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #ffffff;
+  }
+
+  ion-input {
+    text-align: right;
+    --color: #6B8BFF;
+    font-size: 18px;
+    font-weight: 700;
+    --placeholder-color: #4a4a4a;
+  }
+
+  ion-item-divider {
+    margin-top: 0;
+    margin-bottom: 15px;
+    --padding-start: 0;
+    --background: transparent;
+    --color: #ffffff;
+    min-height: auto;
+    padding-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+
+    ion-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #ffffff;
+    }
+  }
+
+  // NUEVO: Filas de tiempo (Minutos y Segundos lado a lado)
+  .time-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .time-input-group {
+    flex: 1;
+    background-color: #2a2a2a;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    ion-label {
+      font-size: 11px;
+      color: #888888;
+      text-transform: capitalize;
+      font-weight: 500;
+    }
+
+    ion-input {
+      --color: #6B8BFF;
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      --padding-start: 0;
+      --padding-end: 0;
+    }
+  }
+}
+
+// Controles
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: auto;
+
+  ion-button {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+    height: 50px;
+    font-size: 15px;
+    --border-radius: 15px;
+
+    &.primary-button {
+      --background: linear-gradient(135deg, #6B8BFF 0%, #5B7AEE 100%);
+      --color: #000000;
+      --box-shadow: 0 5px 20px rgba(107, 139, 255, 0.4);
+    }
+
+    &.secondary-button {
+      --background: transparent;
+      --color: #6B8BFF;
+      --border-width: 2px;
+      --border-style: solid;
+      --border-color: #6B8BFF;
+    }
+  }
+}
+
+.secondary-controls {
+  display: flex;
+  gap: 12px;
+
+  ion-button {
+    flex: 1;
+    height: 50px;
+    --background: #1a1a1a;
+    --color: #ffffff;
+    --border-radius: 15px;
+  }
+}
+
+// Animaciones
+.timer-display.timer-primary,
+.timer-display.timer-secondary {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% {
+    box-shadow: 0 10px 30px rgba(107, 139, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 10px 40px rgba(107, 139, 255, 0.5);
+  }
+}
+
+.timer-display.timer-success {
+  animation: finish-celebration 0.5s ease-out;
+}
+
+@keyframes finish-celebration {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

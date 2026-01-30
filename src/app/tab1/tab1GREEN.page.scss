@@ -1,0 +1,477 @@
+// ==========================================
+// VARIABLES
+// ==========================================
+$bg-dark: #0a1f1a;
+$bg-darker: #061512;
+$bg-card: #0d2820;
+$bg-card-light: #1a3d32;
+$green-primary: #00ff88;
+$green-dark: #00cc6e;
+$green-badge: #2dde8f;
+$text-white: #ffffff;
+$text-gray: #9ca8a3;
+$text-dim: #6b7873;
+$border-color: #1a3d32;
+
+// ==========================================
+// HEADER
+// ==========================================
+.home-header {
+  ion-toolbar {
+    --background: transparent;
+    --border-width: 0;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    
+    ion-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-white;
+      text-align: center;
+    }
+  }
+}
+
+// ==========================================
+// CONTENT
+// ==========================================
+.home-content {
+  --background: linear-gradient(180deg, #{$bg-darker} 0%, #{$bg-dark} 100%);
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 16px;
+}
+
+// ==========================================
+// TOP BAR (Avatar + Welcome)
+// ==========================================
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  
+  .user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, $green-primary 0%, $green-dark 100%);
+      border: 2px solid $border-color;
+      flex-shrink: 0;
+    }
+    
+    .welcome {
+      .small {
+        font-size: 13px;
+        color: $text-gray;
+        margin-bottom: 2px;
+        font-weight: 400;
+      }
+      
+      .name {
+        font-size: 20px;
+        font-weight: 700;
+        color: $text-white;
+        line-height: 1.2;
+      }
+    }
+  }
+  
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(26, 61, 50, 0.4);
+    border: 1px solid $border-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    ion-icon {
+      font-size: 22px;
+      color: $text-white;
+    }
+    
+    &:active {
+      transform: scale(0.95);
+      background: rgba(26, 61, 50, 0.6);
+    }
+  }
+}
+
+// ==========================================
+// CALENDAR STRIP
+// ==========================================
+.calendar-strip {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  
+  // Ocultar scrollbar
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  
+  .day-chip {
+    min-width: 60px;
+    height: 72px;
+    border-radius: 20px;
+    background: rgba(26, 61, 50, 0.3);
+    border: 1.5px solid $border-color;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    
+    .dow {
+      font-size: 12px;
+      color: $text-gray;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    
+    .dom {
+      font-size: 20px;
+      color: $text-white;
+      font-weight: 700;
+    }
+    
+    &.active {
+      background: linear-gradient(135deg, $green-primary 0%, $green-dark 100%);
+      border-color: $green-primary;
+      box-shadow: 0 8px 24px rgba(0, 255, 136, 0.25);
+      
+      .dow {
+        color: #0d2820;
+      }
+      
+      .dom {
+        color: #0d2820;
+      }
+    }
+    
+    &:hover:not(.active) {
+      background: rgba(26, 61, 50, 0.5);
+      border-color: rgba(0, 255, 136, 0.3);
+    }
+  }
+}
+
+// ==========================================
+// SECTION ROW (Title + Link)
+// ==========================================
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: $text-white;
+    margin: 0;
+  }
+  
+  .link-btn {
+    background: none;
+    border: none;
+    color: $green-primary;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.3s ease;
+    
+    &:hover {
+      color: $green-dark;
+    }
+  }
+}
+
+// ==========================================
+// TODAY'S WORKOUT CARD
+// ==========================================
+.today-card {
+  background: $bg-card;
+  border: 1.5px solid $border-color;
+  border-radius: 24px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  
+  // Background image overlay (opcional)
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(6, 21, 18, 0.8) 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    
+    .chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      
+      &.green {
+        background: rgba(0, 255, 136, 0.2);
+        color: $green-primary;
+        border: 1px solid rgba(0, 255, 136, 0.3);
+      }
+      
+      &.dark {
+        background: rgba(255, 255, 255, 0.1);
+        color: $text-white;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+    }
+  }
+  
+  .title {
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-white;
+    margin-bottom: 14px;
+    line-height: 1.2;
+  }
+  
+  .meta {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: $text-gray;
+      font-size: 14px;
+      font-weight: 500;
+      
+      ion-icon {
+        font-size: 18px;
+        color: $text-gray;
+      }
+    }
+  }
+  
+  .primary-btn {
+    width: 100%;
+    height: 56px;
+    background: linear-gradient(135deg, $green-primary 0%, $green-dark 100%);
+    border: none;
+    border-radius: 16px;
+    color: #0d2820;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0, 255, 136, 0.25);
+    
+    ion-icon {
+      font-size: 20px;
+    }
+    
+    &:active {
+      transform: translateY(2px);
+      box-shadow: 0 4px 12px rgba(0, 255, 136, 0.2);
+    }
+  }
+}
+
+// ==========================================
+// UPCOMING WORKOUTS
+// ==========================================
+.upcoming {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  
+  .upcoming-card {
+    background: $bg-card;
+    border: 1.5px solid $border-color;
+    border-radius: 20px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    
+    .thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 204, 110, 0.15) 100%);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      flex-shrink: 0;
+    }
+    
+    .info {
+      flex: 1;
+      min-width: 0;
+      
+      .up-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: $text-white;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .up-sub {
+        font-size: 12px;
+        color: $text-gray;
+        font-weight: 400;
+      }
+    }
+    
+    .badge {
+      background: rgba(0, 255, 136, 0.15);
+      color: $green-badge;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid rgba(0, 255, 136, 0.25);
+      flex-shrink: 0;
+    }
+    
+    &:active {
+      transform: scale(0.98);
+      background: rgba(26, 61, 50, 0.4);
+    }
+  }
+}
+
+// ==========================================
+// STATS CARDS
+// ==========================================
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 80px;
+  
+  .stat-card {
+    background: $bg-card;
+    border: 1.5px solid $border-color;
+    border-radius: 20px;
+    padding: 20px;
+    
+    .stat-title {
+      font-size: 12px;
+      color: $text-gray;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: $text-white;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    
+    .stat-sub {
+      font-size: 12px;
+      color: $text-dim;
+      font-weight: 400;
+    }
+  }
+}
+
+// ==========================================
+// EMPTY & ERROR STATES
+// ==========================================
+.empty-card {
+  background: rgba(26, 61, 50, 0.2);
+  border: 1.5px dashed $border-color;
+  border-radius: 20px;
+  padding: 32px 20px;
+  text-align: center;
+  color: $text-gray;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.error {
+  background: rgba(255, 77, 77, 0.1);
+  border: 1.5px solid rgba(255, 77, 77, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  color: #ff6b6b;
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  
+  ion-spinner {
+    --color: #{$green-primary};
+  }
+}
+
+// ==========================================
+// RESPONSIVE
+// ==========================================
+@media (max-width: 375px) {
+  .today-card .title {
+    font-size: 24px;
+  }
+  
+  .stats {
+    .stat-card .stat-value {
+      font-size: 28px;
+    }
+  }
+}

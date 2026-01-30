@@ -1,0 +1,601 @@
+.home-content {
+  --background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 100%);
+}
+
+.home-container {
+  padding: 20px;
+  padding-bottom: 80px;
+}
+
+/* ================================
+   HEADER
+================================ */
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  padding-top: 20px;
+}
+
+.user-greeting {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.avatar-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(91, 156, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.greeting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.greeting-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.user-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.notification-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  ion-icon {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  &:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.notification-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  background: #5b9cff;
+  border-radius: 50%;
+  border: 2px solid #0f1419;
+}
+
+/* ================================
+   CALENDAR STRIP
+================================ */
+.calendar-strip {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 30px;
+  overflow-x: auto;
+  padding: 5px 0;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.day-item {
+  min-width: 70px;
+  height: 95px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+
+  &.active {
+    background: #5b9cff;
+    box-shadow: 0 8px 24px rgba(91, 156, 255, 0.4);
+    transform: scale(1.05);
+
+    .day-number,
+    .day-name {
+      color: #ffffff;
+    }
+
+    .day-indicator {
+      opacity: 1;
+    }
+  }
+
+  &.today:not(.active) {
+    border-color: rgba(91, 156, 255, 0.3);
+  }
+}
+
+.day-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.day-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: capitalize;
+}
+
+.day-indicator {
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* ================================
+   WORKOUT CARD
+================================ */
+.workout-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workout-image {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(15, 20, 25, 0.8) 100%
+    );
+  }
+}
+
+.live-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(91, 156, 255, 0.9);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+}
+
+.workout-info {
+  padding: 20px;
+}
+
+.workout-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+}
+
+.workout-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  ion-icon {
+    font-size: 16px;
+  }
+}
+
+.meta-separator {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.workout-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 20px 0;
+}
+
+.start-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #5b9cff 0%, #4a7fe6 100%);
+  border: none;
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(91, 156, 255, 0.35);
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ================================
+   EMPTY STATE
+================================ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  margin-bottom: 30px;
+
+  ion-icon {
+    font-size: 64px;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+/* ================================
+   SECTION HEADERS
+================================ */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.view-details {
+  font-size: 14px;
+  color: #5b9cff;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:active {
+    color: #7ab4ff;
+  }
+}
+
+/* ================================
+   PROGRESS CARDS
+================================ */
+.progress-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.progress-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.progress-circle {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 6;
+}
+
+.progress-bar {
+  fill: none;
+  stroke: #5b9cff;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 251.2;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.progress-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  ion-icon {
+    font-size: 28px;
+    color: #5b9cff;
+  }
+}
+
+.progress-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+}
+
+.progress-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+/* ================================
+   RECOVERY CARDS
+================================ */
+.recovery-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.recovery-card {
+  position: relative;
+  height: 200px;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.recovery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+
+  .recovery-card:active & {
+    transform: scale(1.05);
+  }
+}
+
+.recovery-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  z-index: 2;
+}
+
+.recovery-duration {
+  display: inline-block;
+  background: rgba(91, 156, 255, 0.9);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.recovery-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+/* ================================
+   UPCOMING LIST
+================================ */
+.upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.upcoming-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(0.98);
+  }
+}
+
+.upcoming-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(91, 156, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 24px;
+    color: #5b9cff;
+  }
+}
+
+.upcoming-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.upcoming-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upcoming-date {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.upcoming-badge {
+  padding: 6px 12px;
+  background: rgba(91, 156, 255, 0.15);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5b9cff;
+  flex-shrink: 0;
+}
+
+/* ================================
+   LOADING
+================================ */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+
+  ion-spinner {
+    --color: #5b9cff;
+  }
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 380px) {
+  .progress-cards {
+    gap: 8px;
+  }
+
+  .progress-card {
+    padding: 16px 8px;
+  }
+
+  .progress-circle {
+    width: 70px;
+    height: 70px;
+  }
+
+  .progress-value {
+    font-size: 14px;
+  }
+}

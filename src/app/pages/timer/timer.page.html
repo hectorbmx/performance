@@ -1,0 +1,208 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Timer</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="timer-container">
+    
+    <!-- Selector de modo - SIEMPRE HABILITADO -->
+    <ion-segment 
+      [(ngModel)]="selectedMode" 
+      (ionChange)="changeMode(selectedMode)">
+      <ion-segment-button [value]="TimerMode.STOPWATCH">
+        <ion-label>Cronómetro</ion-label>
+      </ion-segment-button>
+      <ion-segment-button [value]="TimerMode.COUNTDOWN">
+        <ion-label>Cuenta Regr...</ion-label>
+      </ion-segment-button>
+      <ion-segment-button [value]="TimerMode.INTERVAL">
+        <ion-label>Intervalos</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Display del tiempo -->
+    <div class="timer-display" [class]="'timer-' + getTimerColor()">
+      
+      <!-- Info de ronda para intervalos -->
+      <div *ngIf="timerData?.mode === TimerMode.INTERVAL && timerData?.currentRound" 
+           class="round-info">
+        <ion-badge>
+          Ronda {{ timerData?.currentRound }} / {{ timerData?.totalRounds }}
+        </ion-badge>
+      </div>
+
+      <!-- Fase para intervalos -->
+      <div *ngIf="timerData?.mode === TimerMode.INTERVAL" class="phase-text">
+        <h3>{{ getPhaseText() }}</h3>
+      </div>
+
+      <!-- Tiempo principal -->
+      <h1 class="time-text">
+        {{ timerData?.displayTime || '00:00' }}
+      </h1>
+
+      <!-- Estado -->
+      <div class="state-text">
+        <ion-text *ngIf="timerData?.state === TimerState.PAUSED">
+          PAUSADO
+        </ion-text>
+        <ion-text *ngIf="timerData?.state === TimerState.FINISHED">
+          ¡COMPLETADO!
+        </ion-text>
+      </div>
+    </div>
+
+    <!-- Configuración - solo se muestra cuando showConfig es true -->
+    <div class="config-section" *ngIf="showConfig">
+      
+      <!-- Config Countdown -->
+      <ion-card *ngIf="selectedMode === TimerMode.COUNTDOWN">
+        <ion-card-content>
+          <ion-item-divider>
+            <ion-label>Configurar Cuenta Regresiva</ion-label>
+          </ion-item-divider>
+          
+          <div class="time-row">
+            <div class="time-input-group">
+              <ion-label>Minutos</ion-label>
+              <ion-input 
+                type="number" 
+                [(ngModel)]="countdownMinutes" 
+                min="0" 
+                max="99">
+              </ion-input>
+            </div>
+            
+            <div class="time-input-group">
+              <ion-label>Segundos</ion-label>
+              <ion-input 
+                type="number" 
+                [(ngModel)]="countdownSeconds" 
+                min="0" 
+                max="59">
+              </ion-input>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Config Intervalos -->
+      <ion-card *ngIf="selectedMode === TimerMode.INTERVAL">
+        <ion-card-content>
+          <ion-item-divider>
+            <ion-label>Configurar Intervalos</ion-label>
+          </ion-item-divider>
+          
+          <!-- Número de Rondas -->
+          <ion-item>
+            <ion-label>Número de Rondas</ion-label>
+            <ion-input 
+              type="number" 
+              [(ngModel)]="intervalRounds" 
+              min="1" 
+              max="99">
+            </ion-input>
+          </ion-item>
+
+          <!-- Tiempo de Trabajo -->
+          <ion-item-divider>
+            <ion-label>Tiempo de Trabajo</ion-label>
+          </ion-item-divider>
+          
+          <div class="time-row">
+            <div class="time-input-group">
+              <ion-label>Minutos</ion-label>
+              <ion-input 
+                type="number" 
+                [(ngModel)]="intervalWorkMinutes" 
+                min="0" 
+                max="99">
+              </ion-input>
+            </div>
+            
+            <div class="time-input-group">
+              <ion-label>Segundos</ion-label>
+              <ion-input 
+                type="number" 
+                [(ngModel)]="intervalWorkSeconds" 
+                min="0" 
+                max="59">
+              </ion-input>
+            </div>
+          </div>
+
+          <!-- Tiempo de Descanso -->
+          <ion-item-divider>
+            <ion-label>Tiempo de Descanso</ion-label>
+          </ion-item-divider>
+          
+          <div class="time-row">
+            <div class="time-input-group">
+              <ion-label>Minutos</ion-label>
+              <ion-input 
+                type="number" 
+                [(ngModel)]="intervalRestMinutes" 
+                min="0" 
+                max="99">
+              </ion-input>
+            </div>
+            
+            <div class="time-input-group">
+              <ion-label>Segundos</ion-label>
+              <ion-input 
+                type="number" 
+                [(ngModel)]="intervalRestSeconds" 
+                min="0" 
+                max="59">
+              </ion-input>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Controles -->
+    <div class="controls">
+      <!-- Botón principal -->
+      <ion-button 
+        expand="block" 
+        size="large"
+        class="primary-button"
+        (click)="handleMainButton()">
+        {{ getMainButtonText() }}
+      </ion-button>
+
+      <!-- Botón de configurar (solo cuando está idle y no es stopwatch) -->
+      <ion-button 
+        *ngIf="(!timerData || timerData.state === TimerState.IDLE) && selectedMode !== TimerMode.STOPWATCH"
+        expand="block"
+        fill="outline"
+        class="secondary-button"
+        (click)="toggleConfig()">
+        {{ showConfig ? 'Ocultar' : 'Configurar' }}
+      </ion-button>
+
+      <!-- Controles secundarios (cuando está corriendo o pausado) -->
+      <div class="secondary-controls" 
+           *ngIf="timerData && timerData.state !== TimerState.IDLE">
+        <ion-button 
+          fill="outline"
+          (click)="stop()">
+          <ion-icon slot="start" name="stop"></ion-icon>
+          Detener
+        </ion-button>
+
+        <ion-button 
+          *ngIf="timerData.state !== TimerState.RUNNING"
+          fill="outline"
+          (click)="reset()">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          Reiniciar
+        </ion-button>
+      </div>
+    </div>
+
+  </div>
+</ion-content>

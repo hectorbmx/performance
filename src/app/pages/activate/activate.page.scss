@@ -1,0 +1,125 @@
+ion-content {
+  --background: #0f1419;
+}
+
+ion-toolbar {
+  --background: #0f1419;
+  --border-width: 0;
+  --padding-top: 0.5rem;
+  --padding-bottom: 0.5rem;
+}
+
+.container {
+  padding: 2rem 1.5rem;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 2rem 0 1.5rem 0;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #8b98a5;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+
+.input-group {
+  margin-bottom: 2rem;
+
+  ion-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4a9eff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+  }
+
+  ion-item {
+    --background: #1a2332;
+    --border-radius: 12px;
+    --padding-start: 1rem;
+    --padding-end: 1rem;
+    --inner-padding-end: 0;
+    border-radius: 12px;
+    margin: 0;
+
+    ion-icon {
+      color: #4a9eff;
+      font-size: 1.5rem;
+      margin-right: 0.75rem;
+    }
+
+    ion-input {
+      --color: #ffffff;
+      --placeholder-color: #4a5568;
+      --placeholder-opacity: 1;
+      font-size: 1rem;
+      letter-spacing: 2px;
+    }
+
+    ion-button {
+      --color: #8b98a5;
+      --padding-start: 0.5rem;
+      --padding-end: 0.5rem;
+      margin: 0;
+
+      ion-icon {
+        color: #8b98a5;
+        font-size: 1.5rem;
+        margin: 0;
+      }
+    }
+  }
+}
+
+.activate-button {
+  --background: #4a9eff;
+  --background-hover: #3a8eef;
+  --background-activated: #2a7edf;
+  --border-radius: 12px;
+  --padding-top: 1rem;
+  --padding-bottom: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  margin-top: 3rem;
+  height: 56px;
+
+  ion-icon {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+  }
+}
+
+.back-to-login {
+  text-align: center;
+  margin-top: 2rem;
+
+  ion-button {
+    --color: #4a9eff;
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: none;
+  }
+}
+
+// Ajustes responsivos
+@media (max-width: 576px) {
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .container {
+    padding: 1.5rem 1rem;
+  }
+}

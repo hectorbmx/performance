@@ -1,0 +1,272 @@
+.login-content {
+  --background: #000;
+}
+
+.login-container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+// Background image (puedes cambiar la URL por tu imagen)
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80');
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
+}
+
+// Overlay oscuro sobre la imagen
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.75) 50%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  z-index: 2;
+}
+
+// Card principal
+.login-card {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 400px;
+  background: rgba(15, 15, 20, 0.95);
+  border-radius: 24px;
+  padding: 40px 30px;
+  border: 1px solid rgba(100, 150, 255, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+// Header section
+.header-section {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.main-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ffffff;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.sub-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ffffff;
+  margin: -5px 0 0 0;
+  text-transform: uppercase;
+}
+
+.portal-text {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 8px 0 0 0;
+  text-transform: uppercase;
+}
+
+// Form
+.login-form {
+  width: 100%;
+}
+
+.input-group {
+  margin-bottom: 24px;
+}
+
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-input {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(25, 25, 35, 0.8);
+  border: 1px solid rgba(100, 150, 255, 0.2);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: rgba(100, 150, 255, 0.5);
+    background: rgba(30, 30, 45, 0.9);
+    box-shadow: 0 0 0 3px rgba(100, 150, 255, 0.1);
+  }
+}
+
+.password-wrapper {
+  position: relative;
+
+  .custom-input {
+    padding-right: 50px;
+  }
+}
+
+.eye-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+// Options row
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  font-size: 13px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+
+  span {
+    user-select: none;
+  }
+}
+
+.custom-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #5b9cff;
+}
+
+.forgot-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #5b9cff;
+  }
+}
+
+// Sign in button
+.sign-in-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #5b9cff 0%, #4a7fe6 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(91, 156, 255, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #4a8aef 0%, #3968d5 100%);
+    box-shadow: 0 6px 30px rgba(91, 156, 255, 0.4);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Contact text
+.contact-text {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+
+  .contact-link {
+    color: #5b9cff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: #7ab4ff;
+      text-decoration: underline;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 480px) {
+  .login-card {
+    padding: 30px 20px;
+  }
+
+  .main-title {
+    font-size: 28px;
+  }
+
+  .sub-title {
+    font-size: 24px;
+  }
+}
+
+// Animación de entrada
+.login-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

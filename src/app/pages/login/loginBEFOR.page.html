@@ -1,0 +1,87 @@
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-container">
+    
+    <!-- Logo -->
+    <div class="logo-container">
+      <div class="logo-box">
+        <ion-icon name="flash"></ion-icon>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="welcome-text">
+      <h1>Welcome Back, <span class="highlight">Athlete</span></h1>
+      <p class="subtitle">Log in to track your performance</p>
+    </div>
+
+    <!-- Form -->
+    <form class="login-form">
+      
+      <!-- Email Input -->
+      <div class="input-group">
+        <label class="input-label">EMAIL ADDRESS</label>
+        <div class="input-wrapper">
+          <input 
+            type="email" 
+            class="custom-input" 
+            placeholder="your@email.com"
+            [(ngModel)]="email"
+            name="email"
+          />
+          <ion-icon name="mail-outline" class="input-icon"></ion-icon>
+        </div>
+      </div>
+
+      <!-- Password Input -->
+      <div class="input-group">
+        <label class="input-label">PASSWORD</label>
+        <div class="input-wrapper">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            class="custom-input" 
+            placeholder="••••••••"
+            [(ngModel)]="password"
+            name="password"
+          />
+          <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+        </div>
+      </div>
+
+      <!-- Forgot Password -->
+      <div class="forgot-password">
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <!-- Login Button -->
+      <ion-button 
+        expand="block" 
+        class="login-button"
+        (click)="handleLogin()"
+      >
+        LOGIN
+      </ion-button>
+
+      <!-- Divider -->
+      <div class="divider">
+        <span class="divider-text">OR CONTINUE WITH</span>
+      </div>
+
+      <!-- Social Login Buttons -->
+      <div class="social-buttons">
+        <button class="social-button" type="button">
+          <ion-icon name="logo-google"></ion-icon>
+        </button>
+        <button class="social-button" type="button">
+          <ion-icon name="logo-apple"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Sign Up Link -->
+      <div class="signup-text">
+        Don't have an account? <a href="#" class="signup-link">Join Now</a>
+      </div>
+
+    </form>
+
+  </div>
+</ion-content>

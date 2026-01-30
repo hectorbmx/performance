@@ -1,0 +1,99 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab3"></ion-back-button>
+
+    </ion-buttons>
+    <ion-title>Mi perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="profile-content">
+  <div class="profile-container">
+    
+
+
+    <!-- Datos Personales -->
+   <!-- Datos Personales -->
+<div class="section">
+  <div class="section-header">
+    <ion-icon name="person-outline"></ion-icon>
+    <h3>DATOS PERSONALES</h3>
+  </div>
+  
+  <div class="info-grid">
+    <!-- Fila 1 -->
+    <div class="info-item">
+      <span class="info-label">Ciudad</span>
+      <span class="info-value">{{ healthProfile?.city }}</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">Estado</span>
+      <span class="info-value">{{ healthProfile?.state }}</span>
+    </div>
+    
+    <!-- Fila 2 -->
+    <div class="info-item">
+      <span class="info-label">Fecha nacimiento</span>
+      <span class="info-value">{{ formatDate(healthProfile?.birth_date) }}</span>
+    </div>
+    
+    <div class="info-item">
+      <span class="info-label">Estatura</span>
+      <span class="info-value">{{ healthProfile?.height_cm }} cm</span>
+    </div>
+  </div>
+</div>
+
+    <!-- Peso Actual -->
+    <div class="section">
+      <div class="section-header">
+        <ion-icon name="fitness-outline"></ion-icon>
+        <h3>PESO ACTUAL</h3>
+      </div>
+      
+      
+       <div class="weight-card">
+        <div class="weight-header">
+          <ion-button fill="clear" size="small" class="edit-btn" (click)="openWeightModal()">
+            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+          </ion-button>
+        </div>
+        <div class="weight-main">
+          <span class="weight-value">{{ body?.latest?.weight_kg }}</span>
+          <span class="weight-unit">kg</span>
+        </div>
+        <div class="weight-note">
+          <ion-icon name="trending-up-outline"></ion-icon>
+          <span>{{ body?.latest?.notes }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas (1RM) -->
+    <div class="section">
+      <div class="section-header">
+        <ion-icon name="barbell-outline"></ion-icon>
+        <h3>MÉTRICAS (1RM)</h3>
+      </div>
+      
+      <div class="metrics-list">
+        <div class="metric-item" *ngFor="let metric of metrics">
+          <div class="metric-header">
+            <span class="metric-name">{{ metric.name }}</span>
+            <ion-icon name="create-outline" class="metric-edit" (click)="openEditMetric(metric)"></ion-icon>
+          </div>
+          <div class="metric-value-container">
+            <span class="metric-value" *ngIf="metric.last">{{ metric.last.value }}</span>
+            <span class="metric-value empty" *ngIf="!metric.last">—</span>
+            <span class="metric-unit">{{ metric.unit }}</span>
+          </div>
+          <button class="add-button" *ngIf="!metric.last">Agregar</button>
+        </div>
+      </div>
+    </div>
+
+  
+  </div>
+</ion-content>

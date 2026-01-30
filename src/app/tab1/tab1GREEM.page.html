@@ -1,0 +1,125 @@
+<ion-header class="home-header">
+  <ion-toolbar>
+    <ion-title>Home</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="home-content">
+
+  <!-- Top: Welcome / Avatar / Alerts -->
+  <div class="top-bar">
+    <div class="user">
+      <div class="avatar"></div>
+      <div class="welcome">
+        <div class="small">Bienvenido,</div>
+        <div class="name">{{ clientName || '...' }}</div>
+      </div>
+    </div>
+
+    <button class="icon-btn" type="button" aria-label="Alerts">
+      <ion-icon name="notifications-outline"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Calendar strip -->
+  <div class="calendar-strip" #calStrip>
+    <button
+      class="day-chip"
+      *ngFor="let d of days"
+      [class.active]="d.date === selectedDate"
+
+      type="button"
+      (click)="selectDay(d.date)">
+      <div class="dow">{{ d.dow }}</div>
+      <div class="dom">{{ d.dom }}</div>
+    </button>
+  </div>
+
+  <!-- Today -->
+  <div class="section-row">
+    <h2>Today's Workout</h2>
+    <button class="link-btn" type="button">View Plan</button>
+  </div>
+
+  <div *ngIf="loading" class="center">
+    <ion-spinner></ion-spinner>
+  </div>
+
+  <div *ngIf="!loading && errorMsg" class="error">
+    {{ errorMsg }}
+  </div>
+
+  <ng-container *ngIf="!loading && !errorMsg">
+    <!-- Main Today card -->
+    <div class="today-card" *ngIf="today; else noToday">
+      <div class="chips">
+        <span class="chip green">{{ today.training_session.goal || 'strength' }}</span>
+        <span class="chip dark">{{ today.training_session.level || 'intermediate' }}</span>
+      </div>
+
+      <div class="title">{{ today.training_session.title }}</div>
+
+      <div class="meta">
+        <div class="meta-item">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>{{ today.training_session.duration_minutes || 0 }} min</span>
+        </div>
+        <div class="meta-item">
+          <ion-icon name="barbell-outline"></ion-icon>
+          <span>{{ today.progress.pct }}%</span>
+        </div>
+      </div>
+
+      <button class="primary-btn" type="button" (click)="startToday()">
+        <ion-icon name="play"></ion-icon>
+        START WORKOUT
+      </button>
+    </div>
+
+    <ng-template #noToday>
+      <div class="empty-card">
+        No workout scheduled for today.
+      </div>
+    </ng-template>
+
+    <!-- Upcoming -->
+    <div class="section-row" style="margin-top: 18px;">
+      <h2>Upcoming Workouts</h2>
+      <button class="link-btn" type="button">See all</button>
+    </div>
+
+    <div class="upcoming">
+      <button class="upcoming-card" type="button" *ngFor="let t of upcoming">
+        <div class="thumb"></div>
+        <div class="info">
+          <div class="up-title">{{ t.training_session.title }}</div>
+          <div class="up-sub">
+            {{ t.scheduled_for }} • {{ t.training_session.duration_minutes || 0 }} min
+            <span *ngIf="t.group"> • {{ t.group.name }}</span>
+          </div>
+        </div>
+        <div class="badge">{{ t.progress.pct }}%</div>
+      </button>
+
+      <div class="empty-card" *ngIf="upcoming.length === 0">
+        No upcoming workouts.
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-title">Activity Level</div>
+        <div class="stat-value">+12%</div>
+        <div class="stat-sub">this wk</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">Total Hours</div>
+        <div class="stat-value">24.5h</div>
+        <div class="stat-sub">this wk</div>
+      </div>
+    </div>
+  </ng-container>
+
+</ion-content>

@@ -1,17 +1,220 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 1
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content [fullscreen]="true" class="home-content">
+  <div class="home-container">
+    <!-- Header -->
+    <div class="home-header">
+      <div class="user-greeting">
+        <div class="avatar-wrapper">
+          <img 
+            src="https://i.pravatar.cc/100?img=12" 
+            alt="User Avatar" 
+            class="user-avatar"
+          />
+        </div>
+        <div class="greeting-text">
+          <p class="greeting-label">GOOD MORNING</p>
+          <h1 class="user-name">Ready, {{ clientName || 'Alex' }}?</h1>
+          
+        </div>
+      </div>
+      <div class="notification-icon">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="notification-badge"></span>
+      </div>
+    </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+    <!-- Calendar Days -->
+    <div class="calendar-strip">
+      <div 
+        *ngFor="let day of days" 
+        class="day-item"
+        [class.active]="day.date === selectedDate"
+        [class.today]="day.isToday"
+        (click)="selectDay(day.date)"
+      >
+        <span class="day-number">{{ day.dom }}</span>
+        <span class="day-name">{{ day.dow }}</span>
+        <div class="day-indicator" *ngIf="day.date === selectedDate"></div>
+      </div>
+    </div>
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+    <!-- Today's Workout Card -->
+    <div class="workout-card" *ngIf="today">
+      <div class="workout-image">
+        <!-- <img 
+          src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80" 
+          alt="Workout"
+        /> -->
+        <!-- <img src="{{ today.training_session.cover_image || 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80' }}" alt="Workout" /> -->
+      <img
+        [src]="today?.training_session?.cover_image || fallbackCover"
+        alt="Workout"
+        (error)="onImgError($event)"
+      />
+
+        <div class="live-badge">LIVE SESSION</div>
+      </div>
+      
+      <div class="workout-info">
+        <h2 class="workout-title">{{ today.training_session.title || 'Power HIIT' }}</h2>
+        
+        <div class="workout-meta">
+          <div class="meta-item">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>{{ today.training_session.duration_minutes || 45 }} mins</span>
+          </div>
+          <span class="meta-separator">•</span>
+          <div class="meta-item">
+            <span>{{ today.training_session.level || 'Advanced' }}</span>
+          </div>
+        </div>
+
+        <p class="workout-description">
+          {{ today.training_session.goal || 'High-energy interval session designed for max burn.' }}
+        </p>
+
+        <button class="start-btn" (click)="startToday()">
+          <ion-icon name="play"></ion-icon>
+          VER ENTRENAMIENTO
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!today && !loading">
+      <ion-icon name="barbell-outline"></ion-icon>
+      <p>No workout scheduled for today</p>
+    </div>
+
+    <!-- Daily Progress -->
+    <div class="section-header">
+      <h3 class="section-title">Daily Progress</h3>
+      <a class="view-details">View Details</a>
+    </div>
+
+    <div class="progress-cards">
+      <div class="progress-card">
+        <div class="progress-circle">
+          <svg viewBox="0 0 100 100" class="progress-svg">
+            <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
+            <circle cx="50" cy="50" r="40" class="progress-bar" [style.strokeDashoffset]="100"></circle>
+          </svg>
+          <div class="progress-icon">
+            <ion-icon name="walk-outline"></ion-icon>
+          </div>
+        </div>
+        <div class="progress-value">8,432</div>
+        <div class="progress-label">STEPS</div>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-circle">
+          <svg viewBox="0 0 100 100" class="progress-svg">
+            <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
+            <circle cx="50" cy="50" r="40" class="progress-bar" [style.strokeDashoffset]="80"></circle>
+          </svg>
+          <div class="progress-icon">
+            <ion-icon name="flame-outline"></ion-icon>
+          </div>
+        </div>
+        <div class="progress-value">540 kcal</div>
+        <div class="progress-label">BURNED</div>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-circle">
+          <svg viewBox="0 0 100 100" class="progress-svg">
+            <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
+            <circle cx="50" cy="50" r="40" class="progress-bar" [style.strokeDashoffset]="60"></circle>
+          </svg>
+          <div class="progress-icon">
+            <ion-icon name="flash-outline"></ion-icon>
+          </div>
+        </div>
+        <div class="progress-value">42m</div>
+        <div class="progress-label">ACTIVE</div>
+      </div>
+    </div>
+
+    <!-- Recommended Recovery -->
+    <div class="section-header">
+      <h3 class="section-title">Recommended Recovery</h3>
+    </div>
+
+    <div class="recovery-cards">
+      <div class="recovery-card">
+        <img 
+          src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80" 
+          alt="Yoga"
+          class="recovery-image"
+        />
+        <div class="recovery-info">
+          <span class="recovery-duration">15 MIN</span>
+          <h4 class="recovery-title">Post-HIIT Yoga</h4>
+        </div>
+      </div>
+
+      <div class="recovery-card">
+        <img 
+          src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80" 
+          alt="Muscle Release"
+          class="recovery-image"
+        />
+        <div class="recovery-info">
+          <span class="recovery-duration">10 MIN</span>
+          <h4 class="recovery-title">Muscle Release</h4>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Workouts -->
+   <!-- Upcoming Workouts -->
+<ng-container *ngIf="upcoming.length > 0; else noUpcoming">
+
+  <div class="section-header">
+    <h3 class="section-title">Upcoming Workouts</h3>
+  </div>
+
+  <div class="upcoming-list">
+    <div class="upcoming-item" *ngFor="let item of upcoming">
+      <div class="upcoming-icon">
+        <ion-icon name="barbell-outline"></ion-icon>
+      </div>
+
+      <div class="upcoming-details">
+        <h4 class="upcoming-name">{{ item.training_session.title }}</h4>
+        <p class="upcoming-date">
+          {{ item.scheduled_for }} • {{ item.training_session.duration_minutes || 0 }} min
+          <span *ngIf="item.group"> • {{ item.group.name }}</span>
+        </p>
+      </div>
+
+      <div class="upcoming-badge">{{ item.progress.pct }}%</div>
+    </div>
+  </div>
+
+</ng-container>
+
+<!-- Empty state -->
+<ng-template #noUpcoming>
+  <div class="section-header">
+    <h3 class="section-title">Proximos Workouts</h3>
+  </div>
+
+  <div class="upcoming-empty">
+    <ion-icon name="calendar-outline"></ion-icon>
+    <p>No hay nada programado </p>
+  </div>
+</ng-template>
+
+
+    <!-- Loading Spinner -->
+    <div class="loading-container" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <!-- Pull to Refresh -->
+    <ion-refresher slot="fixed" (ionRefresh)="load($event)">
+      <ion-refresher-content></ion-refresher-content>
+    </ion-refresher>
+  </div>
 </ion-content>

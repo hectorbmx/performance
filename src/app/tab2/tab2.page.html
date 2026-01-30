@@ -1,17 +1,117 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar color="dark">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Performance Stats</ion-title>
+    <ion-buttons slot="end">
+      <ion-button>
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content color="dark">
+  <div class="container">
+    
+    <div class="time-selector">
+      <ion-segment value="weekly" mode="ios">
+        <ion-segment-button value="weekly">Weekly</ion-segment-button>
+        <ion-segment-button value="monthly">Monthly</ion-segment-button>
+        <ion-segment-button value="yearly">Yearly</ion-segment-button>
+      </ion-segment>
+    </div>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+    <div class="volume-section">
+      <p class="label">Total Volume</p>
+      <div class="volume-value">
+        <h1>145,200 <span>lbs</span></h1>
+        <span class="percentage">↗ 12.5%</span>
+      </div>
+      
+      <div class="chart-placeholder">
+        <svg viewBox="0 0 400 150" preserveAspectRatio="none">
+          <path d="M0,120 Q50,110 80,40 T160,80 T240,20 T320,130 T400,50" fill="none" stroke="#4dabff" stroke-width="4" />
+        </svg>
+        <div class="days-labels">
+          <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Key Metrics</h2>
+      <ion-note color="primary">View Insights</ion-note>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="card-header">
+          <ion-icon name="timer-outline" color="primary"></ion-icon>
+          <span>AVG. DURATION</span>
+        </div>
+        <div class="card-body">
+          <h3>64 <span>mins</span></h3>
+          <p class="trend-down">-2% vs last week</p>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-header">
+          <ion-icon name="flame-outline" color="primary"></ion-icon>
+          <span>BURNED</span>
+        </div>
+        <div class="card-body">
+          <h3>12,400 <span>kcal</span></h3>
+          <p class="trend-up">+5.2%</p>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-header">
+          <ion-icon name="trophy-outline" color="primary"></ion-icon>
+          <span>PRS HIT</span>
+        </div>
+        <div class="card-body">
+          <h3>4 <span>total</span></h3>
+          <div class="badges">
+            <span class="badge sq">SQ</span>
+            <span class="badge dl">DL</span>
+            <span class="badge more">+2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-header">
+          <ion-icon name="barbell-outline" color="primary"></ion-icon>
+          <span>WORKOUTS</span>
+        </div>
+        <div class="card-body">
+          <h3>18 <span>sessions</span></h3>
+          <p class="status">On track</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Consistency</h2>
+      <ion-note>Last 6 Months</ion-note>
+    </div>
+
+    <div class="heatmap-container">
+      <div class="heatmap-grid">
+        <div class="cube level-1" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]"></div>
+      </div>
+      <div class="heatmap-legend">
+        <span>LESS</span>
+        <div class="legend-steps">
+          <div class="cube level-0"></div><div class="cube level-1"></div><div class="cube level-2"></div><div class="cube level-3"></div>
+        </div>
+        <span>MORE</span>
+      </div>
+    </div>
+
+  </div>
 </ion-content>
