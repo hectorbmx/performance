@@ -109,11 +109,11 @@
 
 {{-- Cover image --}}
 @php
-    // URL pública para la imagen existente (si hay)
     $existingCoverUrl = !empty($training->cover_image)
-        ? url(Storage::disk('public')->url($training->cover_image))
+        ? asset('storage/'.$training->cover_image)
         : null;
 @endphp
+
 
 <div class="space-y-2">
     <label class="block text-sm font-medium text-gray-700">

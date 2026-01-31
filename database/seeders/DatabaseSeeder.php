@@ -2,25 +2,16 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
-            $this->call([
-        // TrainingMetricsSeeder::class,
-         CoachTrainingMetricsSeeder::class,
-    ]);
+        $this->call([
+            RolesAndAdminSeeder::class,      // 1️⃣ roles + admin
+            TrainingMetricsSeeder::class,    // 2️⃣ catálogo base
+            CoachTrainingMetricsSeeder::class, // 3️⃣ override por coach
+        ]);
     }
 }
