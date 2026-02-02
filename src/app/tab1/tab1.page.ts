@@ -8,14 +8,14 @@ import {
   IonTitle,
   IonToolbar,
   IonList,
-  IonItem,
+  IonItem,IonModal,
   IonLabel,
-  IonSpinner,
-  IonRefresher,
+  IonSpinner,IonButtons,
+  IonRefresher,IonButton,
   IonRefresherContent,
-  IonIcon,
+  IonIcon,IonText,
 } from '@ionic/angular/standalone';
-
+import { computed } from '@angular/core';
 import { addIcons } from 'ionicons';
 import {
   notificationsOutline,
@@ -26,6 +26,7 @@ import {
 import { TrainingApiService, TrainingFeedItemDTO } from '../services/training-api.service';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
+import type { AppNotificationDTO } from 'src/app/services/auth.service'; // ajusta ruta si aplica
 
 /* =========================
    Tipos locales
@@ -41,12 +42,12 @@ type CalendarDay = {
   selector: 'app-tab1',
   standalone: true,
   imports: [
-    CommonModule,
-    IonContent,
-    IonHeader,
+    CommonModule,IonText,
+    IonContent,IonButton,
+    IonHeader,IonButtons,
     IonTitle,
     IonToolbar,
-    IonList,
+    IonList,IonModal,
     IonItem,
     IonLabel,
     IonSpinner,
@@ -58,6 +59,10 @@ type CalendarDay = {
   styleUrls: ['tab1.page.scss'],
 })
 export class Tab1Page {
+  isNotifOpen = false;
+  notifCount = computed(() => this.auth.notifications().length);
+  notifications = computed(() => this.auth.notifications());
+
   loading = false;
   errorMsg: string | null = null;
   fallbackCover = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80';
@@ -82,8 +87,23 @@ export class Tab1Page {
 
     this.buildDays();
   }
-
-
+  openNotifications() {
+    this.isNotifOpen = true;
+  }
+    iconFor(type: AppNotificationDTO['type']) {
+    switch (type) {
+      case 'danger': return 'alert-circle';
+      case 'warning': return 'warning';
+      default: return 'information-circle';
+    }
+  }
+    colorFor(type: AppNotificationDTO['type']) {
+    switch (type) {
+      case 'danger': return 'danger';
+      case 'warning': return 'warning';
+      default: return 'primary';
+    }
+  }
   async ionViewWillEnter() {
     // 1) carga rápida desde storage
     await this.auth.hydrateFromStorage();

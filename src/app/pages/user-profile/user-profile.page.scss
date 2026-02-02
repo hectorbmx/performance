@@ -301,3 +301,27 @@ ion-header {
     grid-template-columns: 1fr;
   }
 }
+
+// Ajuste para que el botón de edición no se vea como un botón gigante
+.edit-metric-btn {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  height: 24px;
+  margin: 0;
+  --color: #{$text-secondary};
+  opacity: 0.6;
+
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+// Ajuste para el botón agregar
+.add-metric-btn {
+  --color: #{$primary-blue};
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  --padding-start: 0;
+  margin-left: -4px; // Para alinear el texto a la izquierda
+}

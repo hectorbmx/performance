@@ -184,17 +184,35 @@ export interface MeResponse {
   user: AppUserDTO;
   client: ClientDTO;
 }
+export interface AppNotificationDTO {
+  id: string;
+  type: 'info' | 'warning' | 'danger';
+  title: string;
+  message: string;
+  action?: string;
+  meta?: any;
+}
+
+export interface MeResponse {
+  ok: boolean;
+  user: AppUserDTO;
+  client: ClientDTO;
+  membership?: any | null;
+  notifications?: AppNotificationDTO[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly CONTEXT_KEY = 'auth_context';
   private readonly USER_KEY = 'auth_user';
   private readonly CLIENT_KEY = 'auth_client';
+  private readonly NOTIFICATIONS_KEY = 'auth_notifications';
 
   // Estado en memoria (para UI)
   user = signal<AppUserDTO | null>(null);
   client = signal<ClientDTO | null>(null);
   context = signal<AuthContext | null>(null);
+  notifications = signal<AppNotificationDTO[]>([]);
 
   constructor(private api: ApiService) {}
 
@@ -216,31 +234,7 @@ export class AuthService {
     try { return JSON.parse(value) as T; } catch { return null; }
   }
 
-  // ==========================
-  // AUTH FUNCIONAL ANYES DE LA ACTIVACION
-  // ==========================
-  // async login(email: string, password: string): Promise<LoginResponse> {
-  //   const res = await this.api.post<LoginResponse>('app/login', { email, password });
 
-  //   if (!res?.ok || !res?.token) {
-  //     throw new Error('Respuesta inválida del servidor (token no recibido).');
-  //   }
-
-  //   await this.api.setToken(res.token);
-
-  //   await this.persistSession(res.context, res.user, res.client);
-
-  //   // memoria (UI inmediata)
-  //   this.context.set(res.context ?? null);
-  //   this.user.set(res.user ?? null);
-  //   this.client.set(res.client ?? null);
-
-  //   return res;
-  // }
-  
-  // ==========================
-  // AUTH PROBANDO ACTIVACION
-  // ==========================
 async login(email: string, password: string): Promise<LoginResponse> {
   try {
     const res = await this.api.post<LoginResponse>('app/login', { email, password });
@@ -285,21 +279,31 @@ async login(email: string, password: string): Promise<LoginResponse> {
       coach_id: res.client.coach_id, // users.id (coach)
     };
 
-    await this.persistSession(ctx, res.user, res.client);
+    // await this.persistSession(ctx, res.user, res.client);
+    await this.persistSession(ctx, res.user, res.client, res.notifications ?? []);
+
 
     // memoria (UI)
     this.context.set(ctx);
     this.user.set(res.user);
     this.client.set(res.client);
+    this.notifications.set(res.notifications ?? []);
 
     return res;
   }
 
-  private async persistSession(ctx: AuthContext, user: AppUserDTO, client: ClientDTO) {
+  private async persistSession(
+    ctx: AuthContext, 
+    user: AppUserDTO, 
+    client: ClientDTO,
+    notifications: AppNotificationDTO[] = []
+  ) {
     await Promise.all([
       Preferences.set({ key: this.CONTEXT_KEY, value: JSON.stringify(ctx || {}) }),
       Preferences.set({ key: this.USER_KEY, value: JSON.stringify(user || {}) }),
       Preferences.set({ key: this.CLIENT_KEY, value: JSON.stringify(client || {}) }),
+      Preferences.set({ key: this.NOTIFICATIONS_KEY, value: JSON.stringify(notifications || []),
+      }),
     ]);
   }
 

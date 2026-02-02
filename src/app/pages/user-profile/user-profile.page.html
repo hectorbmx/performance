@@ -75,11 +75,11 @@
     <div class="section">
       <div class="section-header">
         <ion-icon name="barbell-outline"></ion-icon>
-        <h3>MÉTRICAS (1RM)</h3>
+        <h3>MÉTRICAS </h3>
       </div>
       
       <div class="metrics-list">
-        <div class="metric-item" *ngFor="let metric of metrics">
+        <!-- <div class="metric-item" *ngFor="let metric of metrics">
           <div class="metric-header">
             <span class="metric-name">{{ metric.name }}</span>
             <ion-icon name="create-outline" class="metric-edit" (click)="openEditMetric(metric)"></ion-icon>
@@ -90,10 +90,28 @@
             <span class="metric-unit">{{ metric.unit }}</span>
           </div>
           <button class="add-button" *ngIf="!metric.last">Agregar</button>
-        </div>
+        </div> -->
+        <div class="metric-item" *ngFor="let metric of metrics">
+  <div class="metric-header">
+    <span class="metric-name">{{ metric.name }}</span>
+    
+    <ion-button fill="clear" class="edit-metric-btn" (click)="openEditMetric(metric)">
+      <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+    </ion-button>
+  </div>
+
+
+</div>
       </div>
     </div>
 
-  
+  <ion-button
+  fill="clear"
+  class="edit-metric-btn"
+  (click)="testClick(metric)"
+>
+  <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+</ion-button>
+
   </div>
 </ion-content>

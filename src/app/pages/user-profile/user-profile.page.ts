@@ -81,9 +81,10 @@ interface Metric {
   standalone: true,
   imports: [
     IonicModule,
-  
     CommonModule, 
     FormsModule,
+    MetricEditModalComponent,
+    WeightEditModalComponent
  
   ]
 })
@@ -92,7 +93,7 @@ export class UserProfilePage implements OnInit {
   loading = true;
   profile: any = null;
   error: string | null = null;
-
+  metric = null;
   // Propiedades tipadas para el template
   user: User | null = null;
   client: Client | null = null;
@@ -210,19 +211,34 @@ private async reloadProfile() {
     // TODO: Implementar logout
   }
 
+// async openEditMetric(metric: Metric) {
+//   const modal = await this.modalCtrl.create({
+//     component: MetricEditModalComponent,
+//     componentProps: {
+//       metric,
+//       currentValue: metric?.last?.value ?? null,
+//     },
+//     breakpoints: [0, 0.5, 0.85],
+//     initialBreakpoint: 0.5,
+//   });
 async openEditMetric(metric: Metric) {
+      console.log('[openEditMetric] create()...');
+
   const modal = await this.modalCtrl.create({
     component: MetricEditModalComponent,
     componentProps: {
       metric,
       currentValue: metric?.last?.value ?? null,
     },
-    breakpoints: [0, 0.5, 0.85],
-    initialBreakpoint: 0.5,
+    // Prueba cambiando el initial a un valor más alto o eliminándolos 
+    // temporalmente para descartar que sea un error de altura
+    // breakpoints: [0, 0.5, 0.95], 
+    // initialBreakpoint: 0.6, 
+    // handle: true // Añade esto para ver si aparece la barrita gris de arrastre
   });
-
+    console.log('[openEditMetric] present()...');
   await modal.present();
-
+console.log('[openEditMetric] presented ✅');
   const { data, role } = await modal.onWillDismiss();
 
   if (role !== 'save' || !data) return;
@@ -236,6 +252,7 @@ async openEditMetric(metric: Metric) {
   } catch (err) {
     console.error(err);
     await this.showToast('Error al guardar la métrica', 'danger');
+    
   }
 }
 
@@ -252,10 +269,38 @@ private async showToast(
 
   await toast.present();
 }
-async openWeightModal() {
+// async openWeightModal() {
+//   const latest = this.body?.latest ?? null;
+
+//   const modal = await this.modalCtrl.create({
+//     component: WeightEditModalComponent,
+//     componentProps: {
+//       currentWeight: latest?.weight_kg ?? null,
+//       currentNotes: latest?.notes ?? null,
+//     },
+//     breakpoints: [0, 0.5, 0.85],
+//     initialBreakpoint: 0.5,
+//   });
+
+//   await modal.present();
+
+//   const { data, role } = await modal.onWillDismiss();
+
+//   if (role !== 'save' || !data) return;
+
+//   try {
+//     await this.profileService.addBodyRecord(data);
+//     await this.reloadProfile();
+//     await this.showToast('Peso guardado correctamente', 'success');
+//   } catch (err) {
+//     console.error(err);
+//     await this.showToast('Error al guardar el peso', 'danger');
+//   }
+// }
+openWeightModal(): void {
   const latest = this.body?.latest ?? null;
 
-  const modal = await this.modalCtrl.create({
+  this.modalCtrl.create({
     component: WeightEditModalComponent,
     componentProps: {
       currentWeight: latest?.weight_kg ?? null,
@@ -263,23 +308,14 @@ async openWeightModal() {
     },
     breakpoints: [0, 0.5, 0.85],
     initialBreakpoint: 0.5,
-  });
-
-  await modal.present();
-
-  const { data, role } = await modal.onWillDismiss();
-
-  if (role !== 'save' || !data) return;
-
-  try {
-    await this.profileService.addBodyRecord(data);
-    await this.reloadProfile();
-    await this.showToast('Peso guardado correctamente', 'success');
-  } catch (err) {
-    console.error(err);
-    await this.showToast('Error al guardar el peso', 'danger');
-  }
+  })
+  .then(modal => modal.present())
+  .catch(err => console.error('Modal error', err));
 }
 
+testClick(metric: any) {
+  console.log('[ANGULAR CLICK] metric=', metric);
+  alert('ANGULAR CLICK OK'); // temporal, sí: alert en Android
+}
 
 }

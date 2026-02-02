@@ -599,3 +599,53 @@
     font-size: 14px;
   }
 }
+.notification-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  background: #ff3b30; // iOS danger
+  color: #fff;
+    display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-item {
+  --padding-start: 10px;
+  --inner-padding-end: 10px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.04);
+}
+
+.notif-title {
+  font-weight: 700;
+  margin: 0;
+}
+
+.notif-message {
+  margin: 6px 0 0;
+  opacity: 0.85;
+}
+
+.empty {
+  min-height: 40vh;
+  display: grid;
+  place-items: center;
+}

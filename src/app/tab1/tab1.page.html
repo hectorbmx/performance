@@ -16,10 +16,54 @@
           
         </div>
       </div>
-      <div class="notification-icon">
+      <div class="notification-icon" (click)="openNotifications()">
+          <ion-icon name="notifications-outline"></ion-icon>
+
+         <span class="notification-badge" *ngIf="notifCount() > 0">
+  {{ notifCount() }}
+</span>
+<ion-modal [isOpen]="isNotifOpen" (didDismiss)="isNotifOpen = false">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title>Notificaciones</ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="isNotifOpen = false">Cerrar</ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-content class="ion-padding">
+    <ng-container *ngIf="notifications.length > 0; else emptyState">
+      <ion-list lines="none">
+        <ion-item *ngFor="let n of notifications()" class="notif-item">
+          <ion-icon
+            slot="start"
+            [name]="iconFor(n.type)"
+            [color]="colorFor(n.type)"
+          ></ion-icon>
+
+          <ion-label>
+            <h3 class="notif-title">{{ n.title }}</h3>
+            <p class="notif-message">{{ n.message }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ng-container>
+
+    <ng-template #emptyState>
+      <div class="empty">
+        <ion-text color="medium">No tienes notificaciones.</ion-text>
+      </div>
+    </ng-template>
+  </ion-content>
+</ion-modal>
+
+      </div>
+
+      <!-- <div class="notification-icon">
         <ion-icon name="notifications-outline"></ion-icon>
         <span class="notification-badge"></span>
-      </div>
+      </div> -->
     </div>
 
     <!-- Calendar Days -->
