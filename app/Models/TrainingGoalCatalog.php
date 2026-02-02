@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,10 +28,4 @@ class TrainingGoalCatalog extends Model
     {
         return $this->belongsTo(User::class, 'coach_id');
     }
-
-    // Relación opcional futura (no asumo tu modelo TrainingSession):
-    // public function trainingSessions(): HasMany
-    // {
-    //     return $this->hasMany(TrainingSession::class, 'training_goal_id');
-    // }
 }

@@ -70,16 +70,20 @@
                             @endforeach
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
-                        <select name="goal" class="w-full h-10 rounded-lg border-gray-300">
-                            @foreach(['strength','cardio','technique','mobility','mixed'] as $g)
-                                <option value="{{ $g }}" @selected(old('goal',$training->goal)===$g)>
-                                    {{ ucfirst($g) }}
-                                </option>
-                            @endforeach
-                        </select>
+                          <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
+                            <select name="training_goal_catalog_id" class="w-full h-10 rounded-lg border-gray-300" required>
+                                @foreach ($goals as $goal)
+                                    <option value="{{ $goal->id }}"
+                                        @selected(old('training_goal_catalog_id') == $goal->id)>
+                                        {{ $goal->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('training_goal_catalog_id')
+                                <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                            @enderror
+
                     </div>
 
                    <div>
@@ -314,24 +318,60 @@
       </div>
 
       <div class="flex items-end gap-3">
-        <label class="inline-flex items-center gap-2 text-sm">
+        {{-- <label class="inline-flex items-center gap-2 text-sm">
           <input type="checkbox"
                  name="sections[{{ $i }}][accepts_results]"
                  value="1"
                  @checked($s->accepts_results)>
           Acepta resultados
-        </label>
+        </label> --}}
 
         <div class="flex-1">
-          <label class="block text-xs mb-1">Tipo de resultado</label>
-          <select name="sections[{{ $i }}][result_type]"
+          
+          {{-- <select name="sections[{{ $i }}][result_type]"
                   class="w-full h-10 rounded-lg border-gray-300"
                   {{ !$s->accepts_results ? 'disabled' : '' }}>
             <option value="">Seleccionar…</option>
             @foreach(['kg','lb','time','distance','reps'] as $rt)
               <option value="{{ $rt }}" @selected($s->result_type===$rt)>{{ strtoupper($rt) }}</option>
             @endforeach
-          </select>
+          </select> --}}
+          @php
+  $rt = $s->result_type ?? 'none';
+
+  // Compat: si traes datos viejos (kg/lb) mapéalos a weight para que no “desaparezcan”
+  if (in_array($rt, ['kg','lb'], true)) {
+      $rt = 'weight';
+  }
+
+  $resultTypes = [
+      'none'     => 'Sin resultados',
+      'reps'     => 'Repeticiones',
+      'time'     => 'Tiempo',
+      'weight'   => 'Peso',
+      'distance' => 'Distancia',
+      'rounds'   => 'Rondas',
+      'sets'     => 'Series',
+      'calories' => 'Calorías',
+      'points'   => 'Puntos',
+      'note'     => 'Nota / Texto',
+      'boolean'  => 'Sí / No',
+  ];
+@endphp
+
+<div class="flex-1">
+  <label class="block text-xs mb-1">Tipo de resultado</label>
+
+  <select name="sections[{{ $i }}][result_type]"
+          class="w-full h-10 rounded-lg border-gray-300"
+          {{ !$s->accepts_results ? 'disabled' : '' }}>
+
+    @foreach($resultTypes as $key => $label)
+      <option value="{{ $key }}" @selected($rt === $key)>{{ $label }}</option>
+    @endforeach
+  </select>
+</div>
+
         </div>
       </div>
 
@@ -383,21 +423,27 @@
       </div>
 
       <div class="flex items-end gap-3">
-        <label class="inline-flex items-center gap-2 text-sm">
+        {{-- <label class="inline-flex items-center gap-2 text-sm">
           <input type="checkbox" class="secAccepts rounded border-gray-300" />
           Acepta resultados
-        </label>
+        </label> --}}
 
         <div class="flex-1">
           <label class="block text-xs mb-1">Tipo de resultado</label>
-          <select class="secResultType w-full h-10 rounded-lg border-gray-300" disabled>
-            <option value="">Seleccionar…</option>
-            <option value="kg">KG</option>
-            <option value="lb">LB</option>
-            <option value="time">TIME</option>
-            <option value="distance">DISTANCE</option>
-            <option value="reps">REPS</option>
-          </select>
+        <select class="secResultType w-full h-10 rounded-lg border-gray-300" >
+          <option value="none" selected>Sin resultados</option>
+          <option value="reps">Repeticiones</option>
+          <option value="time">Tiempo</option>
+          <option value="weight">Peso</option>
+          <option value="distance">Distancia</option>
+          <option value="rounds">Rondas</option>
+          <option value="sets">Series</option>
+          <option value="calories">Calorías</option>
+          <option value="points">Puntos</option>
+          <option value="note">Notas</option>
+          <option value="boolean">Sí / No</option>
+      </select>
+
         </div>
       </div>
 

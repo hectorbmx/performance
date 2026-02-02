@@ -7,12 +7,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\Group;
+use App\Models\TrainingGoalCatalog;
 use App\Models\TrainingSection;
 use App\Models\GroupTrainingAssignment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Models\TrainingTypeCatalog;
 use Illuminate\Validation\Rule;
+use App\Enums\TrainingSectionResultType;
 
 class TrainingSessionController extends Controller
 {
@@ -82,23 +84,36 @@ class TrainingSessionController extends Controller
 public function create(Request $request)
 {
     $date = $request->get('date');
-
     $coachId = $request->user()->id;
 
     $clients = Client::where('coach_id', auth()->id())
-  ->where('is_active', 1)
-  ->orderBy('first_name')
-  ->get(['id','first_name','last_name','email']);
+        ->where('is_active', 1)
+        ->orderBy('first_name')
+        ->get(['id','first_name','last_name','email']);
 
-$assignedGroups = collect(); // vacío
+
+    $assignedGroups = collect(); // vacío
+        $types = TrainingTypeCatalog::query()
+        ->where('coach_id', $coachId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id','name']);
+
 
     $types = TrainingTypeCatalog::query()
         ->where('coach_id', $coachId)
         ->where('is_active', true)
         ->orderBy('name')
         ->get(['id','name']);
+         // ✅ NUEVO: Goals (catálogo) por coach
+    $goals = TrainingGoalCatalog::query()
+        ->where('coach_id', $coachId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id','name']);
 
-return view('coach.trainings.create', compact('date','types','clients','assignedGroups'));
+
+return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups'));
 }
 
 
@@ -202,10 +217,10 @@ public function store(Request $request)
         'title'            => ['required','string','max:150'],
         'scheduled_at'     => ['required','date'],
         'duration_minutes' => ['nullable','integer','min:1','max:600'],
-
         'level'            => ['required','in:beginner,intermediate,advanced'],
-        'goal'             => ['required','in:strength,cardio,technique,mobility,mixed'],
-        'training_type_catalog_id' => ['nullable','integer'],
+        // 'goal'             => ['required','in:strength,cardio,technique,mobility,mixed'],
+        'training_goal_catalog_id' => ['required','integer','exists:training_goal_catalogs,id'],
+
 
         'visibility'       => ['required','in:free,assigned'],
         'notes'            => ['nullable','string'],
@@ -224,8 +239,14 @@ public function store(Request $request)
         'sections.*.name'                  => ['required','string','max:100'],
         'sections.*.description'           => ['nullable','string'],
         'sections.*.video_url'             => ['nullable','url','max:255'],
-        'sections.*.accepts_results'       => ['nullable','boolean'],
-        'sections.*.result_type'           => ['nullable','string','max:30'],
+        // 'sections.*.accepts_results'       => ['nullable','boolean'],
+        // 'sections.*.result_type'           => ['nullable','string','max:30'],
+        'sections.*.result_type' => [
+                    'required',
+                    Rule::in(TrainingSectionResultType::values()),
+                ],
+
+
     ]);
 
     // Validar que el type catalog pertenezca al coach
@@ -265,7 +286,7 @@ public function store(Request $request)
             'scheduled_at'             => $data['scheduled_at'],
             'duration_minutes'         => $data['duration_minutes'] ?? null,
             'level'                    => $data['level'],
-            'goal'                     => $data['goal'],
+            // 'training_goal_catalog_id' => $data['training_goal_catalog_id'],
             'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
             'visibility'               => $data['visibility'],
             'notes'                    => $data['notes'] ?? null,
@@ -283,8 +304,13 @@ public function store(Request $request)
                 'name'            => $s['name'],
                 'description'     => $s['description'] ?? null,
                 'video_url'       => $s['video_url'] ?? null,
-                'accepts_results' => $accepts,
-                'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
+                'accepts_results' => 1,
+                // 'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
+                //  'sections.*.result_type' => [
+                //     'required',
+                //     Rule::in(TrainingSectionResultType::values()),
+                // ],
+                'result_type'     => $s['result_type'],
             ]);
         }
 
@@ -355,12 +381,18 @@ public function edit(TrainingSession $training)
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id','name']);
+             $goals = TrainingGoalCatalog::query()
+                ->where('coach_id', auth()->id())
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id','name']);
 
             return view('coach.trainings.edit', compact(
                 'training',
                 'clients',
                 'assignedClientIds',
                 'assignedGroups',
+                'goals',
                 'types' // ✅ NUEVO
             ));
         }
@@ -376,10 +408,9 @@ public function update(Request $request, TrainingSession $training)
         'title'            => ['required','string','max:150'],
         'scheduled_at'     => ['required','date'],
         'duration_minutes' => ['nullable','integer','min:1','max:600'],
-
         'level'      => ['required','in:beginner,intermediate,advanced'],
-        'goal'       => ['required','in:strength,cardio,technique,mobility,mixed'],
-
+        // 'goal'       => ['required','in:strength,cardio,technique,mobility,mixed'],
+        'training_goal_catalog_id' => ['required','integer','exists:training_goal_catalogs,id'],
         'training_type_catalog_id' => [
             'nullable',
             'integer',
@@ -388,20 +419,20 @@ public function update(Request $request, TrainingSession $training)
 
         'visibility' => ['required','in:free,assigned'],
         'notes'      => ['nullable','string'],
-
         'cover_image' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
-
         // --- SECCIONES ---
         'sections'                   => ['required','array','min:1'],
         'sections.*.id'              => ['nullable','integer'],
         'sections.*.name'            => ['required','string','max:100'],
         'sections.*.description'     => ['nullable','string'],
         'sections.*.video_url'       => ['nullable','url','max:255'],
-        'sections.*.accepts_results' => ['nullable','boolean'],
-        'sections.*.result_type'     => ['nullable','string','max:30'],
-
+        // 'sections.*.accepts_results' => ['nullable','boolean'],
+        // 'sections.*.result_type'     => ['nullable','string','max:30'],
+         'sections.*.result_type' => [
+                    'required',
+                    Rule::in(TrainingSectionResultType::values()),
+                ],
         'video_url' => ['nullable','url','max:255'],
-
         // --- ASIGNACIONES ---
         'assigned_clients'   => ['nullable','array'],
         'assigned_clients.*' => ['integer'],
@@ -442,7 +473,7 @@ public function update(Request $request, TrainingSession $training)
             'scheduled_at'             => $data['scheduled_at'],
             'duration_minutes'         => $data['duration_minutes'] ?? null,
             'level'                    => $data['level'],
-            'goal'                     => $data['goal'],
+            // 'goal'                     => $data['goal'],
             'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
             // 'type' legacy: no lo tocamos si no viene en el request
             'visibility'               => $data['visibility'],
@@ -524,8 +555,13 @@ public function update(Request $request, TrainingSession $training)
                 'name'            => $s['name'],
                 'description'     => $s['description'] ?? null,
                 'video_url'       => $s['video_url'] ?? null,
-                'accepts_results' => $accepts,
-                'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
+                'accepts_results' => 1,
+                // 'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
+                //  'sections.*.result_type' => [
+                //     'required',
+                //     Rule::in(TrainingSectionResultType::values()),
+                // ],
+                'result_type'     => $s['result_type'],
             ];
 
             if (!empty($s['id'])) {

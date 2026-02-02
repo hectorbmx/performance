@@ -12,8 +12,8 @@ use App\Models\TrainingMetric;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\UserDevice;
-
-
+use App\Models\ClientMembership;
+use Illuminate\Support\Carbon;
 
 class AuthController extends Controller
 {
@@ -82,9 +82,13 @@ public function login(Request $request)
         'password' => ['required','string'],
     ]);
 
-    $userApp = UserApp::with('client')
+    // $userApp = UserApp::with('client')
+    //     ->where('email', $data['email'])
+    //     ->first();
+
+    $userApp = UserApp::with('client:id,coach_id,first_name,last_name,is_active')
         ->where('email', $data['email'])
-        ->first();
+        ->first();   
 
     if (!$userApp || !$userApp->is_active) {
         return response()->json([
@@ -108,20 +112,97 @@ public function login(Request $request)
         ], 422);
     }
 
+        // =========================================================
+    // ✅ VALIDAR MEMBRESÍA VIGENTE (ANTES DE CREAR TOKEN)
+    // Reglas:
+    // - status = active
+    // - starts_at <= hoy
+    // - y (ends_at is null OR ends_at >= hoy OR grace_until >= hoy)
+    // - (billing_status NO bloquea si hay gracia, como definiste)
+    // =========================================================
+ $today = Carbon::today();
+
+    $validMembership = ClientMembership::query()
+        ->where('client_id', $userApp->client_id)
+        ->where('coach_id', $userApp->client->coach_id)
+        ->whereNull('deleted_at')
+        ->where('status', 'active')
+        ->whereDate('starts_at', '<=', $today)
+        ->where(function ($q) use ($today) {
+            $q->whereNull('ends_at')
+              ->orWhereDate('ends_at', '>=', $today)
+              ->orWhereDate('grace_until', '>=', $today);
+        })
+        // prioridad: la más "reciente relevante"
+        ->orderByRaw('CASE WHEN ends_at IS NULL THEN 1 ELSE 0 END') // si quieres priorizar "sin vencimiento"
+        ->orderByDesc('ends_at')
+        ->orderByDesc('starts_at')
+        ->first();
+
+    if (!$validMembership) {
+        // Para mensaje más claro: traemos la última membresía del cliente
+        $latest = ClientMembership::query()
+            ->where('client_id', $userApp->client_id)
+            ->where('coach_id', $userApp->client->coach_id)
+            ->whereNull('deleted_at')
+            ->orderByDesc('starts_at')
+            ->orderByDesc('ends_at')
+            ->first();
+
+        // Mensajes según situación
+        if (!$latest) {
+            $msg = 'No tienes una membresía activa o vigente. Contacta a tu coach.';
+        } elseif ($latest->status === 'canceled') {
+            $msg = 'Tu membresía fue cancelada. Contacta a tu coach.';
+        } elseif ($latest->status === 'expired') {
+            $msg = 'Tu membresía ha vencido. Renueva para continuar.';
+        } else {
+            // status puede ser active pero fuera de fechas/gracia
+            $graceOk = $latest->grace_until && Carbon::parse($latest->grace_until)->startOfDay()->gte($today);
+            if ($graceOk) {
+                // Esto sería raro porque la query válida debió atraparla, pero por seguridad:
+                $msg = 'Tu membresía está en periodo de gracia. Intenta nuevamente.';
+            } else {
+                $msg = 'No tienes una membresía vigente. Renueva para continuar.';
+            }
+        }
+
+        return response()->json([
+            'ok' => false,
+            'message' => $msg,
+        ], 403);
+    }
     // (Opcional) registrar last_login_at
     $userApp->forceFill(['last_login_at' => now()])->save();
 
     // Crear token Sanctum
     $token = $userApp->createToken('app')->plainTextToken;
 
+        // Para que la app muestre banner si está en gracia:
+    $isGrace = $validMembership->grace_until
+        && Carbon::parse($validMembership->grace_until)->startOfDay()->gte($today)
+        && $validMembership->ends_at
+        && Carbon::parse($validMembership->ends_at)->startOfDay()->lt($today);
+
   return response()->json([
     'ok' => true,
     'token' => $token,
-    'context' => [
-        'user_app_id' => $userApp->id,
-        'client_id'   => $userApp->client_id,
-        'coach_id'    => $userApp->client->coach_id,
-    ],
+     'context' => [
+            'user_app_id' => $userApp->id,
+            'client_id'   => $userApp->client_id,
+            'coach_id'    => $userApp->client->coach_id,
+
+            // ✅ info mínima de membresía
+            'membership' => [
+                'id'            => $validMembership->id,
+                'status'        => $validMembership->status,        // active
+                'billing_status'=> $validMembership->billing_status, // unpaid/paid/past_due/canceled
+                'starts_at'     => $validMembership->starts_at,
+                'ends_at'       => $validMembership->ends_at,
+                'grace_until'   => $validMembership->grace_until,
+                'access_state'  => $isGrace ? 'grace' : 'active',
+            ],
+        ],
     'user' => [
         'id' => $userApp->id,
         'email' => $userApp->email,
@@ -148,25 +229,101 @@ public function logout(Request $request)
         'message' => 'Sesión cerrada correctamente.'
     ]);
 }
+// public function me(Request $request)
+// {
+//     $auth = $request->user();
+
+
+//     if (!$auth) {
+//             return response()->json([
+//                 'ok' => false,
+//                 'message' => 'No autenticado.'
+//             ], 401);
+//         }
+
+
+//     $userApp = UserApp::query()
+//         ->select(['id','email','client_id','is_active'])
+//         ->with(['client:id,coach_id,first_name,last_name,is_active,avatar'])
+//         // ->findOrFail($auth->id);
+//         ->where('email', $auth->email)->firstOrFail();
+
+
+//     return response()->json([
+//         'ok' => true,
+//         'user' => [
+//             'id' => $userApp->id,
+//             'email' => $userApp->email,
+//             'client_id' => $userApp->client_id,
+//             'is_active' => (bool) $userApp->is_active,
+//         ],
+//         'client' => $userApp->client ? [
+//             'id' => $userApp->client->id,
+//             'first_name' => $userApp->client->first_name,
+//             'last_name' => $userApp->client->last_name,
+//             'coach_id' => $userApp->client->coach_id,
+//             'avatar_url' => $userApp->client->avatar ? url(Storage::disk('public')->url($userApp->client->avatar)) : null,
+//             'is_active' => (bool) $userApp->client->is_active,
+//         ] : null,
+//     ]);
+// }
+
 public function me(Request $request)
 {
     $auth = $request->user();
 
-
     if (!$auth) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'No autenticado.'
-            ], 401);
-        }
-
+        return response()->json([
+            'ok' => false,
+            'message' => 'No autenticado.'
+        ], 401);
+    }
 
     $userApp = UserApp::query()
         ->select(['id','email','client_id','is_active'])
         ->with(['client:id,coach_id,first_name,last_name,is_active,avatar'])
-        // ->findOrFail($auth->id);
-        ->where('email', $auth->email)->firstOrFail();
+        ->where('email', $auth->email)
+        ->firstOrFail();
 
+    // ==========================
+    // ✅ Membership + Notifications
+    // ==========================
+    $today = Carbon::today();
+
+    $membership = null;
+    $notifications = [];
+
+    if ($userApp->client) {
+        $membership = ClientMembership::query()
+            ->where('client_id', $userApp->client_id)
+            ->where('coach_id', $userApp->client->coach_id)
+            ->whereNull('deleted_at')
+            ->where('status', 'active')
+            ->whereDate('starts_at', '<=', $today)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('ends_at')
+                  ->orWhereDate('ends_at', '>=', $today)
+                  ->orWhereDate('grace_until', '>=', $today);
+            })
+            ->orderByDesc('ends_at')
+            ->orderByDesc('starts_at')
+            ->first();
+
+        if ($membership && in_array($membership->billing_status, ['unpaid', 'past_due'], true)) {
+            $notifications[] = [
+                'id'      => 'membership_payment_pending',
+                'type'    => 'warning',
+                'title'   => 'Pago pendiente',
+                'message' => 'Tu membresía no está pagada. Regulariza tu pago para evitar la suspensión del servicio.',
+                'action'  => 'open_membership',
+                'meta'    => [
+                    'billing_status' => $membership->billing_status,
+                    'ends_at'        => $membership->ends_at,
+                    'grace_until'    => $membership->grace_until,
+                ],
+            ];
+        }
+    }
 
     return response()->json([
         'ok' => true,
@@ -181,13 +338,26 @@ public function me(Request $request)
             'first_name' => $userApp->client->first_name,
             'last_name' => $userApp->client->last_name,
             'coach_id' => $userApp->client->coach_id,
-            'avatar_url' => $userApp->client->avatar ? url(Storage::disk('public')->url($userApp->client->avatar)) : null,
+            'avatar_url' => $userApp->client->avatar
+                ? url(Storage::disk('public')->url($userApp->client->avatar))
+                : null,
             'is_active' => (bool) $userApp->client->is_active,
         ] : null,
+
+        // ✅ nuevos
+        'membership' => $membership ? [
+            'id'             => $membership->id,
+            'status'         => $membership->status,
+            'billing_status' => $membership->billing_status,
+            'starts_at'      => $membership->starts_at,
+            'ends_at'        => $membership->ends_at,
+            'grace_until'    => $membership->grace_until,
+            'paid_at'        => $membership->paid_at,
+        ] : null,
+
+        'notifications' => $notifications,
     ]);
 }
-
-
 //reenvio de condigo de activacion
 public function resendActivationCode(Request $request)
 {

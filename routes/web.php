@@ -78,30 +78,22 @@ Route::middleware(['auth', 'admin'])
 
 Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () {
 
-    Route::prefix('config')->name('config.')->group(function () {
-        Route::resource('types', TrainingTypeCatalogController::class)->except(['show']);
-        });
+    // Route::prefix('config')->name('config.')->group(function () {
+    //     Route::resource('types', TrainingTypeCatalogController::class)->except(['show']);
+    //     });
    Route::get('groups/search', [GroupController::class, 'search'])->name('groups.search'); // ✅ NUEVO: buscador de grupos
 
     Route::resource('groups', GroupClientController::class);
     Route::resource('groups', GroupController::class);
     
-
-    Route::get('clients/search', [CoachClientController::class, 'search'])
-        ->name('clients.search');
+    Route::get('clients/search', [CoachClientController::class, 'search'])->name('clients.search');
 
     // routes/web.php
-    Route::put('clients/{client}/health-profile', [ClientHealthProfileController::class, 'update'])
-        ->name('clients.health-profile.update');
+    Route::put('clients/{client}/health-profile', [ClientHealthProfileController::class, 'update'])->name('clients.health-profile.update');
 
-    Route::post('clients/{client}/metric-records', [ClientMetricRecordController::class, 'store'])
-        ->name('clients.metric-records.store');
+    Route::post('clients/{client}/metric-records', [ClientMetricRecordController::class, 'store'])->name('clients.metric-records.store');
 
-    Route::delete('clients/{client}/metric-records/{record}', [ClientMetricRecordController::class, 'destroy'])
-        ->name('clients.metric-records.destroy');
-
-
-        //aqui van mas rutas
+    Route::delete('clients/{client}/metric-records/{record}', [ClientMetricRecordController::class, 'destroy'])->name('clients.metric-records.destroy');
 
 
     // Para asignar clientes al grupo
@@ -126,8 +118,6 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
         Route::put('types/{type}',     [TrainingTypeCatalogController::class, 'update'])->name('types.update');
         Route::delete('types/{type}',  [TrainingTypeCatalogController::class, 'destroy'])->name('types.destroy');
 
-       
-
         Route::get('goals',            [TrainingGoalCatalogController::class, 'index'])->name('goals.index');
         Route::get('goals/create',     [TrainingGoalCatalogController::class, 'create'])->name('goals.create');
         Route::post('goals',           [TrainingGoalCatalogController::class, 'store'])->name('goals.store');
@@ -151,15 +141,11 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
 
         // Listar métricas de una sección
         Route::get('sections/{section}/metrics', [TrainingSectionMetricController::class, 'index'])->name('sections.metrics.index');
-        // Form para agregar métrica a sección
+        
         Route::get('sections/{section}/metrics/create', [TrainingSectionMetricController::class, 'create'])->name('sections.metrics.create');
-        // Guardar métrica
         Route::post('sections/{section}/metrics',    [TrainingSectionMetricController::class, 'store'])->name('sections.metrics.store');
-        // Editar métrica de sección
         Route::get('sections/{section}/metrics/{sectionMetric}/edit',   [TrainingSectionMetricController::class, 'edit'])->name('sections.metrics.edit');
-        // Actualizar
         Route::put('sections/{section}/metrics/{sectionMetric}',  [TrainingSectionMetricController::class, 'update'])->name('sections.metrics.update');
-        // Eliminar
         Route::delete('sections/{section}/metrics/{sectionMetric}',  [TrainingSectionMetricController::class, 'destroy'])->name('sections.metrics.destroy');
 
         //VISTA CALENDARIO POR ATLETA
@@ -170,6 +156,7 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
         Route::post('coach-metrics/catalog', [MetricsController::class, 'storeCatalog'])->name('coach-metrics.catalog.store');
         Route::put('coach-metrics/catalog/{metric}', [MetricsController::class, 'updateCatalog'])->name('coach-metrics.catalog.update');
         Route::delete('coach-metrics/catalog/{metric}', [MetricsController::class, 'destroyCatalog'])->name('coach-metrics.catalog.destroy');
+     
         });
 
 

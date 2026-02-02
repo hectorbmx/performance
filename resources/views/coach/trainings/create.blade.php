@@ -88,18 +88,7 @@
                         @error('level') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
-                    {{-- Objetivo --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
-                        <select name="goal" class="w-full h-10 rounded-lg border-gray-300" required>
-                            <option value="strength" @selected(old('goal','strength')==='strength')>Fuerza</option>
-                            <option value="cardio" @selected(old('goal')==='cardio')>Cardio</option>
-                            <option value="technique" @selected(old('goal')==='technique')>Técnica</option>
-                            <option value="mobility" @selected(old('goal')==='mobility')>Movilidad</option>
-                            <option value="mixed" @selected(old('goal')==='mixed')>Mixto</option>
-                        </select>
-                        @error('goal') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
-                    </div>
+                
 
                     {{-- Tipo (catálogo) --}}
                     <div>
@@ -118,7 +107,31 @@
                         {{-- Legacy para no romper mientras "type" siga required en backend --}}
                         <input type="hidden" name="type" value="{{ old('type','fitness') }}">
                     </div>
+    {{-- Objetivo --}}
+                    <div>
+                        {{-- <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
+                        <select name="goal" class="w-full h-10 rounded-lg border-gray-300" required>
+                            <option value="strength" @selected(old('goal','strength')==='strength')>Fuerza</option>
+                            <option value="cardio" @selected(old('goal')==='cardio')>Cardio</option>
+                            <option value="technique" @selected(old('goal')==='technique')>Técnica</option>
+                            <option value="mobility" @selected(old('goal')==='mobility')>Movilidad</option>
+                            <option value="mixed" @selected(old('goal')==='mixed')>Mixto</option>
+                        </select>
+                        @error('goal') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror --}}
+                        <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
+                            <select name="training_goal_catalog_id" class="w-full h-10 rounded-lg border-gray-300" required>
+                                @foreach ($goals as $goal)
+                                    <option value="{{ $goal->id }}"
+                                        @selected(old('training_goal_catalog_id') == $goal->id)>
+                                        {{ $goal->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('training_goal_catalog_id')
+                                <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
+                            @enderror
 
+                    </div>
                     {{-- Color etiqueta --}}
                     <div>
                         <label class="block text-xs text-gray-600 mb-1">Color etiqueta</label>
@@ -317,16 +330,15 @@
                                <div class="flex-1">
                                     <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
                                     <select class="secResultType w-full h-10 rounded-lg border-gray-300">
-                                        <option value="" selected>Sin resultados</option>
-
-                                        <option value="kg">Kilos (kg)</option>
-                                        <option value="lb">Libras (lb)</option>
+                                        <option value="none" selected>Sin resultados</option>
                                         <option value="time">Tiempo</option>
+                                        <option value="weight">Peso</option>
                                         <option value="distance">Distancia</option>
-                                        <option value="reps">Repeticiones</option>
+                                        <option value="sets">Rounds</option>
+                                        <option value="calories">Calorias</option>
+                                        <option value="note">Notas</option>
                                     </select>
-                                    </div>
-
+                                </div>
                             </div>
 
                             <div class="md:col-span-2">
