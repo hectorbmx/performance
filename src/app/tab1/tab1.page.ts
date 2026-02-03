@@ -15,7 +15,7 @@ import {
   IonRefresherContent,
   IonIcon,
 } from '@ionic/angular/standalone';
-
+import { Health } from '@capgo/capacitor-health';
 import { addIcons } from 'ionicons';
 import {
   notificationsOutline,
@@ -72,6 +72,21 @@ export class Tab1Page {
 
   clientName = '';
 
+  healthToday = {
+    steps: 0,
+    kcal: 0,
+    activeMin: 0,
+  };
+goals = {
+  steps: 10000,
+  kcal: 600,
+  activeMin: 45,
+};
+
+readonly CIRC = 2 * Math.PI * 40; // r=40
+
+healthLoading = false;
+
   constructor(
     private trainingApi: TrainingApiService,
     private api: ApiService,
@@ -86,6 +101,7 @@ export class Tab1Page {
 
   async ionViewWillEnter() {
     // 1) carga rápida desde storage
+        await this.testHealthToday();
     await this.auth.hydrateFromStorage();
     this.clientName = this.auth.getClientDisplayName();
 
@@ -98,6 +114,78 @@ export class Tab1Page {
     }
 
     await this.load();
+  }
+  private async testHealthToday() {
+  console.log('🧪 Health test: START');
+
+  try {
+    const availability = await Health.isAvailable();
+    console.log('🧪 Health isAvailable ->', availability);
+
+    if (!availability.available) {
+      console.log('🧪 Health NOT available: STOP');
+      return;
+    }
+
+    console.log('🧪 Requesting authorization...');
+    const authRes = await Health.requestAuthorization({
+      read: ['steps', 'calories'],
+      write: [],
+    });
+    console.log('🧪 Authorization result ->', authRes);
+
+    const startDate = this.startOfTodayISO();
+    const endDate = this.endOfTodayISO();
+    console.log('🧪 Range ->', { startDate, endDate });
+
+    const stepsAgg = await Health.queryAggregated({
+      dataType: 'steps',
+      startDate,
+      endDate,
+      bucket: 'day',
+      aggregation: 'sum',
+    });
+    console.log('🧪 Steps aggregated ->', stepsAgg);
+
+    const caloriesAgg = await Health.queryAggregated({
+      dataType: 'calories',
+      startDate,
+      endDate,
+      bucket: 'day',
+      aggregation: 'sum',
+    });
+    console.log('🧪 Calories aggregated ->', caloriesAgg);
+
+    const stepsToday = stepsAgg.samples?.[0]?.value ?? 0;
+    const caloriesToday = caloriesAgg.samples?.[0]?.value ?? 0;
+
+    console.log('✅ Health TODAY -> steps:', stepsToday);
+    console.log('✅ Health TODAY -> kcal:', caloriesToday);
+
+    this.healthToday.steps = Math.round(stepsToday);
+    this.healthToday.kcal = Math.round(caloriesToday);
+
+    // Stage 1 “ACTIVE”: como hoy no estamos leyendo appleExerciseTime (aún),
+    // lo dejamos en 0 por ahora o lo calculamos con workouts cuando lo activemos.
+    this.healthToday.activeMin = 0;
+
+  } catch (err) {
+    console.error('❌ Health test ERROR:', err);
+  } finally {
+    console.log('🧪 Health test: END');
+  }
+}
+
+ private startOfTodayISO(): string {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }
+
+  private endOfTodayISO(): string {
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
   }
 
   private buildDays() {
@@ -185,17 +273,7 @@ private computeTodayUpcoming() {
   }
 }
 
-  // Método actualizado para navegar a training-details
-  // async startToday() {
-  //   if (!this.today?.assignment_id) {
-  //     console.warn('No hay assignment_id disponible');
-  //     return;
-  //   }
 
-  //   console.log('Navegando a entrenamiento:', this.today.assignment_id);
-    
-  //   await this.router.navigate(['/training-details', this.today.assignment_id]);
-  // }
 async startToday() {
   const assignmentId = this.today?.assignment_id ?? null;
   const sessionId = this.today?.training_session?.id ?? null;
@@ -213,11 +291,7 @@ async startToday() {
   console.warn('No hay assignment_id ni training_session.id disponible');
 }
 
-  // Método adicional para navegar desde upcoming workouts
-  // async goToWorkout(assignmentId: number) {
-  //   if (!assignmentId) return;
-  //   await this.router.navigate(['/training-details', assignmentId]);
-  // }
+
   async goToWorkout(item: TrainingFeedItemDTO) {
   const assignmentId = item?.assignment_id ?? null;
   const sessionId = item?.training_session?.id ?? null;
@@ -238,5 +312,16 @@ async startToday() {
   onImgError(ev: Event) {
   (ev.target as HTMLImageElement).src = this.fallbackCover;
 }
+progressPct(value: number, goal: number) {
+  if (!goal) return 0;
+  return Math.max(0, Math.min(1, value / goal));
+}
+
+dashOffset(value: number, goal: number) {
+  const pct = this.progressPct(value, goal);
+  return this.CIRC * (1 - pct);
+}
+
 
 }
+
