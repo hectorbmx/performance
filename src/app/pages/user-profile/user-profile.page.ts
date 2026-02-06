@@ -12,12 +12,7 @@ import {
 } from 'ionicons/icons';
 import { ProfileService } from 'src/app/services/profile.service';
 import { IonicModule } from '@ionic/angular';
-
-import { ModalController } from '@ionic/angular';
-import { MetricEditModalComponent } from 'src/app/components/metric-edit-modal/metric-edit-modal.component';
 import { ToastController } from '@ionic/angular/standalone';
-import { addOutline } from 'ionicons/icons';
-import { WeightEditModalComponent } from 'src/app/components/weight-edit-modal/weight-edit-modal.component';
 
 interface User {
   id: number;
@@ -46,7 +41,7 @@ interface HealthProfile {
 }
 
 interface BodyLatest {
-  weight_kg: number;
+  weight_kg: number | null;
   recorded_at?: string;
   source?: string;
   notes?: string | null;
@@ -82,10 +77,7 @@ interface Metric {
   imports: [
     IonicModule,
     CommonModule, 
-    FormsModule,
-    MetricEditModalComponent,
-    WeightEditModalComponent
- 
+    FormsModule
   ]
 })
 export class UserProfilePage implements OnInit {
@@ -93,18 +85,26 @@ export class UserProfilePage implements OnInit {
   loading = true;
   profile: any = null;
   error: string | null = null;
-  metric = null;
+
   // Propiedades tipadas para el template
   user: User | null = null;
   client: Client | null = null;
   healthProfile: HealthProfile | null = null;
   body: Body | null = null;
   metrics: Metric[] = [];
-  
+
+  // Estado de expansión
+  weightExpanded = false;
+  expandedMetricId: number | null = null;
+
+  // Valores de edición
+  editingWeight: number | null = null;
+  editingWeightNotes: string | null = null;
+  editingMetricValue: number | null = null;
+  editingMetricNotes: string | null = null;
 
   constructor(
     private profileService: ProfileService,
-    private modalCtrl: ModalController,
     private toastCtrl: ToastController
   ) {
     // Registrar los iconos necesarios
@@ -115,42 +115,21 @@ export class UserProfilePage implements OnInit {
       'create-outline': createOutline,
       'save-outline': saveOutline,
       'trending-up-outline': trendingUpOutline,
-       'add-outline': addOutline,
     });
   }
 
-  // async ngOnInit() {
-  //   try {
-  //     this.profile = await this.profileService.getMyProfile();
-      
-  //     // Asignar datos a las propiedades tipadas
-  //     if (this.profile) {
-  //       this.user = this.profile.user;
-  //       this.client = this.profile.client;
-  //       this.healthProfile = this.profile.health_profile;
-  //       this.body = this.profile.body;
-  //       this.metrics = this.profile.metrics || [];
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     this.error = 'No se pudo cargar el perfil';
-  //   } finally {
-  //     this.loading = false;
-  //   }
-  // }
   async ngOnInit() {
-  this.loading = true;
+    this.loading = true;
 
-  try {
-    await this.reloadProfile();
-  } catch (err) {
-    console.error(err);
-    this.error = 'No se pudo cargar el perfil';
-  } finally {
-    this.loading = false;
+    try {
+      await this.reloadProfile();
+    } catch (err) {
+      console.error(err);
+      this.error = 'No se pudo cargar el perfil';
+    } finally {
+      this.loading = false;
+    }
   }
-}
-
 
   // Obtener iniciales del nombre
   getInitials(): string {
@@ -188,134 +167,155 @@ export class UserProfilePage implements OnInit {
     // TODO: Implementar edición de avatar
   }
 
- 
-private applyProfile(res: any) {
-  this.profile = res;
+  private applyProfile(res: any) {
+    this.profile = res;
+    this.user = res?.user ?? null;
+    this.client = res?.client ?? null;
+    this.healthProfile = res?.health_profile ?? null;
+    this.body = res?.body ?? null;
+    this.metrics = res?.metrics ?? [];
+  }
 
-  this.user = res?.user ?? null;
-  this.client = res?.client ?? null;
-  this.healthProfile = res?.health_profile ?? null;
-  this.body = res?.body ?? null;
-  this.metrics = res?.metrics ?? [];
-}
+  private async reloadProfile() {
+    const res = await this.profileService.getMyProfile();
+    this.applyProfile(res);
+  }
 
-private async reloadProfile() {
-  const res = await this.profileService.getMyProfile();
-  this.applyProfile(res);
-}
-
- 
- 
   logout() {
     console.log('Cerrar sesión');
     // TODO: Implementar logout
   }
 
-// async openEditMetric(metric: Metric) {
-//   const modal = await this.modalCtrl.create({
-//     component: MetricEditModalComponent,
-//     componentProps: {
-//       metric,
-//       currentValue: metric?.last?.value ?? null,
-//     },
-//     breakpoints: [0, 0.5, 0.85],
-//     initialBreakpoint: 0.5,
-//   });
-async openEditMetric(metric: Metric) {
-      console.log('[openEditMetric] create()...');
-
-  const modal = await this.modalCtrl.create({
-    component: MetricEditModalComponent,
-    componentProps: {
-      metric,
-      currentValue: metric?.last?.value ?? null,
-    },
-    // Prueba cambiando el initial a un valor más alto o eliminándolos 
-    // temporalmente para descartar que sea un error de altura
-    // breakpoints: [0, 0.5, 0.95], 
-    // initialBreakpoint: 0.6, 
-    // handle: true // Añade esto para ver si aparece la barrita gris de arrastre
-  });
-    console.log('[openEditMetric] present()...');
-  await modal.present();
-console.log('[openEditMetric] presented ✅');
-  const { data, role } = await modal.onWillDismiss();
-
-  if (role !== 'save' || !data) return;
-
-  try {
-    await this.profileService.addMetricRecord(data);
-    await this.reloadProfile();
-
-    await this.showToast(`${metric.name} actualizado`, 'success');
-
-  } catch (err) {
-    console.error(err);
-    await this.showToast('Error al guardar la métrica', 'danger');
+  // ==========================================
+  // WEIGHT EXPANDABLE CARD
+  // ==========================================
+  
+  toggleWeight() {
+    this.weightExpanded = !this.weightExpanded;
     
+    if (this.weightExpanded) {
+      // Inicializar valores cuando se expande
+      this.editingWeight = this.body?.latest?.weight_kg ?? null;
+      this.editingWeightNotes = this.body?.latest?.notes ?? null;
+      // Cerrar cualquier métrica abierta
+      this.expandedMetricId = null;
+    } else {
+      // Limpiar valores cuando se colapsa
+      this.resetWeightEdit();
+    }
   }
-}
 
-private async showToast(
-  message: string,
-  color: 'success' | 'danger' | 'warning' | 'medium' = 'medium'
-) {
-  const toast = await this.toastCtrl.create({
-    message,
-    duration: 1800,
-    position: 'bottom',
-    color,
-  });
+  cancelWeightEdit(event: Event) {
+    event.stopPropagation();
+    this.resetWeightEdit();
+    this.weightExpanded = false;
+  }
 
-  await toast.present();
-}
-// async openWeightModal() {
-//   const latest = this.body?.latest ?? null;
+  async saveWeight(event: Event) {
+    event.stopPropagation();
 
-//   const modal = await this.modalCtrl.create({
-//     component: WeightEditModalComponent,
-//     componentProps: {
-//       currentWeight: latest?.weight_kg ?? null,
-//       currentNotes: latest?.notes ?? null,
-//     },
-//     breakpoints: [0, 0.5, 0.85],
-//     initialBreakpoint: 0.5,
-//   });
+    if (!this.editingWeight || this.editingWeight <= 0) {
+      await this.showToast('Por favor ingresa un peso válido', 'warning');
+      return;
+    }
 
-//   await modal.present();
+    try {
+      const data = {
+        weight_kg: this.editingWeight,
+        notes: this.editingWeightNotes || null,
+      };
 
-//   const { data, role } = await modal.onWillDismiss();
+      await this.profileService.addBodyRecord(data);
+      await this.reloadProfile();
+      
+      this.weightExpanded = false;
+      this.resetWeightEdit();
+      
+      await this.showToast('Peso guardado correctamente', 'success');
+    } catch (err) {
+      console.error(err);
+      await this.showToast('Error al guardar el peso', 'danger');
+    }
+  }
 
-//   if (role !== 'save' || !data) return;
+  private resetWeightEdit() {
+    this.editingWeight = null;
+    this.editingWeightNotes = null;
+  }
 
-//   try {
-//     await this.profileService.addBodyRecord(data);
-//     await this.reloadProfile();
-//     await this.showToast('Peso guardado correctamente', 'success');
-//   } catch (err) {
-//     console.error(err);
-//     await this.showToast('Error al guardar el peso', 'danger');
-//   }
-// }
-openWeightModal(): void {
-  const latest = this.body?.latest ?? null;
+  // ==========================================
+  // METRICS EXPANDABLE CARDS
+  // ==========================================
 
-  this.modalCtrl.create({
-    component: WeightEditModalComponent,
-    componentProps: {
-      currentWeight: latest?.weight_kg ?? null,
-      currentNotes: latest?.notes ?? null,
-    },
-    breakpoints: [0, 0.5, 0.85],
-    initialBreakpoint: 0.5,
-  })
-  .then(modal => modal.present())
-  .catch(err => console.error('Modal error', err));
-}
+  toggleMetric(metric: Metric) {
+    if (this.expandedMetricId === metric.id) {
+      // Si ya está expandido, colapsar
+      this.expandedMetricId = null;
+      this.resetMetricEdit();
+    } else {
+      // Expandir esta métrica
+      this.expandedMetricId = metric.id;
+      this.editingMetricValue = metric.last?.value ?? null;
+      this.editingMetricNotes = metric.last?.notes ?? null;
+      // Cerrar peso si está abierto
+      this.weightExpanded = false;
+    }
+  }
 
-testClick(metric: any) {
-  console.log('[ANGULAR CLICK] metric=', metric);
-  alert('ANGULAR CLICK OK'); // temporal, sí: alert en Android
-}
+  cancelMetricEdit(event: Event) {
+    event.stopPropagation();
+    this.expandedMetricId = null;
+    this.resetMetricEdit();
+  }
 
+  async saveMetric(event: Event, metric: Metric) {
+    event.stopPropagation();
+
+    if (!this.editingMetricValue || this.editingMetricValue <= 0) {
+      await this.showToast('Por favor ingresa un valor válido', 'warning');
+      return;
+    }
+
+    try {
+      const data = {
+        training_metric_id: metric.id,
+        value: this.editingMetricValue,
+        notes: this.editingMetricNotes || null,
+      };
+
+      await this.profileService.addMetricRecord(data);
+      await this.reloadProfile();
+      
+      this.expandedMetricId = null;
+      this.resetMetricEdit();
+      
+      await this.showToast(`${metric.name} actualizado`, 'success');
+    } catch (err) {
+      console.error(err);
+      await this.showToast('Error al guardar la métrica', 'danger');
+    }
+  }
+
+  private resetMetricEdit() {
+    this.editingMetricValue = null;
+    this.editingMetricNotes = null;
+  }
+
+  // ==========================================
+  // TOAST HELPER
+  // ==========================================
+
+  private async showToast(
+    message: string,
+    color: 'success' | 'danger' | 'warning' | 'medium' = 'medium'
+  ) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 1800,
+      position: 'bottom',
+      color,
+    });
+
+    await toast.present();
+  }
 }

@@ -1,327 +1,464 @@
-// Variables
-$bg-dark: #0a0e1a;
-$card-bg: #151b2e;
-$primary-blue: #4a7cff;
-$text-primary: #ffffff;
-$text-secondary: #8b92a8;
-$text-muted: #5a5f73;
-$border-color: #1f2940;
+:host {
+  --bg: #0b0f16;
+  --card: rgba(255, 255, 255, 0.06);
+  --card2: rgba(255, 255, 255, 0.08);
+  --stroke: rgba(255, 255, 255, 0.08);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --muted2: rgba(255, 255, 255, 0.42);
 
-.profile-content {
-  --background: #{$bg-dark};
-  --padding-top: 0;
-  --padding-bottom: 20px;
+  --blue: #2f80ff;
+  --blue2: #246bff;
+  --danger: #ff4d4f;
+  --success: #3ddc84;
+  --warning: #ffc107;
 }
 
-.profile-container {
-  padding: 16px;
-  max-width: 600px;
-  margin: 0 auto;
+/* ===== HEADER ===== */
+.custom-toolbar {
+  --background: transparent;
+  --color: #fff;
 }
 
-// Secciones
-.section {
-  background: $card-bg;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  border: 1px solid $border-color;
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 20px;
-
-    ion-icon {
-      color: $primary-blue;
-      font-size: 20px;
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      color: $primary-blue;
-      text-transform: uppercase;
-    }
-  }
+ion-title {
+  font-weight: 800;
 }
 
-// Grid de información - 2x2
-.info-grid {
+.dark-content {
+  --background: var(--bg);
+  color: #fff;
+}
+
+/* ===== STATES ===== */
+.loading-container,
+.error-container {
+  min-height: 55vh;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px 16px;
-  margin-bottom: 0;
-
-  .info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .info-label {
-      font-size: 11px;
-      color: $text-muted;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      font-weight: 500;
-    }
-
-    .info-value {
-      font-size: 15px;
-      color: $text-primary;
-      font-weight: 500;
-    }
-  }
+  place-items: center;
+  color: var(--muted);
+  padding: 16px;
 }
 
-// Tarjeta de peso
-.weight-card {
-  background: rgba(74, 124, 255, 0.08);
-  border-radius: 12px;
-  padding: 20px;
+.error-container p {
+  background: rgba(255, 77, 79, 0.12);
+  border: 1px solid rgba(255, 77, 79, 0.18);
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+/* ===== LAYOUT ===== */
+.profile-container {
+  padding: 12px 16px 22px;
+}
+
+/* ===== USER HEADER (avatar + nombre + email) ===== */
+.user-header {
+  display: grid;
+  justify-items: center;
+  padding: 14px 0 10px;
+  text-align: center;
+}
+
+.avatar-container {
   position: relative;
-
-  .weight-header {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8px;
-
-    .edit-btn {
-      --color: #{$text-secondary};
-      --padding-start: 8px;
-      --padding-end: 8px;
-      margin: 0;
-      height: 32px;
-
-      ion-icon {
-        font-size: 18px;
-      }
-    }
-  }
-
-  .weight-main {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 16px;
-
-    .weight-value {
-      font-size: 64px;
-      font-weight: 700;
-      color: $primary-blue;
-      line-height: 1;
-    }
-
-    .weight-unit {
-      font-size: 24px;
-      font-weight: 500;
-      color: $text-secondary;
-    }
-  }
-
-  .weight-note {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(74, 124, 255, 0.12);
-    border-radius: 8px;
-
-    ion-icon {
-      color: $primary-blue;
-      font-size: 16px;
-    }
-
-    span {
-      font-size: 13px;
-      color: $primary-blue;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-  }
+  width: 104px;
+  height: 104px;
+  margin-bottom: 10px;
 }
 
-// Lista de métricas
-.metrics-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  .metric-item {
-    border-bottom: 1px solid $border-color;
-    padding-bottom: 16px;
-
-    &:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .metric-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-
-      .metric-name {
-        font-size: 11px;
-        color: $text-muted;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 500;
-      }
-
-      .metric-edit {
-        color: $text-secondary;
-        font-size: 18px;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: opacity 0.2s;
-
-        &:hover {
-          opacity: 1;
-        }
-      }
-    }
-
-    .metric-value-container {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin-bottom: 12px;
-
-      .metric-value {
-        font-size: 20px;
-        color: $text-primary;
-        font-weight: 600;
-
-        &.empty {
-          color: $text-muted;
-          font-size: 24px;
-        }
-      }
-
-      .metric-unit {
-        font-size: 14px;
-        color: $text-secondary;
-        font-weight: 500;
-      }
-    }
-
-    .add-button {
-      background: transparent;
-      border: none;
-      color: $primary-blue;
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 8px 0;
-      cursor: pointer;
-      transition: opacity 0.2s;
-
-      &:hover {
-        opacity: 0.8;
-      }
-    }
-  }
+.avatar-circle {
+  width: 104px;
+  height: 104px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 3px solid rgba(47, 128, 255, 0.65);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
 }
 
-// Botones
-.save-button {
-  --background: #{$primary-blue};
-  --color: #{$text-primary};
-  --border-radius: 12px;
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  margin-top: 24px;
-  margin-bottom: 12px;
-  font-weight: 600;
-  font-size: 15px;
-  text-transform: none;
-  letter-spacing: 0.3px;
-
-  ion-icon {
-    margin-right: 8px;
-  }
+.avatar-initials {
+  font-weight: 900;
+  font-size: 34px;
+  letter-spacing: 1px;
+  color: rgba(47, 128, 255, 0.95);
 }
 
-.logout-button {
-  --color: #{$text-secondary};
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  margin-bottom: 20px;
-  font-weight: 500;
-  font-size: 14px;
-  text-transform: none;
-
-  &:hover {
-    --color: #{$text-primary};
-  }
+.edit-avatar-btn {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 18px rgba(47, 128, 255, 0.28);
 }
 
-// Estilos del header (opcional)
-ion-header {
-  ion-toolbar {
-    --background: #{$bg-dark};
-    --color: #{$text-primary};
-    --border-color: #{$border-color};
-
-    ion-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    ion-back-button {
-      --color: #{$text-primary};
-    }
-  }
+.edit-avatar-btn ion-icon {
+  font-size: 16px;
 }
 
-// Responsive
-@media (max-width: 360px) {
-  .weight-card {
-    .weight-main {
-      .weight-value {
-        font-size: 52px;
-      }
-
-      .weight-unit {
-        font-size: 20px;
-      }
-    }
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
+.user-name {
+  margin: 6px 0 2px;
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--text);
 }
 
-// Ajuste para que el botón de edición no se vea como un botón gigante
-.edit-metric-btn {
-  --padding-start: 4px;
-  --padding-end: 4px;
-  height: 24px;
+.user-email {
   margin: 0;
-  --color: #{$text-secondary};
-  opacity: 0.6;
-
-  ion-icon {
-    font-size: 18px;
-  }
+  color: var(--muted);
+  font-weight: 600;
 }
 
-// Ajuste para el botón agregar
-.add-metric-btn {
-  --color: #{$primary-blue};
+/* ===== SECTIONS ===== */
+.section {
+  margin-top: 16px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 2px 10px;
+}
+
+.section-icon {
+  font-size: 18px;
+  color: rgba(47, 128, 255, 0.9);
+}
+
+.section-title {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== PERSONAL DATA CARD ===== */
+.data-card {
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 14px;
+}
+
+.data-row + .data-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.data-label {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.data-value {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 800;
+}
+
+.data-value.primary {
+  color: rgba(47, 128, 255, 0.95);
+}
+
+/* ===== WEIGHT CARD (collapsible) ===== */
+.weight-card {
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.weight-card:active {
+  transform: scale(0.99);
+}
+
+.weight-card.expanded {
+  background: var(--card2);
+  border-color: rgba(47, 128, 255, 0.22);
+}
+
+.weight-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.weight-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.weight-value {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 0.4px;
+}
+
+.weight-unit {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.weight-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(61, 220, 132, 0.14);
+  border: 1px solid rgba(61, 220, 132, 0.18);
+  color: rgba(61, 220, 132, 0.95);
+  font-weight: 900;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.weight-change ion-icon {
+  font-size: 14px;
+}
+
+/* ===== METRICS LIST ===== */
+.metrics-list {
+  display: grid;
+  gap: 12px;
+}
+
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.metric-card:active {
+  transform: scale(0.99);
+}
+
+.metric-card.expanded {
+  background: var(--card2);
+  border-color: rgba(47, 128, 255, 0.22);
+}
+
+.metric-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.metric-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.metric-bar {
+  width: 5px;
+  height: 46px;
+  border-radius: 999px;
+  background: rgba(47, 128, 255, 0.95);
+  box-shadow: 0 10px 20px rgba(47, 128, 255, 0.18);
+}
+
+.metric-info {
+  min-width: 0;
+}
+
+.metric-name {
+  margin: 0;
+  font-weight: 900;
   font-size: 13px;
-  font-weight: 600;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.70);
   text-transform: uppercase;
-  --padding-start: 0;
-  margin-left: -4px; // Para alinear el texto a la izquierda
+}
+
+.metric-value {
+  margin: 6px 0 0;
+  font-weight: 950;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.metric-unit {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.metric-empty {
+  margin: 10px 0 0;
+}
+
+.empty-bar {
+  display: inline-block;
+  width: 26px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.metric-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-add-metric {
+  background: transparent;
+  border: 0;
+  color: rgba(47, 128, 255, 0.95);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.edit-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ===== EDIT FORMS (weight + metric) ===== */
+.edit-form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.60);
+  margin-bottom: 6px;
+  letter-spacing: 0.6px;
+}
+
+.custom-input,
+.custom-textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  padding: 12px 12px;
+  outline: none;
+  font-weight: 700;
+}
+
+.custom-input::placeholder,
+.custom-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+}
+
+.custom-textarea {
+  resize: none;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-cancel {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.80);
+  border-radius: 14px;
+  padding: 12px 12px;
+  font-weight: 900;
+}
+
+.btn-save {
+  flex: 1;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 12px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 12px 22px rgba(47, 128, 255, 0.22);
+}
+
+.btn-save ion-icon {
+  font-size: 16px;
+}
+
+/* ===== ACTIONS ===== */
+.actions-section {
+  margin-top: 18px;
+  padding: 6px 0 0;
+  display: grid;
+  gap: 14px;
+}
+
+.btn-primary {
+  width: 100%;
+  border: 0;
+  border-radius: 18px;
+  padding: 16px 14px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 950;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 18px 30px rgba(47, 128, 255, 0.22);
+  opacity: 0.55; /* disabled look (tu botón está disabled) */
+}
+
+.btn-danger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 900;
+  padding: 10px 0 2px;
+}
+
+/* ===== SMALL DEVICES ===== */
+@media (max-width: 360px) {
+  .weight-value { font-size: 32px; }
+  .metric-value { font-size: 24px; }
 }

@@ -169,6 +169,7 @@ export interface ClientDTO {
   last_name: string;
   coach_id: number;
   is_active: boolean;
+  avatar_url:string;
 }
 
 export interface LoginResponse {
@@ -334,5 +335,11 @@ async login(email: string, password: string): Promise<LoginResponse> {
     const c = this.client();
     if (!c) return '';
     return `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim();
+  }
+
+   getClientAvatarUrl(): string {
+    const c = this.client();
+    if (!c) return '';
+    return `${c.avatar_url ?? ''}`.trim();
   }
 }

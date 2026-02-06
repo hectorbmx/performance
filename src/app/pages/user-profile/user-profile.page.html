@@ -1,117 +1,217 @@
-<ion-header>
-  <ion-toolbar>
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar class="custom-toolbar">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/tabs/tab3"></ion-back-button>
-
     </ion-buttons>
     <ion-title>Mi perfil</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="profile-content">
-  <div class="profile-container">
-    
-
-
-    <!-- Datos Personales -->
-   <!-- Datos Personales -->
-<div class="section">
-  <div class="section-header">
-    <ion-icon name="person-outline"></ion-icon>
-    <h3>DATOS PERSONALES</h3>
-  </div>
+<ion-content [fullscreen]="true" class="dark-content">
   
-  <div class="info-grid">
-    <!-- Fila 1 -->
-    <div class="info-item">
-      <span class="info-label">Ciudad</span>
-      <span class="info-value">{{ healthProfile?.city }}</span>
-    </div>
-    
-    <div class="info-item">
-      <span class="info-label">Estado</span>
-      <span class="info-value">{{ healthProfile?.state }}</span>
-    </div>
-    
-    <!-- Fila 2 -->
-    <div class="info-item">
-      <span class="info-label">Fecha nacimiento</span>
-      <span class="info-value">{{ formatDate(healthProfile?.birth_date) }}</span>
-    </div>
-    
-    <div class="info-item">
-      <span class="info-label">Estatura</span>
-      <span class="info-value">{{ healthProfile?.height_cm }} cm</span>
-    </div>
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
   </div>
-</div>
 
-    <!-- Peso Actual -->
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="!loading && !error" class="profile-container">
+    
+    <!-- User Header -->
+    <div class="user-header">
+      <!-- <div class="avatar-container">
+        <div class="avatar-circle">
+          <span class="avatar-initials">{{ getInitials() }}</span>
+        </div>
+        <button class="edit-avatar-btn" (click)="editAvatar()">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+      </div> -->
+      
+      <h1 class="user-name">{{ fullName }}</h1>
+      <p class="user-email">{{ client?.email }}</p>
+    </div>
+
+    <!-- Personal Data Section -->
     <div class="section">
       <div class="section-header">
-        <ion-icon name="fitness-outline"></ion-icon>
-        <h3>PESO ACTUAL</h3>
+        <ion-icon name="person-outline" class="section-icon"></ion-icon>
+        <h2 class="section-title">DATOS PERSONALES</h2>
       </div>
       
-      
-       <div class="weight-card">
-        <div class="weight-header">
-          <ion-button fill="clear" size="small" class="edit-btn" (click)="openWeightModal()">
-            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
-          </ion-button>
+      <div class="data-card">
+        <div class="data-row">
+          <span class="data-label">Ciudad</span>
+          <span class="data-value">{{ healthProfile?.city || '—' }}</span>
         </div>
-        <div class="weight-main">
-          <span class="weight-value">{{ body?.latest?.weight_kg }}</span>
-          <span class="weight-unit">kg</span>
+        <div class="data-row">
+          <span class="data-label">Estado</span>
+          <span class="data-value">{{ healthProfile?.state || '—' }}</span>
         </div>
-        <div class="weight-note">
-          <ion-icon name="trending-up-outline"></ion-icon>
-          <span>{{ body?.latest?.notes }}</span>
+        <div class="data-row">
+          <span class="data-label">Fecha nacimiento</span>
+          <span class="data-value">{{ formatDate(healthProfile?.birth_date) || '—' }}</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Estatura</span>
+          <span class="data-value primary">{{ healthProfile?.height_cm || '—' }} cm</span>
         </div>
       </div>
     </div>
 
-    <!-- Métricas (1RM) -->
+    <!-- Current Weight Section -->
     <div class="section">
       <div class="section-header">
-        <ion-icon name="barbell-outline"></ion-icon>
-        <h3>MÉTRICAS </h3>
+        <ion-icon name="fitness-outline" class="section-icon"></ion-icon>
+        <h2 class="section-title">PESO ACTUAL</h2>
       </div>
       
+      <div class="weight-card" [class.expanded]="weightExpanded" (click)="toggleWeight()">
+        <div class="weight-display">
+          <div class="weight-main">
+            <span class="weight-value">{{ body?.latest?.weight_kg || '—' }}</span>
+            <span class="weight-unit">kg</span>
+          </div>
+          <div *ngIf="body?.latest?.recorded_at" class="weight-change">
+            <ion-icon name="trending-up-outline"></ion-icon>
+            <span>-1.2 kg esta semana</span>
+          </div>
+        </div>
+
+        <!-- Expanded Edit Form -->
+        <div class="edit-form" *ngIf="weightExpanded" (click)="$event.stopPropagation()">
+          <div class="form-group">
+            <label>Peso (kg)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="editingWeight" 
+              step="0.1"
+              class="custom-input"
+              placeholder="Ej: 82.5"
+            />
+          </div>
+          <div class="form-group">
+            <label>Notas (opcional)</label>
+            <textarea 
+              [(ngModel)]="editingWeightNotes"
+              class="custom-textarea"
+              rows="2"
+              placeholder="Agrega comentarios..."
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn-cancel" (click)="cancelWeightEdit($event)">
+              Cancelar
+            </button>
+            <button class="btn-save" (click)="saveWeight($event)">
+              <ion-icon name="save-outline"></ion-icon>
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics Section (IRM) -->
+    <div class="section">
+      <div class="section-header">
+        <ion-icon name="barbell-outline" class="section-icon"></ion-icon>
+        <h2 class="section-title">MÉTRICAS (IRM)</h2>
+      </div>
+
+      <!-- Metric Cards -->
       <div class="metrics-list">
-        <!-- <div class="metric-item" *ngFor="let metric of metrics">
-          <div class="metric-header">
-            <span class="metric-name">{{ metric.name }}</span>
-            <ion-icon name="create-outline" class="metric-edit" (click)="openEditMetric(metric)"></ion-icon>
+        <div 
+          *ngFor="let metric of metrics; let i = index"
+          class="metric-card"
+          [class.expanded]="expandedMetricId === metric.id"
+          (click)="toggleMetric(metric)"
+        >
+          <!-- Metric Display -->
+          <div class="metric-display">
+            <div class="metric-left">
+              <div class="metric-bar"></div>
+              <div class="metric-info">
+                <h3 class="metric-name">{{ metric.name }}</h3>
+                <p class="metric-value" *ngIf="metric.last">
+                  {{ metric.last.value }} <span class="metric-unit">{{ metric.unit }}</span>
+                </p>
+                <p class="metric-empty" *ngIf="!metric.last">
+                  <span class="empty-bar"></span>
+                </p>
+              </div>
+            </div>
+            
+            <div class="metric-right">
+              <button 
+                *ngIf="!metric.last" 
+                class="btn-add-metric"
+                (click)="$event.stopPropagation(); toggleMetric(metric)"
+              >
+                Agregar
+              </button>
+              <ion-icon 
+                *ngIf="metric.last" 
+                name="create-outline" 
+                class="edit-icon"
+              ></ion-icon>
+            </div>
           </div>
-          <div class="metric-value-container">
-            <span class="metric-value" *ngIf="metric.last">{{ metric.last.value }}</span>
-            <span class="metric-value empty" *ngIf="!metric.last">—</span>
-            <span class="metric-unit">{{ metric.unit }}</span>
+
+          <!-- Expanded Edit Form -->
+          <div 
+            class="edit-form" 
+            *ngIf="expandedMetricId === metric.id"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="form-group">
+              <label>{{ metric.name }} ({{ metric.unit }})</label>
+              <input 
+                type="number" 
+                [(ngModel)]="editingMetricValue" 
+                class="custom-input"
+                [placeholder]="'Ej: ' + (metric.last?.value || '100')"
+              />
+            </div>
+            <div class="form-group">
+              <label>Notas (opcional)</label>
+              <textarea 
+                [(ngModel)]="editingMetricNotes"
+                class="custom-textarea"
+                rows="2"
+                placeholder="Agrega comentarios..."
+              ></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" (click)="cancelMetricEdit($event)">
+                Cancelar
+              </button>
+              <button class="btn-save" (click)="saveMetric($event, metric)">
+                <ion-icon name="save-outline"></ion-icon>
+                Guardar
+              </button>
+            </div>
           </div>
-          <button class="add-button" *ngIf="!metric.last">Agregar</button>
-        </div> -->
-        <div class="metric-item" *ngFor="let metric of metrics">
-  <div class="metric-header">
-    <span class="metric-name">{{ metric.name }}</span>
-    
-    <ion-button fill="clear" class="edit-metric-btn" (click)="openEditMetric(metric)">
-      <ion-icon slot="icon-only" name="create-outline"></ion-icon>
-    </ion-button>
-  </div>
-
-
-</div>
+        </div>
       </div>
     </div>
 
-  <ion-button
-  fill="clear"
-  class="edit-metric-btn"
-  (click)="testClick(metric)"
->
-  <ion-icon slot="icon-only" name="create-outline"></ion-icon>
-</ion-button>
+    <!-- Action Buttons -->
+    <!-- <div class="actions-section">
+      <button class="btn-primary" disabled>
+        <ion-icon name="save-outline"></ion-icon>
+        Guardar Cambios
+      </button>
+      
+      <button class="btn-danger" (click)="logout()">
+        Cerrar sesión
+      </button>
+    </div> -->
 
   </div>
 </ion-content>

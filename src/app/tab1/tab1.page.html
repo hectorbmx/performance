@@ -5,14 +5,14 @@
       <div class="user-greeting">
         <div class="avatar-wrapper">
           <img 
-            src="https://i.pravatar.cc/100?img=12" 
+            [src]="clientAvatarUrl || 'https://i.pravatar.cc/100?img=12'"
             alt="User Avatar" 
             class="user-avatar"
           />
         </div>
         <div class="greeting-text">
           <p class="greeting-label">BUEN DÍA!</p>
-          <h1 class="user-name">Ready, {{ clientName || 'Alex' }}?</h1>
+          <h1 class="user-name">Hola, {{ clientName || 'Alex' }}</h1>
           
         </div>
       </div>

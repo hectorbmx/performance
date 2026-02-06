@@ -31,6 +31,11 @@ export const routes: Routes = [
     canMatch: [authGuard],
     loadComponent: () => import('./pages/training-details/training-details.page').then(m => m.TrainingDetailsPage),
   },
+  {
+    path: 'subscription-history',
+    canMatch: [authGuard],
+    loadComponent: () => import('./pages/subscription-history/subscription-history.page').then( m => m.SubscriptionHistoryPage)
+  },
   // Timer route - OPCIÓN 1: Sin autenticación (accesible sin login)
   // {
   //   path: 'timer',
@@ -52,4 +57,5 @@ export const routes: Routes = [
     path: '**',
     redirectTo: 'login',
   },
+  
 ];

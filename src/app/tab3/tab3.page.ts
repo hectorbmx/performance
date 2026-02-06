@@ -92,24 +92,13 @@ export class Tab3Page {
       // const res: any = await firstValueFrom(this.api.me());
       const res: any = await this.auth.me();
             
-
-      // Estructura esperada (ejemplo tuyo):
-      // {
-      //   ok: true,
-      //   user: { id, email, client_id, ... },
-      //   client: { first_name, last_name, coach_id, ... }
-      // }
-
       const first = res?.client?.first_name ?? '';
       const last  = res?.client?.last_name ?? '';
       const fullName = `${first} ${last}`.trim() || (res?.user?.email ?? '—');
-
       // Si quieres derivar el rol por presencia de coach_id, ajústalo a tu lógica real.
       const roleLabel = res?.client?.coach_id ? 'ATHLETE' : 'ATHLETE';
-
       // Si aún no tienes fecha real, lo dejamos "simple" (puedes mapearlo luego desde DB)
       const memberSinceLabel = 'Member since Jan 2023';
-
       // Foto: si aún no existe, queda null y mostramos fallback
       const raw = res?.client?.avatar_url ?? null;
       const photoUrl = raw ? raw.replace(/\\/g, '/') : null;
@@ -152,7 +141,7 @@ export class Tab3Page {
 
   goSubscription() {
     // Ajusta a tu ruta real
-    this.router.navigate(['/profile/subscription']);
+    this.router.navigate(['/subscription-history']);
   }
 
   goHelpCenter() {

@@ -15,6 +15,7 @@ import {
   IonRefresherContent,
   IonIcon,IonText,
 } from '@ionic/angular/standalone';
+import { Health } from '@capgo/capacitor-health';
 import { computed } from '@angular/core';
 import { addIcons } from 'ionicons';
 import {
@@ -76,6 +77,7 @@ export class Tab1Page {
   selectedDate: string | null = null;
 
   clientName = '';
+  clientAvatarUrl: string = '';
 
   healthToday = {
     steps: 0,
@@ -121,14 +123,18 @@ healthLoading = false;
   }
   async ionViewWillEnter() {
     // 1) carga rápida desde storage
-        await this.testHealthToday();
+    await this.testHealthToday();
     await this.auth.hydrateFromStorage();
     this.clientName = this.auth.getClientDisplayName();
+    this.clientAvatarUrl = this.auth.getClientAvatarUrl();
+
 
     // 2) refrescar datos "fuente de verdad"
     try {
       await this.auth.me();
       this.clientName = this.auth.getClientDisplayName();
+      this.clientAvatarUrl = this.auth.getClientAvatarUrl();
+
     } catch {
       // aquí puedes decidir: ignorar o forzar logout/redirect
     }
