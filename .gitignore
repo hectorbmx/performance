@@ -2,6 +2,9 @@
 /node_modules
 /public/build
 /public/hot
+/public/storage
+error_log
+
 /storage/**
 !/storage/app
 !/storage/app/.gitignore
@@ -23,4 +26,4 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-FIREBASE_CREDENTIALS=storage/app/firebase/firebase-service-account.json
+

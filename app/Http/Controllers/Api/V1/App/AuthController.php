@@ -77,6 +77,13 @@ class AuthController extends Controller
     }
 public function login(Request $request)
 {
+    
+    \Log::info('LOGIN HIT',[
+    'ua' => request()->userAgent(),
+    'origin' => request()->header('Origin'),
+    'referer' => request()->header('Referer'),
+    'ip' => request()->ip(),
+]);
     $data = $request->validate([
         'email'    => ['required','email'],
         'password' => ['required','string'],
