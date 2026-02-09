@@ -211,6 +211,11 @@ Route::prefix('coach')->name('coach.')->group(function () {
         ->middleware(['auth', 'role:coach', 'coach.subscription'])
         ->name('client-payments.store');
 
+  Route::delete('client-memberships/{membership}', [CoachClientMembershipController::class, 'destroy'])
+        ->name('client-memberships.destroy');
+
+
+
     // Rutas de Trainings
     Route::resource('trainings', TrainingController::class)
         ->middleware(['auth', 'role:coach', 'coach.subscription']);

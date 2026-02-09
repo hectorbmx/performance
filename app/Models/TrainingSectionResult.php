@@ -48,15 +48,25 @@ class TrainingSectionResult extends Model
     /**
      * Normaliza el valor para la App (un solo campo).
      */
-    public function normalizedValue(): mixed
-    {
-        return match ($this->result_type) {
-            'number' => $this->value_number,
-            'time'   => $this->value_time_seconds,
-            'text'   => $this->value_text,
-            'bool'   => $this->value_bool,
-            'json'   => $this->value_json,
-            default  => null,
-        };
-    }
+   public function normalizedValue(): mixed
+{
+    return match ($this->result_type) {
+        'time'    => $this->value_time_seconds,
+        'boolean' => $this->value_bool,
+        'note'    => $this->value_text,
+        'none'    => null,
+
+        // Todos los numéricos
+        'weight',
+        'reps',
+        'distance',
+        'rounds',
+        'sets',
+        'calories',
+        'points'  => $this->value_number,
+
+        default   => null,
+    };
+}
+
 }

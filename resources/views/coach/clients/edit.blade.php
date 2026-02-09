@@ -141,6 +141,7 @@
                     <th class="py-2 text-left">Método</th>
                     <th class="py-2 text-left">Importe pagado</th>
                     <th class="py-2 text-left">Cobro</th>
+                    <th class="py-2 text-center">Acciones</th>
                 </tr>
             </thead>
 
@@ -228,6 +229,19 @@
                                 </span>
                             </div>
                         </td>
+                        <td class="px-6 py-2 text-center">
+                            <form method="POST"
+                                action="{{ route('coach.client-memberships.destroy', $m) }}"
+                                onsubmit="return confirm('¿Eliminar esta membresía? Se anularán los pagos asociados.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="inline-flex items-center px-3 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">
+                                    Eliminar
+                                </button>
+                            </form>
+                        </td>
+
                     </tr>
                 @endforeach
             </tbody>

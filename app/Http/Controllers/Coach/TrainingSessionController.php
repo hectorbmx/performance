@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\Group;
+use App\Models\Unit;
 use App\Models\TrainingGoalCatalog;
 use App\Models\TrainingSection;
 use App\Models\GroupTrainingAssignment;
@@ -111,9 +112,17 @@ public function create(Request $request)
         ->where('is_active', true)
         ->orderBy('name')
         ->get(['id','name']);
+    $units = Unit::query()
+        ->whereNull('coach_id')                 // por ahora solo globales
+        ->where('is_active', true)
+        ->orderBy('result_type')
+        ->orderBy('name')
+        ->get(['id','result_type','name','symbol','code']);
 
 
-return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups'));
+
+return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups','units'));
+
 }
 
 
@@ -241,13 +250,36 @@ public function store(Request $request)
         'sections.*.video_url'             => ['nullable','url','max:255'],
         // 'sections.*.accepts_results'       => ['nullable','boolean'],
         // 'sections.*.result_type'           => ['nullable','string','max:30'],
+        // 'sections.*.result_type' => [
+        //             'required',
+        //             Rule::in(TrainingSectionResultType::values()),
+        //         ],
         'sections.*.result_type' => [
-                    'required',
-                    Rule::in(TrainingSectionResultType::values()),
-                ],
-
+            'nullable',
+            Rule::in(array_merge(['none'], TrainingSectionResultType::values())),
+            ],
+        'sections.*.unit_id' => ['nullable','integer','exists:units,id'],
 
     ]);
+foreach (($data['sections'] ?? []) as $idx => $s) {
+    $rt = $s['result_type'] ?? 'none';
+    $unitId = $s['unit_id'] ?? null;
+
+    if ($rt === 'none' && !empty($unitId)) {
+        return back()
+            ->withErrors(["sections.$idx.unit_id" => 'No se permite unidad si la sección es "Sin resultados".'])
+            ->withInput();
+    }
+
+    // Para estos tipos, la unidad es requerida
+    $requiresUnit = in_array($rt, ['weight','time','distance','reps','rounds','sets','calories','points'], true);
+
+    if ($requiresUnit && empty($unitId)) {
+        return back()
+            ->withErrors(["sections.$idx.unit_id" => 'Selecciona una unidad para este tipo de resultado.'])
+            ->withInput();
+    }
+}
 
     // Validar que el type catalog pertenezca al coach
     if (!empty($data['training_type_catalog_id'])) {
@@ -295,24 +327,26 @@ public function store(Request $request)
         ]);
 
         // Secciones
-        $order = 1;
-        foreach ($data['sections'] as $s) {
-            $accepts = !empty($s['accepts_results']);
+$order = 1;
+foreach ($data['sections'] as $s) {
 
-            $training->sections()->create([
-                'order'           => $order++,
-                'name'            => $s['name'],
-                'description'     => $s['description'] ?? null,
-                'video_url'       => $s['video_url'] ?? null,
-                'accepts_results' => 1,
-                // 'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
-                //  'sections.*.result_type' => [
-                //     'required',
-                //     Rule::in(TrainingSectionResultType::values()),
-                // ],
-                'result_type'     => $s['result_type'],
-            ]);
-        }
+    $rt = $s['result_type'] ?? null;
+    $unitId = $s['unit_id'] ?? null;
+
+    // "none" => sin resultados
+    $accepts = !empty($rt) && $rt !== 'none';
+
+    $training->sections()->create([
+        'order'           => $order++,
+        'name'            => $s['name'],
+        'description'     => $s['description'] ?? null,
+        'video_url'       => $s['video_url'] ?? null,
+        'accepts_results' => $accepts ? 1 : 0,
+        'result_type'     => $accepts ? $rt : null,
+        'unit_id' => $accepts ? $unitId : null,
+    ]);
+}
+
 
         // ✅ Asignaciones (ESTO era lo que ya no existía)
        // ✅ Asignaciones (según tu modelo real)
@@ -381,11 +415,17 @@ public function edit(TrainingSession $training)
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id','name']);
-             $goals = TrainingGoalCatalog::query()
+            $goals = TrainingGoalCatalog::query()
                 ->where('coach_id', auth()->id())
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id','name']);
+            $units = Unit::query()
+                ->whereNull('coach_id')                 // por ahora solo globales
+                ->where('is_active', true)
+                ->orderBy('result_type')
+                ->orderBy('name')
+                ->get(['id','result_type','name','symbol','code']);
 
             return view('coach.trainings.edit', compact(
                 'training',
@@ -393,7 +433,8 @@ public function edit(TrainingSession $training)
                 'assignedClientIds',
                 'assignedGroups',
                 'goals',
-                'types' // ✅ NUEVO
+                'types', // ✅ NUEVO
+                'units'
             ));
         }
 
@@ -429,9 +470,11 @@ public function update(Request $request, TrainingSession $training)
         // 'sections.*.accepts_results' => ['nullable','boolean'],
         // 'sections.*.result_type'     => ['nullable','string','max:30'],
          'sections.*.result_type' => [
-                    'required',
-                    Rule::in(TrainingSectionResultType::values()),
-                ],
+            'required',
+            Rule::in(array_merge(['none'], TrainingSectionResultType::values())),
+        ],
+        'sections.*.unit_id' => ['nullable','integer','exists:units,id'],
+                
         'video_url' => ['nullable','url','max:255'],
         // --- ASIGNACIONES ---
         'assigned_clients'   => ['nullable','array'],
@@ -439,6 +482,26 @@ public function update(Request $request, TrainingSession $training)
         'assigned_groups'    => ['nullable','array'],
         'assigned_groups.*'  => ['integer','exists:groups,id'],
     ]);
+    foreach (($data['sections'] ?? []) as $idx => $s) {
+        $rt = $s['result_type'] ?? 'none';
+        $unitId = $s['unit_id'] ?? null;
+
+        if ($rt === 'none' && !empty($unitId)) {
+            return back()
+                ->withErrors(["sections.$idx.unit_id" => 'No se permite unidad si la sección es "Sin resultados".'])
+                ->withInput();
+        }
+
+        // Para estos tipos, la unidad es requerida
+        $requiresUnit = in_array($rt, ['weight','time','distance','reps','rounds','sets','calories','points'], true);
+
+        if ($requiresUnit && empty($unitId)) {
+            return back()
+                ->withErrors(["sections.$idx.unit_id" => 'Selecciona una unidad para este tipo de resultado.'])
+                ->withInput();
+        }
+    }
+
 
     $visibility = $data['visibility'];
 
@@ -548,20 +611,21 @@ public function update(Request $request, TrainingSession $training)
         // 4) Secciones: crear/actualizar (manteniendo orden)
         $order = 1;
         foreach ($data['sections'] as $s) {
-            $accepts = !empty($s['accepts_results']);
+
+            $rt = $s['result_type'] ?? null;
+            $unitId = $s['unit_id'] ?? null;
+
+            // $accepts = !empty($s['accepts_results']);
+            $accepts = ($rt !== 'none');
 
             $payload = [
                 'order'           => $order++,
                 'name'            => $s['name'],
                 'description'     => $s['description'] ?? null,
                 'video_url'       => $s['video_url'] ?? null,
-                'accepts_results' => 1,
-                // 'result_type'     => $accepts ? ($s['result_type'] ?? null) : null,
-                //  'sections.*.result_type' => [
-                //     'required',
-                //     Rule::in(TrainingSectionResultType::values()),
-                // ],
-                'result_type'     => $s['result_type'],
+                'accepts_results' => $accepts ? 1 : 0,
+                'result_type'     => $accepts ? $rt : null,
+                'unit_id'         => $accepts ? $unitId : null,
             ];
 
             if (!empty($s['id'])) {

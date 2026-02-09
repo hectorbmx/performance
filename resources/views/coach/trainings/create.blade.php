@@ -296,69 +296,79 @@
             </div>
 
             {{-- Card: Secciones --}}
-            <div class="bg-white border rounded-xl p-5">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-gray-900">Secciones</h2>
-                    <button type="button" id="addSection"
-                            class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
-                        + Agregar sección
-                    </button>
+<div class="bg-white border rounded-xl p-5">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900">Secciones</h2>
+        <button type="button" id="addSection"
+                class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
+            + Agregar sección
+        </button>
+    </div>
+
+    <div id="sections" class="mt-4 space-y-4"></div>
+
+    <template id="sectionTpl">
+        <div class="rounded-xl border p-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="font-semibold text-gray-900">Sección <span class="secNum"></span></div>
+                <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
+            </div>
+
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Nombre</label>
+                    <input class="secName w-full h-10 rounded-lg border-gray-300" required />
                 </div>
 
-                <div id="sections" class="mt-4 space-y-4"></div>
+                <div class="flex items-end gap-3">
+                    {{-- <label class="inline-flex items-center gap-2 text-sm">
+                        <input type="checkbox" class="secAccepts rounded border-gray-300" />
+                        Acepta resultados
+                    </label> --}}
+                    <input type="hidden" class="secAccepts" value="1" />
 
-                <template id="sectionTpl">
-                    <div class="rounded-xl border p-4">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="font-semibold text-gray-900">Sección <span class="secNum"></span></div>
-                            <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
-                        </div>
-
-                        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs text-gray-600 mb-1">Nombre</label>
-                                <input class="secName w-full h-10 rounded-lg border-gray-300" required />
-                            </div>
-
-                            <div class="flex items-end gap-3">
-                                {{-- <label class="inline-flex items-center gap-2 text-sm">
-                                    <input type="checkbox" class="secAccepts rounded border-gray-300" />
-                                    Acepta resultados
-                                </label> --}}
-                                <input type="hidden" class="secAccepts" value="1" />
-
-                               <div class="flex-1">
-                                    <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
-                                    <select class="secResultType w-full h-10 rounded-lg border-gray-300">
-                                        <option value="none" selected>Sin resultados</option>
-                                        <option value="time">Tiempo</option>
-                                        <option value="weight">Peso</option>
-                                        <option value="distance">Distancia</option>
-                                        <option value="sets">Rounds</option>
-                                        <option value="calories">Calorias</option>
-                                        <option value="note">Notas</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="md:col-span-2">
-                                <label class="block text-xs text-gray-600 mb-1">Descripción</label>
-                                <textarea class="secDesc w-full rounded-lg border-gray-300" rows="3"></textarea>
-                            </div>
-
-                            <div class="md:col-span-2">
-                                <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
-                                <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
-                                       placeholder="https://www.youtube.com/watch?v=..." />
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <i class="fa fa-youtube" aria-hidden="true"></i>
-                                    Opcional: pega un link de YouTube.
-                                </p>
-                            </div>
-                        </div>
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
+                        <select class="secResultType w-full h-10 rounded-lg border-gray-300">
+                            <option value="none" selected>Sin resultados</option>
+                            <option value="time">Tiempo</option>
+                            <option value="weight">Peso</option>
+                            <option value="distance">Distancia</option>
+                            <option value="rounds">Rounds</option>
+                            <option value="sets">Sets</option>
+                            <option value="calories">Calorias</option>
+                            <option value="points">Puntos</option>
+                            <option value="note">Notas</option>
+                        </select>
                     </div>
-                </template>
+
+                    {{-- ✅ Unidad (solo si acepta resultados y tiene tipo != none) --}}
+                    <div class="flex-1 secUnitWrap hidden">
+                        <label class="block text-xs text-gray-600 mb-1">Unidad</label>
+                        <select class="secUnit w-full h-10 rounded-lg border-gray-300">
+                            <option value="" selected>Selecciona una unidad</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-1">Descripción</label>
+                    <textarea class="secDesc w-full rounded-lg border-gray-300" rows="3"></textarea>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
+                    <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
+                           placeholder="https://www.youtube.com/watch?v=..." />
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fa fa-youtube" aria-hidden="true"></i>
+                        Opcional: pega un link de YouTube.
+                    </p>
+                </div>
             </div>
+        </div>
+    </template>
+</div>
 
             <div class="flex items-center justify-end gap-3">
                 <a href="{{ route('coach.trainings.index') }}"
@@ -370,59 +380,105 @@
 
     {{-- JS: Secciones (tu lógica) --}}
     <script>
-        (function(){
-            const sectionsEl = document.getElementById('sections');
-            const tpl = document.getElementById('sectionTpl');
-            const addBtn = document.getElementById('addSection');
-            if (!sectionsEl || !tpl || !addBtn) return;
+  window.__units = @json($units);
+</script>
 
-            function rebuildNames() {
-                const cards = sectionsEl.querySelectorAll('[data-sec]');
-                cards.forEach((card, idx) => {
-                    const i = idx;
-                    card.querySelector('.secNum').textContent = (i + 1);
+    <script>
+(function () {
+    const sectionsEl = document.getElementById('sections');
+    const tpl = document.getElementById('sectionTpl');
+    const addBtn = document.getElementById('addSection');
+    if (!sectionsEl || !tpl || !addBtn) return;
 
-                    card.querySelector('.secName').setAttribute('name', `sections[${i}][name]`);
-                    card.querySelector('.secDesc').setAttribute('name', `sections[${i}][description]`);
+ function toggleUnitUI(card) {
+  const resultType = card.querySelector('.secResultType');
+  const unitWrap = card.querySelector('.secUnitWrap');
+  const unitSel = card.querySelector('.secUnit');
 
-                    const accepts = card.querySelector('.secAccepts');
-                    accepts.setAttribute('name', `sections[${i}][accepts_results]`);
-                    accepts.setAttribute('value', '1');
+  const rt = (resultType?.value || 'none');
 
-                    card.querySelector('.secResultType').setAttribute('name', `sections[${i}][result_type]`);
+  // Si no hay resultados
+  if (!rt || rt === 'none') {
+    if (unitWrap) unitWrap.classList.add('hidden');
+    if (unitSel) unitSel.value = '';
+    return;
+  }
 
-                    const video = card.querySelector('.secVideo');
-                    if (video) video.setAttribute('name', `sections[${i}][video_url]`);
-                });
-            }
+  const allUnits = Array.isArray(window.__units) ? window.__units : [];
+  const options = allUnits.filter(u => u.result_type === rt);
 
-            function addSection() {
-                const node = tpl.content.cloneNode(true);
-                const wrapper = document.createElement('div');
-                wrapper.dataset.sec = '1';
-                wrapper.appendChild(node);
+  // Render opciones
+  if (unitSel) {
+    const current = unitSel.value || '';
+    unitSel.innerHTML = `<option value="" selected>Selecciona una unidad</option>` +
+      options.map(u => `<option value="${u.id}">${u.name} (${u.symbol})</option>`).join('');
 
-                const accepts = wrapper.querySelector('.secAccepts');
-                const resultType = wrapper.querySelector('.secResultType');
+    // intenta mantener selección si sigue existiendo
+    if (current && options.some(u => String(u.id) === String(current))) {
+      unitSel.value = current;
+    } else {
+      unitSel.value = '';
+    }
+  }
 
-                accepts.addEventListener('change', () => {
-                    resultType.disabled = !accepts.checked;
-                    if (!accepts.checked) resultType.value = '';
-                });
+  // Mostrar u ocultar según si hay unidades disponibles
+  const show = options.length > 0;
+  if (unitWrap) unitWrap.classList.toggle('hidden', !show);
 
-                wrapper.querySelector('.removeSec').addEventListener('click', () => {
-                    wrapper.remove();
-                    rebuildNames();
-                });
+  if (!show && unitSel) unitSel.value = '';
+}
 
-                sectionsEl.appendChild(wrapper);
-                rebuildNames();
-            }
+    function rebuildNames() {
+        const cards = sectionsEl.querySelectorAll('[data-sec]');
+        cards.forEach((card, idx) => {
+            const i = idx;
+            card.querySelector('.secNum').textContent = (i + 1);
 
-            addBtn.addEventListener('click', addSection);
-            addSection(); // 1 sección por defecto
-        })();
-    </script>
+            card.querySelector('.secName').setAttribute('name', `sections[${i}][name]`);
+            card.querySelector('.secDesc').setAttribute('name', `sections[${i}][description]`);
+
+            // Hidden accepts_results (lo sigues controlando por result_type)
+            const accepts = card.querySelector('.secAccepts');
+            accepts.setAttribute('name', `sections[${i}][accepts_results]`);
+            accepts.setAttribute('value', '1');
+
+            card.querySelector('.secResultType').setAttribute('name', `sections[${i}][result_type]`);
+
+            const unitSel = card.querySelector('.secUnit');
+            if (unitSel) unitSel.setAttribute('name', `sections[${i}][unit_id]`);
+
+            const video = card.querySelector('.secVideo');
+            if (video) video.setAttribute('name', `sections[${i}][video_url]`);
+        });
+    }
+
+    function addSection() {
+        const node = tpl.content.cloneNode(true);
+        const wrapper = document.createElement('div');
+        wrapper.dataset.sec = '1';
+        wrapper.appendChild(node);
+
+        const resultType = wrapper.querySelector('.secResultType');
+
+        // Al cambiar el tipo de resultado, mostrar/ocultar unidad
+        if (resultType) {
+            resultType.addEventListener('change', () => toggleUnitUI(wrapper));
+        }
+
+        wrapper.querySelector('.removeSec').addEventListener('click', () => {
+            wrapper.remove();
+            rebuildNames();
+        });
+
+        sectionsEl.appendChild(wrapper);
+        rebuildNames();
+        toggleUnitUI(wrapper); // estado inicial según default
+    }
+
+    addBtn.addEventListener('click', addSection);
+    addSection(); // 1 sección por defecto
+})();
+</script>
 
     {{-- JS: Toggle visibilidad + regla Libre/Asignado --}}
     <script>

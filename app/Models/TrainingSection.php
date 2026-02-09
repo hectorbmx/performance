@@ -32,5 +32,8 @@ class TrainingSection extends Model
     {
         return $this->hasMany(TrainingSectionResult::class, 'training_section_id');
     }
-    
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
+    }
 }

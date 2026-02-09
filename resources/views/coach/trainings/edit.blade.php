@@ -286,120 +286,287 @@
 
   </div>
 </div>
+{{-- SECCIONES --}}
+<div class="bg-white border rounded-xl p-5">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Secciones</h2>
+        <button type="button" id="addSection"
+                class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
+            + Agregar sección
+        </button>
+    </div>
 
+    {{-- Exponer unidades a JS (para secciones nuevas y cambios de tipo) --}}
+    <script>
+        window.__units = @json($units);
+    </script>
 
-            {{-- SECCIONES --}}
-            <div class="bg-white border rounded-xl p-5">
+    <div id="sections" class="mt-4 space-y-4">
+        @foreach($training->sections as $i => $s)
+            @php
+                $rt = $s->result_type ?? 'none';
+
+                // Compat: si traes datos viejos (kg/lb) mapéalos a weight
+                if (in_array($rt, ['kg','lb'], true)) {
+                    $rt = 'weight';
+                }
+
+                $resultTypes = [
+                    'none'     => 'Sin resultados',
+                    'reps'     => 'Repeticiones',
+                    'time'     => 'Tiempo',
+                    'weight'   => 'Peso',
+                    'distance' => 'Distancia',
+                    'rounds'   => 'Rondas',
+                    'sets'     => 'Series',
+                    'calories' => 'Calorías',
+                    'points'   => 'Puntos',
+                    'note'     => 'Nota / Texto',
+                    'boolean'  => 'Sí / No',
+                ];
+
+                $requiresUnit = in_array($rt, ['weight','time','distance','reps','rounds','sets','calories','points'], true);
+
+                // Opciones de unidades (filtradas por tipo)
+                $unitOptions = $units->where('result_type', $rt);
+            @endphp
+
+            <div class="rounded-xl border p-4" data-sec>
+                <input type="hidden" name="sections[{{ $i }}][id]" value="{{ $s->id }}"/>
+
                 <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold">Secciones</h2>
-                    <button type="button" id="addSection"
-                            class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
-                        + Agregar sección
-                    </button>
+                    <div class="font-semibold">Sección {{ $i+1 }}</div>
+                    <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
                 </div>
 
-                
-                <div id="sections" class="mt-4 space-y-4">
-                 @foreach($training->sections as $i => $s)
-  <div class="rounded-xl border p-4" data-sec>
-    <input type="hidden" name="sections[{{ $i }}][id]" value="{{ $s->id }}"/>
+                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs mb-1">Nombre</label>
+                        <input name="sections[{{ $i }}][name]"
+                               value="{{ $s->name }}"
+                               class="w-full h-10 rounded-lg border-gray-300"
+                               required/>
+                    </div>
 
-    <div class="flex items-center justify-between">
-      <div class="font-semibold">Sección {{ $i+1 }}</div>
-      <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
-    </div>
+                    <div class="flex items-end gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs mb-1">Tipo de resultado</label>
+                            {{-- ⚠️ No usar disabled aquí: si se deshabilita no se envía en el POST --}}
+                            <select name="sections[{{ $i }}][result_type]"
+                                    class="secResultType w-full h-10 rounded-lg border-gray-300">
+                                @foreach($resultTypes as $key => $label)
+                                    <option value="{{ $key }}" @selected($rt === $key)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-xs mb-1">Nombre</label>
-        <input name="sections[{{ $i }}][name]"
-               value="{{ $s->name }}"
-               class="w-full h-10 rounded-lg border-gray-300"/>
-      </div>
+                        {{-- Unidad: visible solo si aplica --}}
+                        <div class="flex-1 secUnitWrap {{ $requiresUnit ? '' : 'hidden' }}">
+                            <label class="block text-xs mb-1">Unidad</label>
 
-      <div class="flex items-end gap-3">
-        {{-- <label class="inline-flex items-center gap-2 text-sm">
-          <input type="checkbox"
-                 name="sections[{{ $i }}][accepts_results]"
-                 value="1"
-                 @checked($s->accepts_results)>
-          Acepta resultados
-        </label> --}}
+                           <select name="sections[{{ $i }}][unit_id]"
+                                class="secUnit w-full h-10 rounded-lg border-gray-300">
+                            <option value="">Selecciona una unidad</option>
 
-        <div class="flex-1">
-          
-          {{-- <select name="sections[{{ $i }}][result_type]"
-                  class="w-full h-10 rounded-lg border-gray-300"
-                  {{ !$s->accepts_results ? 'disabled' : '' }}>
-            <option value="">Seleccionar…</option>
-            @foreach(['kg','lb','time','distance','reps'] as $rt)
-              <option value="{{ $rt }}" @selected($s->result_type===$rt)>{{ strtoupper($rt) }}</option>
-            @endforeach
-          </select> --}}
-          @php
-  $rt = $s->result_type ?? 'none';
+                            @foreach($unitOptions as $u)
+                                <option value="{{ $u->id }}"
+                                    @selected(
+                                        old("sections.$i.unit_id", $s->unit_id) == $u->id
+                                    )
+                                >
+                                    {{ $u->name }} ({{ $u->symbol }})
+                                </option>
+                            @endforeach
+                        </select>
 
-  // Compat: si traes datos viejos (kg/lb) mapéalos a weight para que no “desaparezcan”
-  if (in_array($rt, ['kg','lb'], true)) {
-      $rt = 'weight';
-  }
+                        </div>
+                    </div>
 
-  $resultTypes = [
-      'none'     => 'Sin resultados',
-      'reps'     => 'Repeticiones',
-      'time'     => 'Tiempo',
-      'weight'   => 'Peso',
-      'distance' => 'Distancia',
-      'rounds'   => 'Rondas',
-      'sets'     => 'Series',
-      'calories' => 'Calorías',
-      'points'   => 'Puntos',
-      'note'     => 'Nota / Texto',
-      'boolean'  => 'Sí / No',
-  ];
-@endphp
+                    <div class="md:col-span-2">
+                        <label class="block text-xs mb-1">Descripción</label>
+                        <textarea name="sections[{{ $i }}][description]"
+                                  class="w-full rounded-lg border-gray-300"
+                                  rows="3">{{ $s->description }}</textarea>
+                    </div>
 
-<div class="flex-1">
-  <label class="block text-xs mb-1">Tipo de resultado</label>
-
-  <select name="sections[{{ $i }}][result_type]"
-          class="w-full h-10 rounded-lg border-gray-300"
-          {{ !$s->accepts_results ? 'disabled' : '' }}>
-
-    @foreach($resultTypes as $key => $label)
-      <option value="{{ $key }}" @selected($rt === $key)>{{ $label }}</option>
-    @endforeach
-  </select>
-</div>
-
-        </div>
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-xs mb-1">Descripción</label>
-        <textarea name="sections[{{ $i }}][description]"
-                  rows="3"
-                  class="w-full rounded-lg border-gray-300">{{ $s->description }}</textarea>
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
-        <input type="url"
-               name="sections[{{ $i }}][video_url]"
-               value="{{ $s->video_url }}"
-               class="w-full h-10 rounded-lg border-gray-300"
-               placeholder="https://www.youtube.com/watch?v=..." />
-        <p class="text-xs text-gray-500 mt-1">
-          <i class="fa fa-youtube" aria-hidden="true"></i>
-          Opcional: pega un link de YouTube.
-        </p>
-      </div>
-    </div>
-  </div>
-@endforeach
-
+                    <div class="md:col-span-2">
+                        <label class="block text-xs mb-1">Video (YouTube URL)</label>
+                        <input type="url"
+                               name="sections[{{ $i }}][video_url]"
+                               value="{{ $s->video_url }}"
+                               class="w-full h-10 rounded-lg border-gray-300"
+                               placeholder="https://www.youtube.com/watch?v=..." />
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fa fa-youtube" aria-hidden="true"></i>
+                            Opcional: pega un link de YouTube.
+                        </p>
+                    </div>
                 </div>
             </div>
+        @endforeach
+    </div>
+
+    {{-- Template para secciones nuevas --}}
+    <template id="sectionTpl">
+        <div class="rounded-xl border p-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="font-semibold text-gray-900">Sección <span class="secNum"></span></div>
+                <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
+            </div>
+
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Nombre</label>
+                    <input class="secName w-full h-10 rounded-lg border-gray-300" required />
+                </div>
+
+                <div class="flex items-end gap-3">
+                    <input type="hidden" class="secAccepts" value="1" />
+
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
+                        <select class="secResultType w-full h-10 rounded-lg border-gray-300">
+                            <option value="none" selected>Sin resultados</option>
+                            <option value="reps">Repeticiones</option>
+                            <option value="time">Tiempo</option>
+                            <option value="weight">Peso</option>
+                            <option value="distance">Distancia</option>
+                            <option value="rounds">Rondas</option>
+                            <option value="sets">Series</option>
+                            <option value="calories">Calorías</option>
+                            <option value="points">Puntos</option>
+                            <option value="note">Nota / Texto</option>
+                            <option value="boolean">Sí / No</option>
+                        </select>
+                    </div>
+
+                    <div class="flex-1 secUnitWrap hidden">
+                        <label class="block text-xs text-gray-600 mb-1">Unidad</label>
+                        <select class="secUnit w-full h-10 rounded-lg border-gray-300">
+                            <option value="" selected>Selecciona una unidad</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-1">Descripción</label>
+                    <textarea class="secDesc w-full rounded-lg border-gray-300" rows="3"></textarea>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
+                    <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
+                           placeholder="https://www.youtube.com/watch?v=..." />
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fa fa-youtube" aria-hidden="true"></i>
+                        Opcional: pega un link de YouTube.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    {{-- Script de secciones (edit + nuevas) --}}
+    <script>
+        (function () {
+            const sectionsEl = document.getElementById('sections');
+            const tpl = document.getElementById('sectionTpl');
+            const addBtn = document.getElementById('addSection');
+            if (!sectionsEl || !tpl || !addBtn) return;
+
+            function toggleUnitUI(card) {
+                const resultType = card.querySelector('.secResultType');
+                const unitWrap = card.querySelector('.secUnitWrap');
+                const unitSel = card.querySelector('.secUnit');
+
+                const rt = (resultType?.value || 'none');
+
+                // Si no hay resultados
+                if (!rt || rt === 'none' || rt === 'note' || rt === 'boolean') {
+                    if (unitWrap) unitWrap.classList.add('hidden');
+                    if (unitSel) unitSel.value = '';
+                    return;
+                }
+
+                const allUnits = Array.isArray(window.__units) ? window.__units : [];
+                const options = allUnits.filter(u => u.result_type === rt);
+
+                if (unitSel) {
+                    const current = unitSel.value || '';
+                    unitSel.innerHTML =
+                        `<option value="" selected>Selecciona una unidad</option>` +
+                        options.map(u => `<option value="${u.id}">${u.name} (${u.symbol})</option>`).join('');
+
+                    // Mantener selección si aún existe
+                    if (current && options.some(u => String(u.id) === String(current))) {
+                        unitSel.value = current;
+                    } else {
+                        unitSel.value = '';
+                    }
+                }
+
+                const show = options.length > 0;
+                if (unitWrap) unitWrap.classList.toggle('hidden', !show);
+                if (!show && unitSel) unitSel.value = '';
+            }
+
+            function rebuildNames() {
+                const cards = sectionsEl.querySelectorAll('[data-sec]');
+                cards.forEach((card, idx) => {
+                    // Si es un card renderizado por blade, ya trae names
+                    // Solo numeración visual si existiera placeholder; no forzamos aquí.
+                    const num = card.querySelector('.secNum');
+                    if (num) num.textContent = (idx + 1);
+                });
+            }
+
+            function wireCard(card) {
+                const resultType = card.querySelector('.secResultType');
+                if (resultType) {
+                    resultType.addEventListener('change', () => toggleUnitUI(card));
+                    toggleUnitUI(card);
+                }
+
+                const removeBtn = card.querySelector('.removeSec');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', () => {
+                        card.remove();
+                        rebuildNames();
+                    });
+                }
+            }
+
+            function addSection() {
+                const node = tpl.content.cloneNode(true);
+                const wrapper = document.createElement('div');
+                wrapper.dataset.sec = '1';
+                wrapper.appendChild(node);
+
+                // asignar names para nuevas secciones
+                const idx = sectionsEl.querySelectorAll('[data-sec]').length;
+                wrapper.querySelector('.secNum').textContent = (idx + 1);
+
+                wrapper.querySelector('.secName').setAttribute('name', `sections[${idx}][name]`);
+                wrapper.querySelector('.secDesc').setAttribute('name', `sections[${idx}][description]`);
+                wrapper.querySelector('.secResultType').setAttribute('name', `sections[${idx}][result_type]`);
+                wrapper.querySelector('.secUnit').setAttribute('name', `sections[${idx}][unit_id]`);
+
+                const video = wrapper.querySelector('.secVideo');
+                if (video) video.setAttribute('name', `sections[${idx}][video_url]`);
+
+                sectionsEl.appendChild(wrapper);
+                wireCard(wrapper);
+                rebuildNames();
+            }
+
+            // Wire cards existentes (blade)
+            sectionsEl.querySelectorAll('[data-sec]').forEach(wireCard);
+
+            addBtn.addEventListener('click', addSection);
+        })();
+    </script>
+</div>      
+<!--AQUI TERMINA SECCIONES --> 
 
             <div class="flex justify-end gap-3">
                 <a href="{{ route('coach.trainings.index') }}" class="px-4 py-2 rounded-lg border">Cancelar</a>

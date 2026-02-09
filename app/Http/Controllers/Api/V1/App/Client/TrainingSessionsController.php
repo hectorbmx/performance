@@ -25,7 +25,9 @@ class TrainingSessionsController extends Controller
 
         // Cargar secciones ordenadas
         $session->load([
-            'sections' => fn ($q) => $q->orderBy('order'),
+            // 'sections' => fn ($q) => $q->orderBy('order'),
+            'sections' => fn ($q) => $q->orderBy('order')->with('unit'),
+
         ]);
 
         $coverUrl = $session->cover_image
@@ -62,6 +64,7 @@ class TrainingSessionsController extends Controller
                     'video_url' => $s->video_url,
                     'accepts_results' => (bool)$s->accepts_results,
                     'result_type' => $s->result_type,
+                    'unit' => $s->unit?->symbol,
                 ]),
 
                 // En free no hay progreso real

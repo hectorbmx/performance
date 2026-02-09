@@ -101,68 +101,116 @@
 
                                 {{-- Plan --}}
                                 <td class="px-6 py-4 text-sm">
-                                    @if($client->activeMembership)
-                                        <div class="font-medium text-gray-900">
-                                            {{ $client->activeMembership->plan_name_snapshot }}
-                                        </div>
-                                        <div class="text-xs text-gray-500">
-                                            ${{ number_format($client->activeMembership->price_snapshot, 2) }}
-                                        </div>
-                                    @else
-                                        <a href="{{ route('coach.client-memberships.create', $client) }}"
-                                           class="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-200">
-                                            Asignar plan
-                                        </a>
-                                    @endif
-                                </td>
+                                        @php
+                                            /** @var \App\Models\ClientMembership|null $m */
+                                            $m = $client->latestMembership;
+                                            $isExpired = $m && $m->ends_at && $m->ends_at->lt(now()->startOfDay());
+                                        @endphp
 
-                                {{-- Vigencia --}}
-                             
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        @if($client->activeMembership)
-                                            <div>
-                                                Inicio: {{ $client->activeMembership->starts_at->format('d/m/Y') }}
+                                        @if($m)
+                                            <div class="font-medium text-gray-900">
+                                                {{ $m->plan_name_snapshot }}
                                             </div>
-                                            <div>
-                                                Fin: {{ $client->activeMembership->ends_at->format('d/m/Y') }}
-                                            </div>
-                                            
-                                            {{-- Badge de estatus de pago --}}
-                                            <div class="mt-1">
-                                                @if($client->activeMembership->billing_status === 'paid')
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                        PAID
-                                                    </span>
-                                                @elseif($client->activeMembership->is_in_grace)
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        EN GRACIA ({{ $client->activeMembership->grace_until->format('d/m/Y') }})
-                                                    </span>
-                                                @else
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                        UNPAID
-                                                    </span>
-                                                    @if($client->activeMembership->grace_until)
-                                                        <div class="text-xs text-red-600 mt-1">
-                                                            GRACIA VENCIDA ({{ $client->activeMembership->grace_until->format('d/m/Y') }})
-                                                        </div>
-                                                    @endif
-                                                @endif
 
-                                                {{-- Botón de registrar pago si está unpaid --}}
-                                                @if($client->activeMembership->billing_status === 'unpaid')
-                                                    <div class="mt-2">
-                                                        <a href="{{ route('coach.client-payments.create', $client->activeMembership) }}"
-                                                        class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700">
-                                                            Registrar pago
-                                                        </a>
-                                                    </div>
-                                                @endif
+                                            <div class="text-xs text-gray-500">
+                                                ${{ number_format($m->price_snapshot, 2) }}
                                             </div>
+
+                                            {{-- opcional: mini badge en columna Plan --}}
+                                            @if($isExpired)
+                                                <div class="mt-1">
+                                                    <span class="px-2 inline-flex text-[10px] font-semibold rounded-full bg-red-100 text-red-800">
+                                                        VENCIDA
+                                                    </span>
+                                                </div>
+                                            @endif
                                         @else
-                                            —
+                                            <a href="{{ route('coach.client-memberships.create', $client) }}"
+                                            class="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-200">
+                                                Asignar plan
+                                            </a>
                                         @endif
                                     </td>
 
+
+                                {{-- Vigencia --}}
+                             
+                               {{-- Vigencia --}}
+<td class="px-6 py-4 text-sm text-gray-600">
+    @php
+        /** @var \App\Models\ClientMembership|null $m */
+        $m = $client->latestMembership;
+
+        $isExpired = $m && $m->ends_at && $m->ends_at->lt(now()->startOfDay());
+    @endphp
+
+    @if(!$m)
+        —
+    @else
+        <div>
+            Inicio: {{ optional($m->starts_at)->format('d/m/Y') ?? '—' }}
+        </div>
+        <div>
+            Fin: {{ optional($m->ends_at)->format('d/m/Y') ?? '—' }}
+        </div>
+                                            
+                                          {{-- Badge de estatus --}}
+ <div class="mt-1">
+            {{-- 1) VENCIDA por fecha --}}
+            @if($isExpired)
+                <span class="px-2 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                    VENCIDA
+                </span>
+
+                <div class="mt-2">
+                    <a href="{{ route('coach.client-memberships.create', $client) }}"
+                       class="inline-flex items-center px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700">
+                        Renovar membresía
+                    </a>
+                </div>
+
+            @else
+                {{-- 2) NO vencida: PAID / EN GRACIA / UNPAID --}}
+                            @if($m->billing_status === 'paid')
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    PAID
+                                </span>
+
+                            @elseif($m->is_in_grace)
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    EN GRACIA ({{ optional($m->grace_until)->format('d/m/Y') }})
+                                </span>
+
+                                {{-- ✅ acción recomendada: cobrar durante gracia --}}
+                                <div class="mt-2">
+                                    <a href="{{ route('coach.client-payments.create', $m) }}"
+                                    class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700">
+                                        Registrar pago
+                                    </a>
+                                </div>
+
+                            @else
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    UNPAID
+                                </span>
+
+                                @if($m->grace_until)
+                                    <div class="text-xs text-red-600 mt-1">
+                                        GRACIA VENCIDA ({{ $m->grace_until->format('d/m/Y') }})
+                                    </div>
+                                @endif
+
+                                <div class="mt-2">
+                                    <a href="{{ route('coach.client-payments.create', $m) }}"
+                                    class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700">
+                                        Registrar pago
+                                    </a>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+                @endif
+            </td>
                                 {{-- Estatus cliente --}}
                                 <td class="px-6 py-4">
                                     @if($client->is_active)

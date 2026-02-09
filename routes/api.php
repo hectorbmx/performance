@@ -43,6 +43,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/app/training-assignments/{assignment}/start',[TrainingAssignmentsController::class, 'start']);
         Route::post('/app/training-assignments/{assignment}/complete',[TrainingAssignmentsController::class, 'complete']);
         Route::post('/app/training-sections/{section}/results',[TrainingSectionResultsController::class, 'store']);
+        Route::put('/app/training-sections/{section}/results', [TrainingSectionResultsController::class, 'update']);
+
         Route::post('/app/training-assignments/{assignment}/sections/{section}/complete', [TrainingAssignmentsController::class, 'completeSection']);
         
         Route::get('/app/training-sessions/{session}', [TrainingSessionsController::class, 'show']);

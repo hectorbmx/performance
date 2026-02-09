@@ -13,106 +13,119 @@ use Illuminate\Support\Facades\DB;
 class TrainingAssignmentsController extends Controller
 {
     public function show(Request $request, TrainingAssignment $assignment)
-    {
-        $user = $request->user();
-        $clientId = $user->client_id ?? null;
+{
+    $user = $request->user();
+    $clientId = $user->client_id ?? null;
 
-        if (!$clientId) {
-            return response()->json(['ok' => false, 'message' => 'Cliente no identificado.'], 422);
-        }
-
-        if ((int)$assignment->client_id !== (int)$clientId) {
-            return response()->json(['ok' => false, 'message' => 'No autorizado.'], 403);
-        }
-
-        // Carga training_session + secciones
-        $session = $assignment->trainingSession()->first();
-
-        $sections = TrainingSection::query()
-            ->where('training_session_id', $assignment->training_session_id)
-            ->orderBy('order')
-            ->get(['id', 'training_session_id', 'order', 'name', 'description', 'video_url', 'accepts_results', 'result_type']);
-
-        // Último resultado por sección (historial existe, pero UI MVP suele mostrar el último)
-        $latestResults = TrainingSectionResult::query()
-            ->where('training_assignment_id', $assignment->id)
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('training_section_id')
-            ->map(fn($rows) => $rows->first());
-
-        $sectionsPayload = $sections->map(function ($s) use ($latestResults) {
-            $r = $latestResults[$s->id] ?? null;
-
-            return [
-                'id' => $s->id,
-                'order' => $s->order,
-                'name' => $s->name,
-                'description' => $s->description,
-                'accepts_results' => (bool)$s->accepts_results,
-                'video_url' => $s->video_url,
-                // Nota: en tu BD actual result_type se usa como unidad (kg)
-                'unit_default' => $s->result_type,
-                'latest_result' => $r ? [
-                    'id' => $r->id,
-                    'result_type' => $r->result_type,
-                    'value' => method_exists($r, 'normalizedValue') ? $r->normalizedValue() : (
-                        $r->value_number ?? $r->value_time_seconds ?? $r->value_text ?? $r->value_bool ?? $r->value_json
-                    ),
-                    'unit' => $r->unit,
-                    'notes' => $r->notes,
-                    'created_at' => optional($r->created_at)->toISOString(),
-                ] : null,
-            ];
-        });
-
-        // Progreso
-        $sectionsTotal = $sections->count();
-        $sectionsWithResults = TrainingSectionResult::query()
-            ->where('training_assignment_id', $assignment->id)
-            ->distinct('training_section_id')
-            ->count('training_section_id');
-
-        $pct = $sectionsTotal > 0 ? (int) round(($sectionsWithResults / $sectionsTotal) * 100) : 0;
-        $coverUrl = $session?->cover_image
-            ? url(Storage::disk('public')->url($session->cover_image))
-            : null;
-
-        return response()->json([
-            'ok' => true,
-            'data' => [
-                'assignment' => [
-                    'id' => $assignment->id,
-                    'status' => $assignment->status,
-                    // 'scheduled_for' => optional($assignment->scheduled_for)->format('Y-m-d'),
-                    'scheduled_for' => $assignment->scheduled_for?->format('Y-m-d'),
-
-
-                ],
-                
-                'training_session' => $session ? [
-                    'id' => $session->id,
-                    'coach_id' => $session->coach_id,
-                    'title' => $session->title,
-                    // 'cover_image' => $session->co,
-                    'cover_image' => $coverUrl,
-
-                    'duration_minutes' => $session->duration_minutes,
-                    'level' => $session->level,
-                    'goal' => $session->goal,
-                    'type' => $session->type,
-                    'visibility' => $session->visibility,
-                    'notes' => $session->notes,
-                ] : null,
-                'sections' => $sectionsPayload,
-                'progress' => [
-                    'sections_total' => $sectionsTotal,
-                    'sections_with_results' => $sectionsWithResults,
-                    'pct' => $pct,
-                ],
-            ],
-        ]);
+    if (!$clientId) {
+        return response()->json(['ok' => false, 'message' => 'Cliente no identificado.'], 422);
     }
+
+    if ((int)$assignment->client_id !== (int)$clientId) {
+        return response()->json(['ok' => false, 'message' => 'No autorizado.'], 403);
+    }
+
+    // Carga training_session
+    $session = $assignment->trainingSession()->first();
+
+    $sections = TrainingSection::query()
+        ->where('training_session_id', $assignment->training_session_id)
+        ->orderBy('order')
+        ->get(['id', 'training_session_id', 'order', 'name', 'description', 'video_url', 'accepts_results', 'result_type']);
+
+    // ✅ Con UNIQUE ya es 1 fila por sección (no historial)
+    $resultsBySection = TrainingSectionResult::query()
+        ->where('training_assignment_id', $assignment->id)
+        ->get()
+        ->keyBy('training_section_id');
+
+    // ✅ completions solo para secciones sin resultados
+    $completionsBySection = DB::table('training_section_completions')
+        ->where('training_assignment_id', $assignment->id)
+        ->get()
+        ->keyBy('training_section_id');
+
+    $sectionsPayload = $sections->map(function ($s) use ($resultsBySection, $completionsBySection) {
+        $r = $resultsBySection->get($s->id);
+
+        $isCompleted = false;
+        if ((bool)$s->accepts_results) {
+            $isCompleted = (bool)$r;
+        } else {
+            $isCompleted = (bool)$completionsBySection->get($s->id);
+        }
+
+        return [
+            'id' => $s->id,
+            'order' => $s->order,
+            'name' => $s->name,
+            'description' => $s->description,
+            'video_url' => $s->video_url,
+
+            'accepts_results' => (bool)$s->accepts_results,
+            // ✅ ESTE es el tipo que eligió el coach
+            'result_type' => $s->result_type, // number|time|text|bool|json|null
+
+            'is_completed' => $isCompleted,
+
+            // ✅ Resultado si existe (solo si accepts_results=1)
+            'result' => $r ? [
+                'id' => $r->id,
+                'result_type' => $r->result_type,
+                'value' => method_exists($r, 'normalizedValue')
+                    ? $r->normalizedValue()
+                    : ($r->value_number ?? $r->value_time_seconds ?? $r->value_text ?? $r->value_bool ?? $r->value_json),
+                'unit' => $r->unit,
+                'notes' => $r->notes,
+                'recorded_at' => optional($r->recorded_at)->toISOString(),
+                'updated_at' => optional($r->updated_at)->toISOString(),
+            ] : null,
+        ];
+    })->values();
+
+    // Progreso real: completadas (por results o completions)
+    $sectionsTotal = $sections->count();
+    $sectionsWithResults = $resultsBySection->count();
+    $sectionsCompletedNoResults = $completionsBySection->count();
+
+    $sectionsCompleted = $sectionsWithResults + $sectionsCompletedNoResults;
+    if ($sectionsCompleted > $sectionsTotal) $sectionsCompleted = $sectionsTotal;
+
+    $pct = $sectionsTotal > 0 ? (int) round(($sectionsCompleted / $sectionsTotal) * 100) : 0;
+
+    $coverUrl = $session?->cover_image
+        ? url(Storage::disk('public')->url($session->cover_image))
+        : null;
+
+    return response()->json([
+        'ok' => true,
+        'data' => [
+            'assignment' => [
+                'id' => $assignment->id,
+                'status' => $assignment->status,
+                'scheduled_for' => $assignment->scheduled_for?->format('Y-m-d'),
+            ],
+            'training_session' => $session ? [
+                'id' => $session->id,
+                'coach_id' => $session->coach_id,
+                'title' => $session->title,
+                'cover_image' => $coverUrl,
+                'duration_minutes' => $session->duration_minutes,
+                'level' => $session->level,
+                'goal' => $session->goal,
+                'type' => $session->type,
+                'visibility' => $session->visibility,
+                'notes' => $session->notes,
+            ] : null,
+            'sections' => $sectionsPayload,
+            'progress' => [
+                'sections_total' => $sectionsTotal,
+                'sections_completed' => $sectionsCompleted,
+                'pct' => $pct,
+            ],
+        ],
+    ]);
+}
 
     public function start(Request $request, TrainingAssignment $assignment)
     {
@@ -158,8 +171,7 @@ class TrainingAssignmentsController extends Controller
         return response()->json(['ok' => true, 'data' => ['status' => $assignment->status]]);
     }
 
-    //completar seccion
-    public function completeSection(Request $request, TrainingAssignment $assignment, TrainingSection $section)
+   public function completeSection(Request $request, TrainingAssignment $assignment, TrainingSection $section)
 {
     $user = $request->user();
     $clientId = $user->client_id ?? null;
@@ -168,42 +180,40 @@ class TrainingAssignmentsController extends Controller
         return response()->json(['ok' => false, 'message' => 'Cliente no identificado.'], 422);
     }
 
-    // 1) Autorización: el assignment debe pertenecer al client
     if ((int)$assignment->client_id !== (int)$clientId) {
         return response()->json(['ok' => false, 'message' => 'No autorizado.'], 403);
     }
 
-    // 2) Seguridad: la sección debe pertenecer al mismo training_session del assignment
     if ((int)$section->training_session_id !== (int)$assignment->training_session_id) {
         return response()->json(['ok' => false, 'message' => 'Sección inválida para este entrenamiento.'], 422);
     }
 
-    // 3) Idempotencia: si ya existe resultado para esa sección, no duplicar
-    $existing = TrainingSectionResult::query()
-        ->where('training_assignment_id', $assignment->id)
-        ->where('training_section_id', $section->id)
-        ->exists();
-
-    if ($existing) {
+    // ✅ Si acepta resultados, NO se completa aquí
+    if ((bool)$section->accepts_results) {
         return response()->json([
-            'ok' => true,
-            'message' => 'Sección ya estaba completada.',
-        ]);
+            'ok' => false,
+            'message' => 'Esta sección requiere resultado. Guarda el resultado para completarla.',
+        ], 422);
     }
 
-    // 4) Crear resultado "bool" = true
-    TrainingSectionResult::create([
-        'training_assignment_id' => $assignment->id,
-        'training_section_id'    => $section->id,
-        'client_id'              => $clientId,
+    // ✅ Upsert idempotente en completions
+    DB::table('training_section_completions')->updateOrInsert(
+        [
+            'training_assignment_id' => $assignment->id,
+            'training_section_id' => $section->id,
+        ],
+        [
+            'client_id' => $clientId,
+            'completed_at' => now(),
+            'updated_at' => now(),
+            'created_at' => now(),
+        ]
+    );
 
-        'result_type'            => 'bool',
-        'value_bool'             => 1,
-
-        'unit'                   => null,
-        'notes'                  => null,
-        'recorded_at'            => now(),
-    ]);
+    // opcional: mover a in_progress al primer avance
+    if ($assignment->status === 'scheduled') {
+        $assignment->update(['status' => 'in_progress']);
+    }
 
     return response()->json([
         'ok' => true,

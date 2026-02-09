@@ -23,6 +23,7 @@ public function index()
 
         $clients = Client::query()
             ->where('coach_id', $coachId)
+            ->with('activeMembership')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('first_name', 'like', "%{$q}%")
@@ -31,6 +32,8 @@ public function index()
                         ->orWhere('phone', 'like', "%{$q}%");
                 });
             })
+            
+
             ->orderBy('first_name')
             ->paginate(10)
             ->appends(['q' => $q]); // mantiene el querystring en links
