@@ -6,6 +6,16 @@ import { ApiService } from './api.service';
 // ===============================
 export type TrainingStatus = 'scheduled' | 'in_progress' | 'completed' | 'skipped' | 'cancelled';
 export type TrainingSource = 'personal' | 'group' | 'free';
+export type TrainingSectionResultType = 'number' | 'time' | 'text' | 'bool' | 'json';
+
+
+export interface SaveSectionResultPayload {
+  training_assignment_id: number;
+    result_type: 'weight' | 'time' | 'reps' | 'distance' | string;
+
+  value: string | number | boolean | any; // en tu app puedes mandar string y ya
+  notes?: string | null;
+}
 
 export type TrainingSessionDTO = {
   id: number;
@@ -17,6 +27,7 @@ export type TrainingSessionDTO = {
   type: string | null;
   visibility: string | null;
   notes: string | null;
+  
 
   // Placeholder (futuro: migración + payload)
   cover_image?: string | null;
@@ -42,18 +53,23 @@ export interface TrainingSectionDTO {
   id: number;
   name: string;
   description: string;
-  video_url: string | null; 
+  video_url: string | null;
   order: number;
+
   accepts_results: boolean;
 
-  // En UI lo usamos como unidad
-  result_type: string | null;
+  // ✅ Tipo real: lo que el coach eligió
+  result_type: 'number' | 'time' | 'text' | 'bool' | 'json' | null;
 
   completed: boolean;
+
+  // ✅ Resultado real (si existe)
   result: {
-    value: string;
+    value: any;
     unit: string | null;
     notes: string | null;
+    // mantenemos "completed_at" para NO tocar tu HTML,
+    // pero lo vamos a llenar con recorded_at/updated_at del backend
     completed_at: string;
   } | null;
 }
@@ -225,38 +241,72 @@ export class TrainingApiService {
         cover_image: null,
       } as TrainingSessionDTO);
 
-    const sections: TrainingSectionDTO[] = (resp.data.sections ?? []).map((sec) => {
-      const lr = sec.latest_result;
+    // const sections: TrainingSectionDTO[] = (resp.data.sections ?? []).map((sec) => {
+    //   const lr = sec.latest_result;
 
-      return {
-        id: sec.id,
-        order: sec.order,
-        name: sec.name,
-        description: sec.description,
-        video_url: sec.video_url ?? null,  
-        accepts_results: !!sec.accepts_results,
+    //   return {
+    //     id: sec.id,
+    //     order: sec.order,
+    //     name: sec.name,
+    //     description: sec.description,
+    //     video_url: sec.video_url ?? null,  
+    //     accepts_results: !!sec.accepts_results,
 
-        // Backend: unit_default
-        result_type: sec.unit_default ?? null,
+    //     // Backend: unit_default
+    //     result_type: sec.unit_default ?? null,
 
-        completed: !!lr,
-        result: lr
-          ? {
-              value:
-                typeof lr.value === 'string'
-                  ? lr.value
-                  : lr.value === null || lr.value === undefined
-                    ? ''
-                    : typeof lr.value === 'number' || typeof lr.value === 'boolean'
-                      ? String(lr.value)
-                      : JSON.stringify(lr.value),
-              unit: lr.unit ?? null,
-              notes: lr.notes ?? null,
-              completed_at: lr.created_at,
-            }
-          : null,
-      };
-    });
+    //     completed: !!lr,
+    //     result: lr
+    //       ? {
+    //           value:
+    //             typeof lr.value === 'string'
+    //               ? lr.value
+    //               : lr.value === null || lr.value === undefined
+    //                 ? ''
+    //                 : typeof lr.value === 'number' || typeof lr.value === 'boolean'
+    //                   ? String(lr.value)
+    //                   : JSON.stringify(lr.value),
+    //           unit: lr.unit ?? null,
+    //           notes: lr.notes ?? null,
+    //           completed_at: lr.created_at,
+    //         }
+    //       : null,
+    //   };
+    // });
+    const sections: TrainingSectionDTO[] = (resp.data.sections ?? []).map((sec: any) => {
+  // Nuevo backend: sec.result (o compat: sec.latest_result)
+  const r = sec.result ?? sec.latest_result ?? null;
+
+  return {
+    id: sec.id,
+    order: sec.order,
+    name: sec.name,
+    description: sec.description,
+    video_url: sec.video_url ?? null,
+    accepts_results: !!sec.accepts_results,
+
+    // ✅ Nuevo: result_type real (number|time|text|bool|json|null)
+    result_type: sec.result_type ?? null,
+
+    // ✅ Nuevo: completado viene del backend (results o completions)
+    completed: !!(sec.is_completed ?? sec.completed ?? r),
+
+    // ✅ Resultado normalizado para tu HTML (mantiene completed_at)
+    result: r
+      ? {
+          value: r.value,
+          unit: r.unit ?? null,
+          notes: r.notes ?? null,
+          completed_at:
+            r.recorded_at ??
+            r.updated_at ??
+            r.created_at ??
+            new Date().toISOString(),
+        }
+      : null,
+  };
+});
+
 
     const detail: TrainingDetailDTO = {
       assignment_id: a.id,
@@ -304,20 +354,27 @@ async showFree(sessionId: number): Promise<{ ok: boolean; data: TrainingDetailDT
   }
 
   const d = resp.data;
+type ResultType = 'number' | 'time' | 'text' | 'bool' | 'json';
+const allowedTypes: ResultType[] = ['number', 'time', 'text', 'bool', 'json'];
+  const sections: TrainingSectionDTO[] = (d.sections ?? []).map((sec: any) => {
+  const rtRaw = sec.result_type ?? null;
+  const rt: ResultType | null =
+    rtRaw && allowedTypes.includes(rtRaw) ? rtRaw : null;
 
-  const sections: TrainingSectionDTO[] = (d.sections ?? []).map((sec) => ({
+  return {
     id: sec.id,
     order: sec.order,
     name: sec.name,
     description: sec.description ?? '',
     video_url: sec.video_url ?? null,
     accepts_results: !!sec.accepts_results,
-    result_type: sec.result_type ?? null,
+    result_type: rt,
 
     // free no tiene results todavía
     completed: false,
     result: null,
-  }));
+  };
+});
 
   const detail: TrainingDetailDTO = {
     assignment_id: null,
@@ -354,7 +411,19 @@ async showFree(sessionId: number): Promise<{ ok: boolean; data: TrainingDetailDT
 
   return { ok: true, data: detail };
 }
-
+async saveSectionResult(
+  assignmentId: number,
+  sectionId: number,
+  payload: SaveSectionResultPayload
+): Promise<any> {
+  // ✅ AJUSTA ESTA RUTA A TU BACKEND REAL
+  // Ejemplos comunes:
+  // POST /api/v1/app/client/training-assignments/{assignment}/sections/{section}/results
+  // POST /api/v1/app/client/training-assignments/{assignment}/sections/{section}/result
+  // const url = `app/training-assignments/${assignmentId}/sections/${sectionId}/results`;
+  const url = `app/training-sections/${sectionId}/results`;
+  return this.api.post(url, payload); // o this.apiCtrl.post(...) según tu wrapper
+}
   /**
    * POST /api/v1/app/training-assignments/{assignment}/start
    */

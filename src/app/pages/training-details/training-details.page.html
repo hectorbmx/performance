@@ -16,86 +16,81 @@
       <div class="td-loading-text">Cargando entrenamiento…</div>
     </div>
 
-    <!-- Content -->
-    <ng-container *ngIf="!loading && detail as d">
+    <!-- Content (sin alias tipo "as d") -->
+    <ng-container *ngIf="!loading && detail">
+
       <!-- HERO CARD -->
       <section class="td-card td-hero">
-      <div class="td-cover">
+        <div class="td-cover">
           <img
             class="td-cover-img"
-            [src]="d?.training_session?.cover_image || fallbackCover"
+            [src]="detail.training_session?.cover_image || fallbackCover"
             alt="Cover"
             (error)="onImgError($event)"
           />
-
-          <!-- Overlay para legibilidad -->
           <div class="td-cover-overlay"></div>
-      </div>
-
+        </div>
 
         <div class="td-hero-body">
           <div class="td-badges">
-            <span class="td-badge" [class.is-live]="d.status === 'in_progress'">
-              {{ d.status === 'in_progress' ? 'EN PROGRESO' : 'ASIGNADO' }}
-            </span>
-            <span class="td-badge is-soft" *ngIf="d.scheduled_for">
-              {{ d.scheduled_for }}
+           <span class="td-badge"
+              [class.is-live]="detail.status === 'in_progress'"
+              [class.is-done]="detail.status === 'completed'">
+                {{
+                  detail.status === 'completed'
+                    ? 'COMPLETADO'
+                    : (detail.status === 'in_progress' ? 'EN PROGRESO' : 'ASIGNADO')
+                }}
+          </span>
+
+            <span class="td-badge is-soft" *ngIf="detail.scheduled_for">
+              {{ detail.scheduled_for }}
             </span>
           </div>
 
-          <h1 class="td-title">{{ d.training_session.title }}</h1>
+          <h1 class="td-title">{{ detail.training_session.title }}</h1>
 
           <div class="td-meta">
             <div class="td-meta-item">
               <ion-icon name="time-outline"></ion-icon>
-              <span>{{ d.training_session.duration_minutes ?? 0 }} mins</span>
+              <span>{{ detail.training_session.duration_minutes ?? 0 }} mins</span>
             </div>
+
             <div class="td-meta-item">
               <ion-icon name="barbell-outline"></ion-icon>
-              <span>{{ d.training_session.level }}</span>
+              <span>{{ detail.training_session.level }}</span>
             </div>
-            <div class="td-meta-item" *ngIf="d.training_session.goal">
+
+            <div class="td-meta-item" *ngIf="detail.training_session.goal">
               <ion-icon name="flash-outline"></ion-icon>
-              <span>{{ d.training_session.goal }}</span>
+              <span>{{ detail.training_session.goal }}</span>
             </div>
-            <div class="td-meta-item" *ngIf="d.training_session.type">
+
+            <div class="td-meta-item" *ngIf="detail.training_session.type">
               <ion-icon name="fitness-outline"></ion-icon>
-              <span>{{ d.training_session.type }}</span>
+              <span>{{ detail.training_session.type }}</span>
             </div>
           </div>
 
-          <p class="td-notes" *ngIf="d.training_session.notes">
-            {{ d.training_session.notes }}
+          <p class="td-notes" *ngIf="detail.training_session.notes">
+            {{ detail.training_session.notes }}
           </p>
 
           <!-- Progress -->
           <div class="td-progress">
             <div class="td-progress-row">
               <div class="td-progress-label">Progreso</div>
-              <div class="td-progress-value">{{ d.progress.pct }}%</div>
+              <div class="td-progress-value">{{ detail.progress.pct }}%</div>
             </div>
+
             <div class="td-progress-bar">
-              <div class="td-progress-fill" [style.width.%]="d.progress.pct"></div>
+              <div class="td-progress-fill" [style.width.%]="detail.progress.pct"></div>
             </div>
+
             <div class="td-progress-sub">
-              {{ d.progress.sections_completed }} / {{ d.progress.sections_total }} secciones completadas
+              {{ detail.progress.sections_completed }} / {{ detail.progress.sections_total }} secciones completadas
             </div>
           </div>
-
-          <!-- Actions -->
-          <!-- <div class="td-actions">
-            <button class="td-btn td-btn-secondary" type="button"
-                    [disabled]="d.status === 'completed' || d.status === 'cancelled' || d.status === 'skipped'"
-                    (click)="onStart()">
-              Iniciar
-            </button>
-
-            <button class="td-btn td-btn-primary" type="button"
-                    [disabled]="d.status === 'completed' || d.progress.sections_total === 0"
-                    (click)="onComplete()">
-              Completar
-            </button>
-          </div> -->
         </div>
       </section>
 
@@ -103,82 +98,164 @@
       <section class="td-section">
         <div class="td-section-header">
           <h2 class="td-section-title">Secciones</h2>
-          <span class="td-section-sub">{{ d.sections.length }} items</span>
+          <span class="td-section-sub">{{ detail.sections.length }} items</span>
         </div>
 
         <div class="td-list">
-          <article class="td-card td-item" *ngFor="let s of d.sections; trackBy: trackBySectionId">
+          <article
+            class="td-card td-item"
+            *ngFor="let section of detail.sections; trackBy: trackBySectionId"
+          >
             <div class="td-item-head">
               <div class="td-item-left">
-                <div class="td-order">#{{ s.order }}</div>
-                <div class="td-item-title">{{ s.name }}</div>
+                <div class="td-order">#{{ section.order }}</div>
+                <div class="td-item-title">{{ section.name }}</div>
               </div>
 
               <div class="td-item-right">
-                <span class="td-chip" [class.is-done]="s.completed">
-                  {{ s.completed ? 'Hecho' : 'Pendiente' }}
+                <span class="td-chip" [class.is-done]="section.completed">
+                  {{ section.completed ? 'Hecho' : 'Pendiente' }}
                 </span>
               </div>
             </div>
 
-            <p class="td-item-desc" *ngIf="s.description">{{ s.description }}</p>
-              <!-- Video (solo si existe) -->
-              <div class="td-video" *ngIf="s.video_url">
-                <iframe
-                  [src]="youtubeEmbedUrl(s.video_url)"
-                  title="Video"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen>
-                </iframe>
-              </div>
+            <p class="td-item-desc" *ngIf="section.description">
+              {{ section.description }}
+            </p>
 
-            <div class="td-result" *ngIf="s.result; else noResult">
+            <!-- Video (solo si existe) -->
+            <div class="td-video" *ngIf="section.video_url">
+              <iframe
+                [src]="youtubeEmbedUrl(section.video_url)"
+                title="Video"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen>
+              </iframe>
+            </div>
+
+            <!-- Result -->
+<div class="td-result" *ngIf="section.result; else noResult">
   <div class="td-result-main">
-    <!-- <div class="td-result-value">{{ s.result.value }}</div> -->
-    <div class="td-result-unit" *ngIf="s.result.unit">{{ s.result.unit }}</div>
-    <div class="td-result-unit" *ngIf="!s.result.unit && s.result_type">{{ s.result_type }}</div>
+    <div class="td-result-value">{{ section.result.value }}</div>
+
+    <!-- 1) unit desde el resultado (si viene) -->
+    <div class="td-result-unit" *ngIf="section.result.unit">
+      {{ section.result.unit }}
+    </div>
+
+    <!-- 2) fallback: unit desde la sección -->
+    <div class="td-result-unit" *ngIf="!section.result.unit && section.unit">
+      {{ section.unit }}
+    </div>
+
+    <!-- 3) último fallback: tipo -->
+    <div class="td-result-unit" *ngIf="!section.result.unit && !section.unit && section.result_type">
+      {{ section.result_type }}
+    </div>
   </div>
-  <div class="td-result-notes" *ngIf="s.result.notes">{{ s.result.notes }}</div>
-  <div class="td-result-date">{{ s.result.completed_at | date:'medium' }}</div>
+
+  <div class="td-result-notes" *ngIf="section.result.notes">
+    {{ section.result.notes }}
+  </div>
+
+  <div class="td-result-date">
+    {{ section.result.recorded_at | date:'medium' }}
+  </div>
 </div>
 
+<ng-template #noResult>
+  <div class="td-empty-inline">
+    <span>Sin resultado aún</span>
+  </div>
+</ng-template>
 
-            <ng-template #noResult>
-              <div class="td-empty-inline">
-                <span>Sin resultado aún</span>
-              </div>
-            </ng-template>
-<div class="td-item-actions">
-  <!-- Registrar resultado: SOLO si acepta resultados -->
-  <!-- (lo dejamos comentado por ahora como lo tenías) -->
-  <!--
-  <button
+
+            <!-- Actions -->
+            <div class="td-item-actions">
+              <!-- Registrar resultado: SOLO si acepta resultados -->
+             <button
     class="td-link"
     type="button"
-    *ngIf="s.accepts_results && !s.completed"
-    (click)="onAddResult(s)"
+    *ngIf="section.accepts_results && !section.result"
+    (click)="onAddResult(section)"
   >
     Registrar resultado
   </button>
-  -->
 
-  <!-- Completar sección: SIEMPRE (mientras no esté completada) -->
+  <!-- Editar (solo si YA hay resultado) -->
   <button
-    class="td-link td-link-soft"
+    class="td-link"
     type="button"
-    *ngIf="!s.completed"
-    (click)="onMarkCompleted(s)"
+    *ngIf="section.accepts_results && section.result"
+    (click)="onEditResult(section)"
   >
-    Marcar completado
+    Editar resultado
   </button>
+              <!-- Expanded inline form (solo si acepta resultados y es la sección expandida) -->
+<div
+  class="td-inline-form"
+  *ngIf="section.accepts_results && expandedSectionId === section.id"
+  (click)="$event.stopPropagation()"
+>
+  <div class="td-form-group">
+    <label class="td-form-label">
+      Resultado
+      <span class="td-form-hint" *ngIf="section.result_type">  ({{ section.unit || section.result_type }})</span>
+    </label>
+
+    <input
+      class="td-form-input"
+      type="text"
+      [(ngModel)]="editingResultValue"
+      [ngModelOptions]="{ standalone: true }"
+
+      placeholder="Ej: 100 / 12:30 / completado…"
+    />
+  </div>
+
+  <div class="td-form-group">
+    <label class="td-form-label">Notas (opcional)</label>
+    <textarea
+    class="td-textarea"
+    rows="2"
+    [(ngModel)]="editingResultNotes"
+    [ngModelOptions]="{ standalone: true }"
+    placeholder="Agrega comentarios..."
+  ></textarea>
+
+  </div>
+
+  <div class="td-form-actions">
+    <button class="td-btn-cancel" type="button" (click)="cancelSectionResultEdit($event)">
+      Cancelar
+    </button>
+
+<button
+  class="td-btn-save"
+  type="button"
+  (click)="saveSectionResult(section)"
+>      Guardar
+    </button>
+  </div>
 </div>
 
 
+              <!-- Completar sección: SOLO si NO acepta resultados -->
+              <button
+                class="td-link td-link-soft"
+                type="button"
+                *ngIf="!section.accepts_results && !section.completed"
+                (click)="onMarkCompleted(section)"
+              >
+                Marcar completado
+              </button>
+            </div>
 
           </article>
         </div>
       </section>
+
     </ng-container>
 
   </div>

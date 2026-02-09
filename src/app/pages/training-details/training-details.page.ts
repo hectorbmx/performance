@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+
 
 import {
   IonContent,
@@ -37,6 +39,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     IonContent,
     IonHeader,
     IonTitle,
@@ -55,11 +58,24 @@ export class TrainingDetailsPage implements OnInit {
   loading = true;
   errorMsg: string | null = null;
 
+  expandedSectionId: number | null = null;
+
+  editingSectionValue: string = '';
+  editingSectionNotes: string = '';
+  
+  editingResultValue: string = '';
+  editingResultNotes: string = '';
+
+
+  savingResult = false;
+
+  savingSectionId: number | null = null;
+
   // Este es el que usa el HTML (detailed)
   detail: TrainingDetailDTO | null = null;
   fallbackCover = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80';
 
-
+  
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -107,6 +123,28 @@ if (sessionId && !Number.isNaN(sessionId)) {
   this.loading = false;
 }
 
+toggleSectionResult(section: TrainingSectionDTO) {
+    // Solo expandimos si acepta resultados y no está completada
+    if (!section.accepts_results ) return;
+
+    if (this.expandedSectionId === section.id) {
+      this.expandedSectionId = null;
+      this.editingSectionValue = '';
+      this.editingSectionNotes = '';
+      return;
+    }
+
+    this.expandedSectionId = section.id;
+    this.editingSectionValue = '';
+    this.editingSectionNotes = '';
+  }
+
+  cancelSectionResultEdit(ev: Event) {
+    ev.stopPropagation();
+    this.expandedSectionId = null;
+    this.editingSectionValue = '';
+    this.editingSectionNotes = '';
+  }
 
   async loadDetails() {
     if (!this.assignmentId) return;
@@ -238,10 +276,21 @@ private toYoutubeEmbed(url: string | null): string {
 }
 
   onAddResult(section: TrainingSectionDTO) {
-    // MVP: por ahora solo log.
-    // Aquí después abrimos modal / page para capturar resultado.
-    console.log('Registrar resultado en sección:', section);
+  // abre/cierra estilo acordeón
+  if (this.expandedSectionId === section.id) {
+    this.cancelResultEdit();
+    return;
   }
+ 
+
+  this.expandedSectionId = section.id;
+
+  // si ya existe un result, precarga
+  this.editingResultValue = section.result?.value ?? '';
+  this.editingResultNotes = section.result?.notes ?? '';
+}
+
+
  async onMarkCompleted(section: TrainingSectionDTO) {
   if (!this.assignmentId) return;
 
@@ -257,6 +306,63 @@ private toYoutubeEmbed(url: string | null): string {
     this.errorMsg = 'No se pudo completar la sección';
   } catch (e: any) {
     this.errorMsg = e?.message ?? 'Error completando sección';
+  }
+}
+cancelResultEdit() {
+  this.expandedSectionId = null;
+  this.editingResultValue = '';
+  this.editingResultNotes = '';
+}
+
+async saveSectionResult(section: TrainingSectionDTO) {
+  console.log('[saveSectionResult] click', { sectionId: section?.id, assignmentId: this.assignmentId });
+
+  if (!this.assignmentId) {
+    console.warn('[saveSectionResult] STOP: no assignmentId');
+    return;
+  }
+
+  const value = (this.editingResultValue ?? '').toString().trim();
+  console.log('[saveSectionResult] value raw/trim', { raw: this.editingResultValue, value });
+
+  if (!value) {
+    console.warn('[saveSectionResult] STOP: empty value');
+    this.errorMsg = 'Captura un resultado.';
+    return;
+  }
+
+  this.savingResult = true;
+  this.errorMsg = null;
+if (!section.result_type) {
+  this.errorMsg = 'Esta sección no tiene tipo de resultado configurado.';
+  return;
+}
+
+  try {
+    console.log('[saveSectionResult] calling API...');
+    const res = await this.trainingApi.saveSectionResult(this.assignmentId, section.id, {
+      
+      training_assignment_id: this.assignmentId,
+      result_type: section.result_type,
+      value,
+      notes: (this.editingResultNotes ?? '').trim() || null,
+    });
+
+    console.log('[saveSectionResult] API response', res);
+
+    if (!res?.ok) {
+      this.errorMsg = res?.message ?? 'No se pudo guardar el resultado';
+      return;
+    }
+
+    await this.loadDetails();
+    this.cancelResultEdit();
+  } catch (e: any) {
+    console.error('[saveSectionResult] ERROR', e);
+    this.errorMsg = e?.message ?? 'Error guardando resultado';
+  } finally {
+    this.savingResult = false;
+    console.log('[saveSectionResult] done');
   }
 }
 
