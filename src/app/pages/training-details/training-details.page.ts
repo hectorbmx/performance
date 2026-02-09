@@ -365,5 +365,9 @@ if (!section.result_type) {
     console.log('[saveSectionResult] done');
   }
 }
+onEditResult(section: TrainingSectionDTO) {
+  // Activa edición inline para esa sección (patrón simple)
+  (section as any).__editing = true;
+}
 
 }

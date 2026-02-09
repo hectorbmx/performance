@@ -55,14 +55,14 @@ export interface TrainingSectionDTO {
   description: string;
   video_url: string | null;
   order: number;
-
+  unit: string | null;
   accepts_results: boolean;
 
   // ✅ Tipo real: lo que el coach eligió
   result_type: 'number' | 'time' | 'text' | 'bool' | 'json' | null;
 
   completed: boolean;
-
+  
   // ✅ Resultado real (si existe)
   result: {
     value: any;
@@ -70,6 +70,8 @@ export interface TrainingSectionDTO {
     notes: string | null;
     // mantenemos "completed_at" para NO tocar tu HTML,
     // pero lo vamos a llenar con recorded_at/updated_at del backend
+    recorded_at: string;
+
     completed_at: string;
   } | null;
 }
@@ -241,39 +243,8 @@ export class TrainingApiService {
         cover_image: null,
       } as TrainingSessionDTO);
 
-    // const sections: TrainingSectionDTO[] = (resp.data.sections ?? []).map((sec) => {
-    //   const lr = sec.latest_result;
-
-    //   return {
-    //     id: sec.id,
-    //     order: sec.order,
-    //     name: sec.name,
-    //     description: sec.description,
-    //     video_url: sec.video_url ?? null,  
-    //     accepts_results: !!sec.accepts_results,
-
-    //     // Backend: unit_default
-    //     result_type: sec.unit_default ?? null,
-
-    //     completed: !!lr,
-    //     result: lr
-    //       ? {
-    //           value:
-    //             typeof lr.value === 'string'
-    //               ? lr.value
-    //               : lr.value === null || lr.value === undefined
-    //                 ? ''
-    //                 : typeof lr.value === 'number' || typeof lr.value === 'boolean'
-    //                   ? String(lr.value)
-    //                   : JSON.stringify(lr.value),
-    //           unit: lr.unit ?? null,
-    //           notes: lr.notes ?? null,
-    //           completed_at: lr.created_at,
-    //         }
-    //       : null,
-    //   };
-    // });
-    const sections: TrainingSectionDTO[] = (resp.data.sections ?? []).map((sec: any) => {
+  
+  const sections: TrainingSectionDTO[] = (resp.data.sections ?? []).map((sec: any) => {
   // Nuevo backend: sec.result (o compat: sec.latest_result)
   const r = sec.result ?? sec.latest_result ?? null;
 
@@ -290,20 +261,28 @@ export class TrainingApiService {
 
     // ✅ Nuevo: completado viene del backend (results o completions)
     completed: !!(sec.is_completed ?? sec.completed ?? r),
+    unit: sec.unit_default ?? null,
 
     // ✅ Resultado normalizado para tu HTML (mantiene completed_at)
-    result: r
-      ? {
-          value: r.value,
-          unit: r.unit ?? null,
-          notes: r.notes ?? null,
-          completed_at:
-            r.recorded_at ??
-            r.updated_at ??
-            r.created_at ??
-            new Date().toISOString(),
-        }
-      : null,
+    // ✅ Resultado normalizado para tu HTML (mantiene completed_at + agrega recorded_at)
+result: r
+  ? (() => {
+      const ts =
+        r.recorded_at ??
+        r.updated_at ??
+        r.created_at ??
+        new Date().toISOString();
+
+      return {
+        value: r.value,
+        unit: r.unit ?? null,
+        notes: r.notes ?? null,
+        completed_at: ts,
+        recorded_at: ts,
+      };
+    })()
+  : null,
+
   };
 });
 
@@ -363,6 +342,8 @@ const allowedTypes: ResultType[] = ['number', 'time', 'text', 'bool', 'json'];
 
   return {
     id: sec.id,
+    unit: sec.unit_default ?? null,
+
     order: sec.order,
     name: sec.name,
     description: sec.description ?? '',
@@ -452,4 +433,5 @@ async saveSectionResult(
 startFreeSession(sessionId: number): Promise<StartFreeResponse> {
   return this.api.post<StartFreeResponse>(`app/training-sessions/${sessionId}/start`, {});
 }
+
 }

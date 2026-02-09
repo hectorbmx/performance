@@ -56,13 +56,14 @@ export interface TrainingSectionDTO {
   unit_default: string | null;
   latest_result: null | {
     id: number;
-    result_type: string; // "number" por MVP
+    result_type: string;
     value: number | string;
     unit: string | null;
     notes: string | null;
     created_at: string;
   };
 }
+
 
 export interface TrainingAssignmentShowResponse {
   ok: boolean;
