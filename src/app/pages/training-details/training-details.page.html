@@ -172,26 +172,29 @@
 
 
             <!-- Actions -->
-            <div class="td-item-actions">
+  <div class="td-item-actions">
               <!-- Registrar resultado: SOLO si acepta resultados -->
-             <button
-    class="td-link"
-    type="button"
-    *ngIf="section.accepts_results && !section.result"
-    (click)="onAddResult(section)"
-  >
-    Registrar resultado
-  </button>
+<button
+  class="td-link"
+  type="button"
+  *ngIf="section.accepts_results && !section.result"
+  (click)="onAddResult(section)"
+>
+  Registrar resultado
+</button>
+
+
 
   <!-- Editar (solo si YA hay resultado) -->
-  <button
-    class="td-link"
-    type="button"
-    *ngIf="section.accepts_results && section.result"
-    (click)="onEditResult(section)"
-  >
-    Editar resultado
-  </button>
+<button
+  class="td-link"
+  type="button"
+  *ngIf="section.accepts_results && section.result"
+  (click)="onEditResult(section)"
+>
+  Editar resultado
+</button>
+
               <!-- Expanded inline form (solo si acepta resultados y es la sección expandida) -->
 <div
   class="td-inline-form"

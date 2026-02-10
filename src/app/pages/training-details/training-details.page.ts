@@ -134,9 +134,9 @@ toggleSectionResult(section: TrainingSectionDTO) {
       return;
     }
 
-    this.expandedSectionId = section.id;
-    this.editingSectionValue = '';
-    this.editingSectionNotes = '';
+      this.expandedSectionId = section.id;
+  this.editingResultValue = section.result?.value ?? '';
+  this.editingResultNotes = section.result?.notes ?? '';
   }
 
   cancelSectionResultEdit(ev: Event) {
@@ -366,8 +366,13 @@ if (!section.result_type) {
   }
 }
 onEditResult(section: TrainingSectionDTO) {
-  // Activa edición inline para esa sección (patrón simple)
-  (section as any).__editing = true;
+  if (!section.accepts_results) return;
+
+  this.expandedSectionId = section.id;
+  this.editingResultValue = section.result?.value ?? '';
+  this.editingResultNotes = section.result?.notes ?? '';
 }
+
+
 
 }
