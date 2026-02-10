@@ -518,6 +518,7 @@ public function update(Request $request, TrainingSession $training)
     }
 
     DB::transaction(function () use ($training, $data, $request, $visibility, $coachId) {
+    $scheduledFor = \Carbon\Carbon::parse($data['scheduled_at'])->toDateString();
 
         // Cover image
         if ($request->hasFile('cover_image')) {
@@ -570,8 +571,21 @@ public function update(Request $request, TrainingSession $training)
                 ->whereIn('id', $rawGroupIds)
                 ->pluck('id')
                 ->all();
+            \DB::table('training_assignments')
+                ->where('training_session_id', $training->id)
+                ->update(['scheduled_for' => $scheduledFor]);
+
 
             $scheduledFor = \Carbon\Carbon::parse($data['scheduled_at'])->toDateString();
+
+            $training->assignedClients()->sync(
+                    collect($selectedClientIds)->mapWithKeys(fn($id) => [
+                        $id => [
+                            'status'        => 'scheduled',
+                            'scheduled_for' => $scheduledFor,
+                        ]
+                    ])->all()
+                );
 
             $existingGroupIds = GroupTrainingAssignment::where('training_session_id', $training->id)
                 ->pluck('group_id')
