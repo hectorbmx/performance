@@ -13,4 +13,14 @@ class LegalController extends Controller
             ->view('legal.privacy-policy')
             ->header('X-Robots-Tag', 'noindex, nofollow');
     }
+    public function support()
+{
+    return response()
+        ->view('legal.support')
+        ->header('X-Robots-Tag', 'noindex, nofollow');
+}
+ public function marketing()
+    {
+        return view('legal.marketing');
+    }
 }

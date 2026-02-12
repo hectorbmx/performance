@@ -58,6 +58,11 @@ Route::get('/', function () {
 });
 Route::get('/privacy-policy', [LegalController::class, 'privacy'])
     ->name('legal.privacy');
+Route::get('/support', [LegalController::class, 'support'])
+    ->name('legal.support');
+Route::get('/marketing', [LegalController::class, 'marketing'])
+    ->name('legal.marketing');
+
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
