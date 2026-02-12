@@ -23,4 +23,10 @@ class LegalController extends Controller
     {
         return view('legal.marketing');
     }
+    public function copyright()
+{
+    return response()
+        ->view('legal.copyright')
+        ->header('X-Robots-Tag', 'noindex, nofollow');
+}
 }

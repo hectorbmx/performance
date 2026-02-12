@@ -63,6 +63,8 @@ Route::get('/support', [LegalController::class, 'support'])
 Route::get('/marketing', [LegalController::class, 'marketing'])
     ->name('legal.marketing');
 
+Route::get('/copyright', [LegalController::class, 'copyright'])
+    ->name('legal.copyright');
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
