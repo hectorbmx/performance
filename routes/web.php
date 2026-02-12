@@ -29,7 +29,7 @@ use App\Http\Controllers\Coach\CoachClientTrainingController;
 use App\Http\Controllers\Coach\MetricsController;
 use App\Http\Controllers\Coach\ClientHealthProfileController;
 use App\Http\Controllers\Coach\ClientMetricRecordController;
-
+use App\Http\Controllers\LegalController;
 
 
 
@@ -53,7 +53,11 @@ Route::get('/', function () {
     }
 
     return redirect()->route('login');
+
+    
 });
+Route::get('/privacy-policy', [LegalController::class, 'privacy'])
+    ->name('legal.privacy');
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
