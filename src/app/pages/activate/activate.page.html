@@ -1,87 +1,47 @@
-<ion-header [translucent]="true">
-  <ion-toolbar >
-    <ion-buttons slot="start">
-      <ion-button (click)="goBackToLogin()">
-        <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content [fullscreen]="true" >
-  <div class="container">
-
-    <!-- Título Principal -->
-    <h1 class="main-title">Activa tu cuenta</h1>
-
-    <!-- Subtítulo -->
-    <p class="subtitle">
-Ingresa el codigo de activacion que te proporciono tu coach, si no lo tienes, contacta con el.
-
-La contraseña debe de tener al menos 8 caracteres, incluyendo una mayúscula, una minúscula y un número.
+<ion-content>
+  <div class="container-debug">
+    
+    <h1 class="title-debug">Activa tu cuenta</h1>
+    
+    <p class="text-debug">
+      Ingresa el código de activación y tu nueva contraseña.
     </p>
 
-    <!-- Código de Activación -->
-    <div class="input-group">
-      <ion-label>Activation Code</ion-label>
-      <ion-item lines="none">
-        <ion-icon name="keypad-outline" slot="start"></ion-icon>
-        <ion-input
-          type="text"
-          inputmode="numeric"
-          maxlength="6"
-          [(ngModel)]="activationCode"
-          placeholder="000000">
-        </ion-input>
-      </ion-item>
+    <div class="input-wrapper-debug">
+      <label class="label-debug">Activation Code</label>
+      <input 
+        type="text" 
+        inputmode="numeric"
+        maxlength="6"
+        [(ngModel)]="activationCode" 
+        (input)="activationCode = $any($event.target).value"
+        placeholder="000000"
+        class="native-input-debug">
     </div>
 
-    <!-- Nueva Contraseña -->
-    <div class="input-group">
-      <ion-label>New Password</ion-label>
-      <ion-item lines="none">
-        <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-        <ion-input
-          [type]="showPassword ? 'text' : 'password'"
-          autocomplete="new-password"
-          [(ngModel)]="password"
-          placeholder="········">
-        </ion-input>
-        <ion-button fill="clear" slot="end" (click)="toggleShowPassword()">
-          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" slot="icon-only"></ion-icon>
-        </ion-button>
-      </ion-item>
+    <div class="input-wrapper-debug">
+      <label class="label-debug">New Password</label>
+      <input 
+        [type]="showPassword ? 'text' : 'password'" 
+        [(ngModel)]="password" 
+        (input)="password = $any($event.target).value"
+        placeholder="········"
+        class="native-input-debug">
+      </div>
+
+    <div class="input-wrapper-debug">
+      <label class="label-debug">Confirm Password</label>
+      <input 
+        [type]="showPasswordConfirm ? 'text' : 'password'" 
+        [(ngModel)]="passwordConfirm" 
+        (input)="passwordConfirm = $any($event.target).value"
+        placeholder="········"
+        class="native-input-debug">
     </div>
 
-    <!-- Confirmar Contraseña -->
-    <div class="input-group">
-      <ion-label>Confirm Password</ion-label>
-      <ion-item lines="none">
-        <ion-icon name="key-outline" slot="start"></ion-icon>
-        <ion-input
-          [type]="showPasswordConfirm ? 'text' : 'password'"
-          autocomplete="new-password"
-          [(ngModel)]="passwordConfirm"
-          placeholder="········">
-        </ion-input>
-        <ion-button fill="clear" slot="end" (click)="toggleShowPasswordConfirm()">
-          <ion-icon [name]="showPasswordConfirm ? 'eye-off-outline' : 'eye-outline'" slot="icon-only"></ion-icon>
-        </ion-button>
-      </ion-item>
-    </div>
-
-    <!-- Botón Activar -->
-    <ion-button expand="block" class="activate-button" (click)="activateAccount()">
-      <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+    <button class="btn-debug" (click)="activateAccount()">
       Activate Account
-    </ion-button>
-
-    <!-- Volver al Login -->
-    <div class="back-to-login">
-      <ion-button fill="clear" (click)="goBackToLogin()">
-        Back to Login
-      </ion-button>
-    </div>
+    </button>
 
   </div>
 </ion-content>

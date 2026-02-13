@@ -1,125 +1,187 @@
+// ion-content {
+//   --background: #0f1419;
+// }
+
+// ion-toolbar {
+//   --background: #0f1419;
+//   --border-width: 0;
+// }
+
+// .container {
+//   padding: 2rem 1.5rem;
+//   max-width: 650px;
+//   margin: 0 auto;
+//   -webkit-user-select: text !important;
+//   user-select: text !important;
+// }
+
+// .main-title {
+//   font-size: 2.5rem;
+//   font-weight: 700;
+//   color: #ffffff;
+//   margin: 2rem 0 1.5rem 0;
+// }
+
+// .subtitle {
+//   font-size: 1rem;
+//   color: #8b98a5;
+//   margin-bottom: 3rem;
+// }
+
+// .input-group {
+//   margin-bottom: 2rem;
+
+//   ion-label {
+//     display: block;
+//     font-size: 0.875rem;
+//     font-weight: 600;
+//     color: #4a9eff;
+//     text-transform: uppercase;
+//     margin-bottom: 0.75rem;
+//   }
+// }
+
+// /* SOLUCIÓN CRÍTICA PARA iOS */
+// .custom-input-container {
+//   display: flex;
+//   align-items: center;
+//   background: #1a2332;
+//   border-radius: 12px;
+//   padding: 0 1rem;
+//   min-height: 56px;
+//   position: relative;
+  
+//   /* CRÍTICO: iOS necesita esto */
+//   -webkit-tap-highlight-color: transparent;
+//   -webkit-touch-callout: none;
+
+//   ion-icon {
+//     color: #4a9eff;
+//     font-size: 1.5rem;
+//     margin-right: 0.75rem;
+//     pointer-events: none;
+//   }
+
+//   .ios-fix-input {
+//     flex: 1;
+//     --color: #ffffff;
+//     --placeholder-color: #4a5568;
+//     --placeholder-opacity: 1;
+    
+//     /* 16px OBLIGATORIO para iOS */
+//     font-size: 16px !important;
+    
+//     height: 56px;
+//     width: 100%;
+//     --padding-start: 0px;
+//     --padding-end: 0px;
+    
+//     cursor: text;
+    
+//     /* SOLUCIÓN CLAVE PARA iOS */
+//     touch-action: manipulation !important;
+//     -webkit-user-select: text !important;
+//     user-select: text !important;
+//   }
+
+//   .eye-button {
+//     --color: #8b98a5;
+//     --padding-start: 0.5rem;
+//     --padding-end: 0.5rem;
+//     margin: 0;
+//     /* Importante: el botón SÍ debe recibir eventos */
+//     pointer-events: auto;
+//     z-index: 10;
+//   }
+// }
+
+// .activate-button {
+//   --background: #4a9eff;
+//   --border-radius: 12px;
+//   margin-top: 3rem;
+//   height: 56px;
+//   font-weight: 600;
+//   --box-shadow: none;
+// }
+
+// .back-to-login {
+//   text-align: center;
+//   margin-top: 2rem;
+//   ion-button { --color: #4a9eff; }
+// }
+
+// @media (max-width: 576px) {
+//   .main-title { font-size: 2rem; }
+//   .container { padding: 1.5rem 1rem; }
+// }
+
+// Comenta todo el contenido anterior
+// Solo deja esto para visibilidad
 ion-content {
-  --background: #0f1419;
+  --background: #0f1419; // Tu color oscuro original
 }
 
-ion-toolbar {
-  --background: #0f1419;
-  --border-width: 0;
-  --padding-top: 0.5rem;
-  --padding-bottom: 0.5rem;
-}
-
-.container {
+.container-debug {
   padding: 2rem 1.5rem;
-  max-width: 650px;
-  margin: 0 auto;
+  color: white;
 }
 
-.main-title {
-  font-size: 2.5rem;
+.title-debug {
+  font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
-  margin: 2rem 0 1.5rem 0;
-  line-height: 1.2;
+  margin-bottom: 1rem;
 }
 
-.subtitle {
-  font-size: 1rem;
+.text-debug {
   color: #8b98a5;
-  line-height: 1.6;
-  margin-bottom: 3rem;
-}
-
-.input-group {
   margin-bottom: 2rem;
+}
 
-  ion-label {
+.input-wrapper-debug {
+  margin-bottom: 1.5rem;
+
+  .label-debug {
     display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
     color: #4a9eff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.75rem;
   }
 
-  ion-item {
-    --background: #1a2332;
-    --border-radius: 12px;
-    --padding-start: 1rem;
-    --padding-end: 1rem;
-    --inner-padding-end: 0;
-    border-radius: 12px;
-    margin: 0;
+  .native-input-debug {
+    width: 100%;
+    height: 50px;
+    background: #1a2332; // Color de fondo de tus inputs
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0 1rem;
+    font-size: 16px; // Crucial para evitar zoom en iOS
+    outline: none;
+    
+    // Quitar estilos nativos de Safari
+    -webkit-appearance: none;
+    appearance: none;
 
-    ion-icon {
-      color: #4a9eff;
-      font-size: 1.5rem;
-      margin-right: 0.75rem;
-    }
-
-    ion-input {
-      --color: #ffffff;
-      --placeholder-color: #4a5568;
-      --placeholder-opacity: 1;
-      font-size: 1rem;
-      letter-spacing: 2px;
-    }
-
-    ion-button {
-      --color: #8b98a5;
-      --padding-start: 0.5rem;
-      --padding-end: 0.5rem;
-      margin: 0;
-
-      ion-icon {
-        color: #8b98a5;
-        font-size: 1.5rem;
-        margin: 0;
-      }
+    &::placeholder {
+      color: #4a5568;
     }
   }
 }
 
-.activate-button {
-  --background: #4a9eff;
-  --background-hover: #3a8eef;
-  --background-activated: #2a7edf;
-  --border-radius: 12px;
-  --padding-top: 1rem;
-  --padding-bottom: 1rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0.5px;
-  margin-top: 3rem;
+.btn-debug {
+  width: 100%;
   height: 56px;
-
-  ion-icon {
-    font-size: 1.5rem;
-    margin-right: 0.5rem;
-  }
-}
-
-.back-to-login {
-  text-align: center;
-  margin-top: 2rem;
-
-  ion-button {
-    --color: #4a9eff;
-    font-size: 1rem;
-    font-weight: 500;
-    text-transform: none;
-  }
-}
-
-// Ajustes responsivos
-@media (max-width: 576px) {
-  .main-title {
-    font-size: 2rem;
-  }
-
-  .container {
-    padding: 1.5rem 1rem;
+  background: #4a9eff;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: 1rem;
+  
+  &:active {
+    opacity: 0.8;
   }
 }

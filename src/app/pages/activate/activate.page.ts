@@ -78,11 +78,12 @@ export class ActivatePage implements OnInit {
   }
 
   async activateAccount() {
+  
     const email = (this.email || '').trim();
     const activation_code = (this.activationCode || '').trim();
     const password = this.password || '';
     const password_confirmation = this.passwordConfirm || '';
-
+console.log("Validando código:", activation_code, "Longitud:", activation_code.length);
     if (!(await this.ensureEmail())) return;
 
     // Validaciones front mínimas
