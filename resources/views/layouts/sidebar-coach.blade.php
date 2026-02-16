@@ -71,6 +71,15 @@
             </svg>
             <span x-show="open">Grupos</span>
         </a>
+        <a href="{{ route('coach.library.index') }}"
+            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.library.*')) }}">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"/>
+                </svg>
+                <span x-show="open">Biblioteca</span>
+            </a>
+
        <a href="{{ route('coach.config.index') }}"
    class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.config.*')) }}">
     {{-- Icono (elige uno de los 3) --}}

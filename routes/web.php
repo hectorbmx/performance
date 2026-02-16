@@ -19,6 +19,9 @@ use App\Http\Controllers\Coach\GroupClientController;
 use App\Http\Controllers\Coach\GroupController;
 use App\Http\Controllers\Coach\GroupTrainingAssignmentController;
 use App\Http\Controllers\Coach\ConfigController;
+use App\Http\Controllers\Coach\LibraryController;
+use App\Http\Controllers\Coach\SectionLibraryVideoController;
+
 use App\Http\Controllers\Coach\Config\TrainingTypeCatalogController;
 use App\Http\Controllers\Coach\Config\TrainingGoalCatalogController;
 use App\Http\Controllers\Coach\Config\SectionTypeCatalogController;
@@ -119,6 +122,17 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
             // ->name('coach.resendActivationCode');
     Route::post('clients/{client}/resend-activation-code', [CoachClientController::class, 'resendActivationCode'])->name('clients.resendActivationCode');
     Route::get('clients/{client}/trainings', [CoachClientTrainingController::class, 'index'])->name('clients.trainings.index');
+    Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
+
+    Route::post('/library', [LibraryController::class, 'store'])->name('library.store');
+
+    Route::delete('/library/{video}', [LibraryController::class, 'destroy'])->name('library.destroy');
+
+    Route::post('/training-sections/{section}/library-videos', [SectionLibraryVideoController::class, 'store'])
+        ->name('sections.library-videos.store');
+
+    Route::delete('/training-sections/{section}/library-videos/{video}', [SectionLibraryVideoController::class, 'destroy'])
+        ->name('sections.library-videos.destroy');
 
     Route::prefix('config')->name('config.')->group(function () {
         Route::get('/',                [ConfigController::class, 'index'])->name('index');

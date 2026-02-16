@@ -37,4 +37,12 @@ class TrainingSection extends Model
     {
         return $this->belongsTo(Unit::class, 'unit_id');
     }
+    public function libraryVideos()
+    {
+        return $this->belongsToMany(\App\Models\LibraryVideo::class, 'training_section_library_videos')
+            ->withPivot(['order','notes'])
+            ->withTimestamps()
+            ->orderBy('training_section_library_videos.order');
+    }
+
 }
