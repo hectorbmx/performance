@@ -56,16 +56,25 @@ class TrainingSessionsController extends Controller
                     'notes' => $session->notes,
                 ],
 
-                'sections' => $session->sections->map(fn ($s) => [
-                    'id' => $s->id,
-                    'order' => $s->order,
-                    'name' => $s->name,
-                    'description' => $s->description,
-                    'video_url' => $s->video_url,
-                    'accepts_results' => (bool)$s->accepts_results,
-                    'result_type' => $s->result_type,
-                    'unit' => $s->unit?->symbol,
-                ]),
+                'sections' => $session->sections->map(function ($s) {
+                    $videoPlaybackUrl = $s->video_path
+                        ? url(Storage::disk('public')->url($s->video_path))
+                        : $s->video_url;
+
+                    return [
+                        'id' => $s->id,
+                        'order' => $s->order,
+                        'name' => $s->name,
+                        'description' => $s->description,
+                        'video_url' => $s->video_url,
+                        'video_path' => $s->video_path,
+                        'video_playback_url' => $videoPlaybackUrl,
+                        'video_source' => $s->video_path ? 'upload' : ($s->video_url ? 'external' : null),
+                        'accepts_results' => (bool)$s->accepts_results,
+                        'result_type' => $s->result_type,
+                        'unit' => $s->unit?->symbol,
+                    ];
+                }),
 
                 // En free no hay progreso real
                 'progress' => [

@@ -357,13 +357,19 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
+                    <label class="block text-xs text-gray-600 mb-1">Video URL (YouTube/Vimeo)</label>
                     <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
                            placeholder="https://www.youtube.com/watch?v=..." />
                     <p class="text-xs text-gray-500 mt-1">
-                        <i class="fa fa-youtube" aria-hidden="true"></i>
-                        Opcional: pega un link de YouTube.
+                        Opcional: pega un link externo.
                     </p>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
+                    <input type="file" class="secVideoFile w-full h-10 rounded-lg border-gray-300"
+                           accept="video/mp4" />
+                    <p class="text-xs text-gray-500 mt-1">Opcional: sube un archivo MP4. Si subes archivo, se usará ese video.</p>
                 </div>
             </div>
         </div>
@@ -449,6 +455,8 @@
 
             const video = card.querySelector('.secVideo');
             if (video) video.setAttribute('name', `sections[${i}][video_url]`);
+            const videoFile = card.querySelector('.secVideoFile');
+            if (videoFile) videoFile.setAttribute('name', `sections[${i}][video_file]`);
         });
     }
 

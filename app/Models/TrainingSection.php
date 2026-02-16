@@ -16,6 +16,7 @@ class TrainingSection extends Model
         'name',
         'description',
         'video_url',
+        'video_path',
         'accepts_results',
         'result_type',
     ];

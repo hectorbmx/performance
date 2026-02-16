@@ -390,16 +390,23 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="block text-xs mb-1">Video (YouTube URL)</label>
+                        <label class="block text-xs mb-1">Video URL (YouTube/Vimeo)</label>
                         <input type="url"
                                name="sections[{{ $i }}][video_url]"
                                value="{{ $s->video_url }}"
                                class="w-full h-10 rounded-lg border-gray-300"
                                placeholder="https://www.youtube.com/watch?v=..." />
-                        <p class="text-xs text-gray-500 mt-1">
-                            <i class="fa fa-youtube" aria-hidden="true"></i>
-                            Opcional: pega un link de YouTube.
-                        </p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs mb-1">Video MP4 (máx 10MB)</label>
+                        <input type="file"
+                               name="sections[{{ $i }}][video_file]"
+                               accept="video/mp4"
+                               class="w-full h-10 rounded-lg border-gray-300" />
+                        @if(!empty($s->video_path))
+                            <p class="text-xs text-gray-500 mt-1">Video cargado actualmente.</p>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -454,13 +461,15 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
+                    <label class="block text-xs text-gray-600 mb-1">Video URL (YouTube/Vimeo)</label>
                     <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
                            placeholder="https://www.youtube.com/watch?v=..." />
-                    <p class="text-xs text-gray-500 mt-1">
-                        <i class="fa fa-youtube" aria-hidden="true"></i>
-                        Opcional: pega un link de YouTube.
-                    </p>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
+                    <input type="file" class="secVideoFile w-full h-10 rounded-lg border-gray-300"
+                           accept="video/mp4" />
                 </div>
             </div>
         </div>
@@ -553,6 +562,8 @@
 
                 const video = wrapper.querySelector('.secVideo');
                 if (video) video.setAttribute('name', `sections[${idx}][video_url]`);
+                const videoFile = wrapper.querySelector('.secVideoFile');
+                if (videoFile) videoFile.setAttribute('name', `sections[${idx}][video_file]`);
 
                 sectionsEl.appendChild(wrapper);
                 wireCard(wrapper);
@@ -620,9 +631,15 @@
       </div>
 
       <div class="md:col-span-2">
-        <label class="block text-xs text-gray-600 mb-1">Video (YouTube URL)</label>
+        <label class="block text-xs text-gray-600 mb-1">Video URL (YouTube/Vimeo)</label>
         <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
                placeholder="https://www.youtube.com/watch?v=..." />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
+        <input type="file" class="secVideoFile w-full h-10 rounded-lg border-gray-300"
+               accept="video/mp4" />
       </div>
     </div>
   </div>
@@ -718,12 +735,14 @@
       const name = card.querySelector('.secName') || card.querySelector('input[name*="[name]"]');
       const desc = card.querySelector('.secDesc') || card.querySelector('textarea[name*="[description]"]');
       const video = card.querySelector('.secVideo') || card.querySelector('input[name*="[video_url]"]');
+      const videoFile = card.querySelector('.secVideoFile') || card.querySelector('input[name*="[video_file]"]');
       const accepts = card.querySelector('.secAccepts') || card.querySelector('input[type="checkbox"][name*="[accepts_results]"]');
       const resultType = card.querySelector('.secResultType') || card.querySelector('select[name*="[result_type]"]');
 
       if (name) name.name = `sections[${i}][name]`;
       if (desc) desc.name = `sections[${i}][description]`;
       if (video) video.name = `sections[${i}][video_url]`;
+      if (videoFile) videoFile.name = `sections[${i}][video_file]`;
       if (accepts) {
         accepts.name = `sections[${i}][accepts_results]`;
         accepts.value = '1';
