@@ -248,6 +248,7 @@ public function store(Request $request)
         'sections.*.name'                  => ['required','string','max:100'],
         'sections.*.description'           => ['nullable','string'],
         'sections.*.video_url'             => ['nullable','url','max:255'],
+        'sections.*.video_file'            => ['nullable','file','mimetypes:video/mp4','max:10240'],
         // 'sections.*.accepts_results'       => ['nullable','boolean'],
         // 'sections.*.result_type'           => ['nullable','string','max:30'],
         // 'sections.*.result_type' => [
@@ -328,7 +329,7 @@ foreach (($data['sections'] ?? []) as $idx => $s) {
 
         // Secciones
 $order = 1;
-foreach ($data['sections'] as $s) {
+foreach ($data['sections'] as $idx => $s) {
 
     $rt = $s['result_type'] ?? null;
     $unitId = $s['unit_id'] ?? null;
@@ -336,11 +337,18 @@ foreach ($data['sections'] as $s) {
     // "none" => sin resultados
     $accepts = !empty($rt) && $rt !== 'none';
 
+    $videoPath = null;
+    if ($request->hasFile("sections.$idx.video_file")) {
+        $videoPath = $request->file("sections.$idx.video_file")
+            ->store("training-section-videos/coach-{$coachId}", 'public');
+    }
+
     $training->sections()->create([
         'order'           => $order++,
         'name'            => $s['name'],
         'description'     => $s['description'] ?? null,
-        'video_url'       => $s['video_url'] ?? null,
+        'video_url'       => $videoPath ? null : ($s['video_url'] ?? null),
+        'video_path'      => $videoPath,
         'accepts_results' => $accepts ? 1 : 0,
         'result_type'     => $accepts ? $rt : null,
         'unit_id' => $accepts ? $unitId : null,
@@ -467,6 +475,7 @@ public function update(Request $request, TrainingSession $training)
         'sections.*.name'            => ['required','string','max:100'],
         'sections.*.description'     => ['nullable','string'],
         'sections.*.video_url'       => ['nullable','url','max:255'],
+        'sections.*.video_file'      => ['nullable','file','mimetypes:video/mp4','max:10240'],
         // 'sections.*.accepts_results' => ['nullable','boolean'],
         // 'sections.*.result_type'     => ['nullable','string','max:30'],
          'sections.*.result_type' => [
@@ -542,7 +551,6 @@ public function update(Request $request, TrainingSession $training)
             // 'type' legacy: no lo tocamos si no viene en el request
             'visibility'               => $data['visibility'],
             'notes'                    => $data['notes'] ?? null,
-            'video_url'                => $data['video_url'] ?? null,
             ...(isset($data['cover_image']) ? ['cover_image' => $data['cover_image']] : []),
         ]);
 
@@ -619,12 +627,18 @@ public function update(Request $request, TrainingSession $training)
 
         $toDelete = array_diff($existingIds, $sentIds);
         if (!empty($toDelete)) {
+            $sectionsToDelete = \App\Models\TrainingSection::whereIn('id', $toDelete)->get();
+            foreach ($sectionsToDelete as $sectionToDelete) {
+                if (!empty($sectionToDelete->video_path)) {
+                    Storage::disk('public')->delete($sectionToDelete->video_path);
+                }
+            }
             \App\Models\TrainingSection::whereIn('id', $toDelete)->delete();
         }
 
         // 4) Secciones: crear/actualizar (manteniendo orden)
         $order = 1;
-        foreach ($data['sections'] as $s) {
+        foreach ($data['sections'] as $idx => $s) {
 
             $rt = $s['result_type'] ?? null;
             $unitId = $s['unit_id'] ?? null;
@@ -632,20 +646,40 @@ public function update(Request $request, TrainingSession $training)
             // $accepts = !empty($s['accepts_results']);
             $accepts = ($rt !== 'none');
 
+            $existingSection = null;
+            if (!empty($s['id'])) {
+                $existingSection = \App\Models\TrainingSection::query()
+                    ->where('id', $s['id'])
+                    ->where('training_session_id', $training->id)
+                    ->first();
+            }
+
+            $videoPath = $existingSection?->video_path;
+            $videoUrl = $s['video_url'] ?? null;
+
+            if ($request->hasFile("sections.$idx.video_file")) {
+                $videoPath = $request->file("sections.$idx.video_file")
+                    ->store("training-section-videos/coach-{$coachId}", 'public');
+                $videoUrl = null;
+
+                if (!empty($existingSection?->video_path)) {
+                    Storage::disk('public')->delete($existingSection->video_path);
+                }
+            }
+
             $payload = [
                 'order'           => $order++,
                 'name'            => $s['name'],
                 'description'     => $s['description'] ?? null,
-                'video_url'       => $s['video_url'] ?? null,
+                'video_url'       => $videoPath ? null : $videoUrl,
+                'video_path'      => $videoPath,
                 'accepts_results' => $accepts ? 1 : 0,
                 'result_type'     => $accepts ? $rt : null,
                 'unit_id'         => $accepts ? $unitId : null,
             ];
 
-            if (!empty($s['id'])) {
-                \App\Models\TrainingSection::where('id', $s['id'])
-                    ->where('training_session_id', $training->id)
-                    ->update($payload);
+            if ($existingSection) {
+                $existingSection->update($payload);
             } else {
                 $training->sections()->create($payload);
             }
