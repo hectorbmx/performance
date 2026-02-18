@@ -27,6 +27,8 @@ class MembershipPlanController extends Controller
             'billing_cycle_days' => ['required','integer','min:1','max:365'],
             'client_limit' => ['nullable','integer','min:1','max:1000000'],
             'is_active' => ['nullable','boolean'],
+            'stripe_product_id' => ['nullable','string','max:255'],
+            'stripe_price_id' => ['nullable','string','max:255'],
         ]);
 
         $validated['is_active'] = (bool)($request->boolean('is_active'));
@@ -50,6 +52,8 @@ class MembershipPlanController extends Controller
             'billing_cycle_days' => ['required','integer','min:1','max:365'],
             'client_limit' => ['nullable','integer','min:1','max:1000000'],
             'is_active' => ['nullable','boolean'],
+            'stripe_product_id' => ['nullable','string','max:255'],
+            'stripe_price_id' => ['nullable','string','max:255'],
         ]);
 
         $validated['is_active'] = (bool)($request->boolean('is_active'));

@@ -67,6 +67,25 @@
                     </div>
                 </div>
 
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Stripe Product ID</label>
+                        <input type="text" name="stripe_product_id"
+                               value="{{ old('stripe_product_id', $plan->stripe_product_id) }}"
+                               class="mt-1 block w-full rounded-md border-gray-300"
+                               placeholder="prod_...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Stripe Price ID</label>
+                        <input type="text" name="stripe_price_id"
+                               value="{{ old('stripe_price_id', $plan->stripe_price_id) }}"
+                               class="mt-1 block w-full rounded-md border-gray-300"
+                               placeholder="price_...">
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('admin.plans.index') }}"
                        class="px-4 py-2 rounded-md border border-gray-300 text-gray-700">
