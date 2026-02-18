@@ -24,6 +24,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ciclo (días)</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Límite clientes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stripe Price ID</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estatus</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                         </tr>
@@ -42,6 +43,10 @@
 
                                 <td class="px-6 py-4">
                                     {{ $plan->client_limit ?? 'Ilimitado' }}
+                                </td>
+
+                                <td class="px-6 py-4 font-mono text-xs">
+                                    {{ $plan->stripe_price_id ?? '—' }}
                                 </td>
 
                                 <td class="px-6 py-4">
@@ -93,7 +98,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-10 text-center text-gray-500">
                                     No hay planes registrados.
                                 </td>
                             </tr>

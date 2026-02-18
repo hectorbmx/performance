@@ -18,6 +18,8 @@ class MembershipPlan extends Model
         'billing_cycle_days',
         'is_active',
         'client_limit',
+        'stripe_product_id',
+        'stripe_price_id',
     ];
 
     protected $casts = [
