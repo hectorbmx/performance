@@ -65,6 +65,63 @@
                     </div>
                 </div>
 
+                {{-- ✅ NUEVO: Precio (para crear el Price en Stripe automáticamente) --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Precio (MXN)</label>
+                        <input type="number" name="amount"
+                               value="{{ old('amount') }}"
+                               class="mt-1 block w-full rounded-md border-gray-300"
+                               step="0.01" min="0" required
+                               placeholder="500.00">
+                        <p class="text-xs text-gray-500 mt-1">Este monto se usará para crear el <b>Price</b> en Stripe.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Moneda</label>
+                        <input type="text" name="currency"
+                               value="{{ old('currency', 'mxn') }}"
+                               class="mt-1 block w-full rounded-md border-gray-300"
+                               maxlength="3" required
+                               placeholder="mxn">
+                        <p class="text-xs text-gray-500 mt-1">Default: <b>mxn</b>. (3 letras)</p>
+                    </div>
+                </div>
+
+                {{-- Estos campos después los vamos a ocultar/auto-llenar (Paso 2). Por ahora se quedan. --}}
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-md border">
+    <div>
+        <label class="block text-sm font-medium text-gray-700">
+            Stripe Product ID
+        </label>
+        <input type="text"
+               name="stripe_product_id"
+               value="{{ old('stripe_product_id') }}"
+               class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-500"
+               placeholder="Se generará automáticamente"
+               readonly>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700">
+            Stripe Price ID
+        </label>
+        <input type="text"
+               name="stripe_price_id"
+               value="{{ old('stripe_price_id') }}"
+               class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-500"
+               placeholder="Se generará automáticamente"
+               readonly>
+    </div>
+
+    <div class="md:col-span-2">
+        <p class="text-xs text-gray-500">
+            Estos valores serán creados automáticamente en Stripe al guardar el plan.
+        </p>
+    </div>
+</div>
+
+
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('admin.plans.index') }}"
                        class="px-4 py-2 rounded-md border border-gray-300 text-gray-700">

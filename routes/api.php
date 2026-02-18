@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\App\AuthController;
 use App\Http\Controllers\Client\TrainingsController;
 use App\Http\Controllers\Client\TrainingAssignmentsController;
 use App\Http\Controllers\Api\V1\App\Client\ProfileController;
+use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
 USE App\Http\Controllers\Api\V1\App\Client\TrainingSessionsController;
@@ -23,7 +24,11 @@ use App\Models\UserApp;
 | "api" y se cargan por el RouteServiceProvider.
 |
 */
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+    Route::post('/billing/coach/checkout', [BillingController::class, 'checkout']);
+    Route::post('/billing/client/checkout', [BillingController::class, 'clientCheckout']);
 
+});
 Route::prefix('v1')->group(function () {
 
     // =========================
@@ -31,6 +36,9 @@ Route::prefix('v1')->group(function () {
     // =========================
     Route::post('/app/login', [AuthController::class, 'login']);
     Route::post('/app/activate', [AuthController::class, 'activate']);
+
+    //para cobrar stripe
+    
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/app/logout', [AuthController::class, 'logout']);

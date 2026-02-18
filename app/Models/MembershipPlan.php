@@ -15,9 +15,13 @@ class MembershipPlan extends Model
     protected $fillable = [
         'name',
         'description',
+        'amount',
+        'currency',
         'billing_cycle_days',
         'is_active',
         'client_limit',
+        'stripe_product_id',
+        'stripe_price_id',
     ];
 
     protected $casts = [

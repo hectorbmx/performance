@@ -25,6 +25,9 @@ class CoachSubscription extends Model
         'billing_status',
         'grace_until',
         'paid_at',
+        'stripe_subscription_id',
+        'stripe_status',
+        'stripe_current_period_end',
 
         'status',
     ];
@@ -35,7 +38,7 @@ class CoachSubscription extends Model
         'next_renewal_at' => 'date',
         'grace_until' => 'date',
         'paid_at' => 'date',
-
+        'stripe_current_period_end' => 'datetime',
     ];
 
     public function coach()

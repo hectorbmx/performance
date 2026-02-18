@@ -36,7 +36,6 @@ use App\Http\Controllers\LegalController;
 
 
 
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -84,7 +83,7 @@ Route::middleware(['auth', 'admin'])
         Route::post('subscriptions', [CoachSubscriptionController::class, 'store'])->name('subscriptions.store');
         Route::get('subscriptions', [CoachSubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::resource('payments', PaymentController::class);
-
+        Route::post('/plans', [MembershipPlanController::class, 'store'])->name('plans.store');   
     });
 //rutas coach para setear sus metricas preferidas
  

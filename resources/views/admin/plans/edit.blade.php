@@ -66,6 +66,52 @@
                         <span class="text-sm text-gray-700">Plan activo</span>
                     </div>
                 </div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Precio (MXN)</label>
+        <input type="number" name="amount"
+               value="{{ old('amount', $plan->amount) }}"
+               class="mt-1 block w-full rounded-md border-gray-300"
+               step="0.01" min="0" required
+               placeholder="500.00">
+        <p class="text-xs text-gray-500 mt-1">
+            Si cambias el precio, se creará un <b>nuevo Price</b> en Stripe.
+        </p>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Moneda</label>
+        <input type="text" name="currency"
+               value="{{ old('currency', $plan->currency ?? 'mxn') }}"
+               class="mt-1 block w-full rounded-md border-gray-300"
+               maxlength="3" required
+               placeholder="mxn">
+    </div>
+</div>
+
+               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-md border">
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Stripe Product ID</label>
+        <input type="text"
+               value="{{ $plan->stripe_product_id }}"
+               class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-500"
+               readonly>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700">Stripe Price ID</label>
+        <input type="text"
+               value="{{ $plan->stripe_price_id }}"
+               class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 text-gray-500"
+               readonly>
+    </div>
+
+    <div class="md:col-span-2">
+        <p class="text-xs text-gray-500">
+            Los IDs de Stripe se administran automáticamente para evitar inconsistencias.
+        </p>
+    </div>
+</div>
 
                 <div class="flex justify-end gap-3">
                     <a href="{{ route('admin.plans.index') }}"
