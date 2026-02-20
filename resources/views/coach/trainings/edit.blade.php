@@ -389,14 +389,51 @@
                                   rows="3">{{ $s->description }}</textarea>
                     </div>
 
-                    <div class="md:col-span-2">
+                    {{-- <div class="md:col-span-2">
                         <label class="block text-xs mb-1">Video URL (YouTube/Vimeo)</label>
                         <input type="url"
                                name="sections[{{ $i }}][video_url]"
                                value="{{ $s->video_url }}"
                                class="w-full h-10 rounded-lg border-gray-300"
                                placeholder="https://www.youtube.com/watch?v=..." />
-                    </div>
+                    </div> --}}
+                    <div class="md:col-span-2">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Buscador biblioteca -->
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">
+        Biblioteca (buscar y agregar)
+      </label>
+
+      <div class="relative">
+        <input type="text"
+               class="secLibrarySearch w-full h-10 rounded-lg border-gray-300"
+               placeholder="Buscar por nombre o ID..." />
+
+        <div class="secLibraryResults absolute z-20 mt-1 w-full bg-white border rounded-lg shadow-sm hidden"></div>
+      </div>
+
+      <p class="text-xs text-gray-500 mt-1">
+        Opcional: selecciona uno o varios videos.
+      </p>
+    </div>
+ <!-- URL directa -->
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">
+        Video URL (YouTube/Vimeo)
+      </label>
+      <input type="url"
+             class="sec-video-url w-full h-10 rounded-lg border-gray-300"
+             placeholder="https://www.youtube.com/watch?v=..." />
+      <p class="text-xs text-gray-500 mt-1">
+        Opcional: pega un link externo.
+      </p>
+    </div>
+  </div>
+
+  <!-- Pills debajo del buscador -->
+  <div class="secLibraryPills mt-3 flex flex-wrap gap-2"></div>
+</div>
 
                     <div class="md:col-span-2">
                         <label class="block text-xs mb-1">Video MP4 (máx 10MB)</label>
@@ -679,6 +716,7 @@
 
 
 </x-app-layout>
+
     <script>
         (function(){
             const input = document.getElementById('clientSearch');
@@ -1221,4 +1259,6 @@
     visibilitySelect.dispatchEvent(new Event('change'));
   });
 })();
+//buscar videos de la biblio
+
 </script>
