@@ -871,6 +871,149 @@
 </script>
 <script>
 (function () {
+  const SEARCH_URL = @json(route('coach.library.search'));
+
+  const escapeHtml = (str) =>
+    String(str).replace(/[&<>"']/g, s => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    })[s]);
+
+  function buildPill(id, name) {
+    const pill = document.createElement('span');
+    pill.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs';
+    pill.dataset.pillId = String(id);
+    pill.innerHTML = `
+      <span>${escapeHtml(name)}</span>
+      <button type="button" class="text-slate-500 hover:text-red-600" data-pill-remove>&times;</button>
+    `;
+    return pill;
+  }
+
+  function findVideoName(sectionCard, id) {
+    const checkbox = sectionCard.querySelector(`.secLibraryVideo[value="${String(id)}"]`);
+    return checkbox?.closest('label')?.querySelector('span')?.textContent?.trim() || `Video #${id}`;
+  }
+
+  function syncPills(sectionCard) {
+    const pillsContainer = sectionCard.querySelector('.secLibraryPills');
+    if (!pillsContainer) return;
+
+    pillsContainer.innerHTML = '';
+
+    sectionCard.querySelectorAll('.secLibraryVideo:checked').forEach((checkbox) => {
+      const id = checkbox.value;
+      const name = findVideoName(sectionCard, id);
+      const pill = buildPill(id, name);
+
+      pill.querySelector('[data-pill-remove]')?.addEventListener('click', () => {
+        const target = sectionCard.querySelector(`.secLibraryVideo[value="${String(id)}"]`);
+        if (target) target.checked = false;
+        pill.remove();
+      });
+
+      pillsContainer.appendChild(pill);
+    });
+  }
+
+  async function searchVideos(q) {
+    const res = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(q)}`, {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin',
+    });
+    return res.json();
+  }
+
+  function bindSection(sectionCard) {
+    if (sectionCard.dataset.libraryBound === '1') return;
+    sectionCard.dataset.libraryBound = '1';
+
+    const input = sectionCard.querySelector('.secLibrarySearch');
+    const results = sectionCard.querySelector('.secLibraryResults');
+
+    sectionCard.querySelectorAll('.secLibraryVideo').forEach((checkbox) => {
+      checkbox.addEventListener('change', () => syncPills(sectionCard));
+    });
+
+    syncPills(sectionCard);
+
+    if (!input || !results) return;
+
+    let timer = null;
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      clearTimeout(timer);
+
+      if (q.length < 2) {
+        results.classList.add('hidden');
+        results.innerHTML = '';
+        return;
+      }
+
+      timer = setTimeout(async () => {
+        try {
+          const items = await searchVideos(q);
+          if (!Array.isArray(items) || !items.length) {
+            results.classList.add('hidden');
+            results.innerHTML = '';
+            return;
+          }
+
+          results.innerHTML = items.map(v => `
+            <button type="button"
+              class="w-full text-left px-3 py-2 hover:bg-slate-50"
+              data-video-id="${v.id}">
+              <div class="text-sm font-medium text-slate-900">${escapeHtml(v.name || `Video #${v.id}`)}</div>
+              <div class="text-xs text-slate-500">ID: ${v.id}</div>
+            </button>
+          `).join('');
+          results.classList.remove('hidden');
+        } catch (_) {
+          results.classList.add('hidden');
+          results.innerHTML = '';
+        }
+      }, 250);
+    });
+
+    results.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-video-id]');
+      if (!btn) return;
+
+      const id = btn.dataset.videoId;
+      const checkbox = sectionCard.querySelector(`.secLibraryVideo[value="${String(id)}"]`);
+      if (checkbox) checkbox.checked = true;
+
+      syncPills(sectionCard);
+      input.value = '';
+      results.classList.add('hidden');
+      results.innerHTML = '';
+    });
+  }
+
+  document.querySelectorAll('#sections [data-sec]').forEach(bindSection);
+
+  const sectionsRoot = document.getElementById('sections');
+  if (sectionsRoot) {
+    const observer = new MutationObserver(() => {
+      sectionsRoot.querySelectorAll('[data-sec]').forEach(bindSection);
+    });
+    observer.observe(sectionsRoot, { childList: true, subtree: true });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.secLibrarySearch') || e.target.closest('.secLibraryResults')) return;
+    document.querySelectorAll('.secLibraryResults').forEach((box) => {
+      box.classList.add('hidden');
+    });
+  });
+})();
+</script>
+<script>
+(function () {
   // =========================
   // ATLETAS (clients)
   // =========================
