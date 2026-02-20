@@ -28,7 +28,11 @@ log.txt
 /tmp
 /out-tsc
 /bazel-out
-
+.env
+bootstrap/
+public/
+storage/
+vendor/
 # Node
 /node_modules
 npm-debug.log
