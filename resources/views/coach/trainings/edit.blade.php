@@ -299,6 +299,11 @@
     {{-- Exponer unidades a JS (para secciones nuevas y cambios de tipo) --}}
     <script>
         window.__units = @json($units);
+        window.__libraryVideos = @json(($libraryVideos ?? collect())->map(fn ($video) => [
+            'id' => $video->id,
+            'name' => $video->name,
+            'youtube_url' => $video->youtube_url,
+        ])->values());
     </script>
 
     <div id="sections" class="mt-4 space-y-4">
@@ -408,6 +413,27 @@
                             <p class="text-xs text-gray-500 mt-1">Video cargado actualmente.</p>
                         @endif
                     </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs mb-2">Videos desde biblioteca</label>
+                        <div class="rounded-lg border border-gray-200 p-3 space-y-2 max-h-44 overflow-auto">
+                            @php
+                                $selectedLibraryVideoIds = old("sections.$i.library_video_ids", $s->libraryVideos->pluck('id')->all());
+                            @endphp
+                            @forelse(($libraryVideos ?? collect()) as $video)
+                                <label class="flex items-center gap-2 text-sm text-gray-700">
+                                    <input type="checkbox"
+                                           class="rounded border-gray-300 secLibraryVideo"
+                                           name="sections[{{ $i }}][library_video_ids][]"
+                                           value="{{ $video->id }}"
+                                           @checked(in_array($video->id, $selectedLibraryVideoIds))>
+                                    <span>{{ $video->name }}</span>
+                                </label>
+                            @empty
+                                <p class="text-xs text-gray-500">No hay videos en tu biblioteca.</p>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
             </div>
         @endforeach
@@ -470,6 +496,12 @@
                     <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
                     <input type="file" class="secVideoFile w-full h-10 rounded-lg border-gray-300"
                            accept="video/mp4" />
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs text-gray-600 mb-2">Videos desde biblioteca</label>
+                    <div class="secLibraryContainer rounded-lg border border-gray-200 p-3 space-y-2 max-h-44 overflow-auto">
+                    </div>
                 </div>
             </div>
         </div>
@@ -536,6 +568,8 @@
                     toggleUnitUI(card);
                 }
 
+                hydrateLibraryVideos(card);
+
                 const removeBtn = card.querySelector('.removeSec');
                 if (removeBtn) {
                     removeBtn.addEventListener('click', () => {
@@ -565,9 +599,33 @@
                 const videoFile = wrapper.querySelector('.secVideoFile');
                 if (videoFile) videoFile.setAttribute('name', `sections[${idx}][video_file]`);
 
+                hydrateLibraryVideos(wrapper, idx);
+
                 sectionsEl.appendChild(wrapper);
                 wireCard(wrapper);
                 rebuildNames();
+            }
+
+            function hydrateLibraryVideos(card, idx = null) {
+                const targetIdx = idx ?? Array.from(sectionsEl.querySelectorAll('[data-sec]')).indexOf(card);
+                const container = card.querySelector('.secLibraryContainer');
+                if (!container) return;
+
+                const videos = Array.isArray(window.__libraryVideos) ? window.__libraryVideos : [];
+                if (!videos.length) {
+                    container.innerHTML = '<p class="text-xs text-gray-500">No hay videos en tu biblioteca.</p>';
+                    return;
+                }
+
+                container.innerHTML = videos.map(video => `
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox"
+                               class="rounded border-gray-300 secLibraryVideo"
+                               name="sections[${targetIdx}][library_video_ids][]"
+                               value="${video.id}">
+                        <span>${video.name}</span>
+                    </label>
+                `).join('');
             }
 
             // Wire cards existentes (blade)
@@ -738,6 +796,7 @@
       const videoFile = card.querySelector('.secVideoFile') || card.querySelector('input[name*="[video_file]"]');
       const accepts = card.querySelector('.secAccepts') || card.querySelector('input[type="checkbox"][name*="[accepts_results]"]');
       const resultType = card.querySelector('.secResultType') || card.querySelector('select[name*="[result_type]"]');
+      const libraryVideos = card.querySelectorAll('.secLibraryVideo, input[name*="[library_video_ids]"]');
 
       if (name) name.name = `sections[${i}][name]`;
       if (desc) desc.name = `sections[${i}][description]`;
@@ -748,6 +807,9 @@
         accepts.value = '1';
       }
       if (resultType) resultType.name = `sections[${i}][result_type]`;
+      libraryVideos.forEach((checkbox) => {
+        checkbox.name = `sections[${i}][library_video_ids][]`;
+      });
     });
   }
 
