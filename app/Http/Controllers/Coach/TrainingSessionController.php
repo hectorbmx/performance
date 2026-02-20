@@ -14,6 +14,7 @@ use App\Models\GroupTrainingAssignment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Models\TrainingTypeCatalog;
+use App\Models\LibraryVideo;
 use Illuminate\Validation\Rule;
 use App\Enums\TrainingSectionResultType;
 
@@ -399,7 +400,10 @@ public function edit(TrainingSession $training)
                 abort(403);
             }
 
-            $training->load(['sections' => fn($q) => $q->orderBy('order')]);
+            $training->load([
+                'sections' => fn($q) => $q->orderBy('order'),
+                'sections.libraryVideos' => fn($q) => $q->orderBy('training_section_library_videos.order'),
+            ]);
 
             $clients = Client::where('coach_id', auth()->id())
                 ->where('is_active', 1)
@@ -435,6 +439,12 @@ public function edit(TrainingSession $training)
                 ->orderBy('name')
                 ->get(['id','result_type','name','symbol','code']);
 
+            $libraryVideos = LibraryVideo::query()
+                ->visibleForCoach(auth()->id())
+                ->where('is_active', 1)
+                ->orderBy('name')
+                ->get(['id','name','youtube_url']);
+
             return view('coach.trainings.edit', compact(
                 'training',
                 'clients',
@@ -442,7 +452,8 @@ public function edit(TrainingSession $training)
                 'assignedGroups',
                 'goals',
                 'types', // ✅ NUEVO
-                'units'
+                'units',
+                'libraryVideos'
             ));
         }
 
@@ -476,6 +487,8 @@ public function update(Request $request, TrainingSession $training)
         'sections.*.description'     => ['nullable','string'],
         'sections.*.video_url'       => ['nullable','url','max:255'],
         'sections.*.video_file'      => ['nullable','file','mimetypes:video/mp4','max:10240'],
+        'sections.*.library_video_ids'   => ['nullable','array'],
+        'sections.*.library_video_ids.*' => ['integer','exists:library_videos,id'],
         // 'sections.*.accepts_results' => ['nullable','boolean'],
         // 'sections.*.result_type'     => ['nullable','string','max:30'],
          'sections.*.result_type' => [
@@ -678,11 +691,28 @@ public function update(Request $request, TrainingSession $training)
                 'unit_id'         => $accepts ? $unitId : null,
             ];
 
-            if ($existingSection) {
-                $existingSection->update($payload);
+            $section = $existingSection;
+            if ($section) {
+                $section->update($payload);
             } else {
-                $training->sections()->create($payload);
+                $section = $training->sections()->create($payload);
             }
+
+            $libraryVideoIds = collect($s['library_video_ids'] ?? [])->map(fn($id) => (int) $id)->filter()->unique()->values();
+
+            $allowedLibraryVideoIds = LibraryVideo::query()
+                ->visibleForCoach($coachId)
+                ->where('is_active', 1)
+                ->whereIn('id', $libraryVideoIds)
+                ->pluck('id')
+                ->all();
+
+            $syncPayload = collect($allowedLibraryVideoIds)
+                ->values()
+                ->mapWithKeys(fn ($videoId, $order) => [$videoId => ['order' => $order + 1]])
+                ->all();
+
+            $section->libraryVideos()->sync($syncPayload);
         }
     });
 
