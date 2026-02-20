@@ -30,12 +30,14 @@ class LibraryVideo extends Model
         return $this->belongsTo(User::class, 'coach_id'); // ajusta si aplica
     }
 
-    // Scope: lo que ve un coach (global + propio)
     public function scopeVisibleForCoach($q, int $coachId)
     {
-        return $q->whereNull('coach_id')
-                 ->orWhere('coach_id', $coachId);
+        return $q->where(function ($qq) use ($coachId) {
+            $qq->whereNull('coach_id')
+            ->orWhere('coach_id', $coachId);
+        });
     }
+
     public function sections()
     {
         return $this->belongsToMany(\App\Models\TrainingSection::class, 'training_section_library_videos')

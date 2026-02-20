@@ -305,7 +305,7 @@
         </button>
     </div>
 
-    <div id="sections" class="mt-4 space-y-4"></div>
+    <div id="sections" class="mt-4 space-y-4" secLibraryHidden></div>
 
     <template id="sectionTpl">
         <div class="rounded-xl border p-4">
@@ -317,7 +317,7 @@
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs text-gray-600 mb-1">Nombre</label>
-                    <input class="secName w-full h-10 rounded-lg border-gray-300" required />
+                    <input class="sec-name w-full h-10 rounded-lg border-gray-300" required />
                 </div>
 
                 <div class="flex items-end gap-3">
@@ -329,7 +329,7 @@
 
                     <div class="flex-1">
                         <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
-                        <select class="secResultType w-full h-10 rounded-lg border-gray-300">
+                        <select class="sec-result-type w-full h-10 rounded-lg border-gray-300">
                             <option value="none" selected>Sin resultados</option>
                             <option value="time">Tiempo</option>
                             <option value="weight">Peso</option>
@@ -345,7 +345,7 @@
                     {{-- ✅ Unidad (solo si acepta resultados y tiene tipo != none) --}}
                     <div class="flex-1 secUnitWrap hidden">
                         <label class="block text-xs text-gray-600 mb-1">Unidad</label>
-                        <select class="secUnit w-full h-10 rounded-lg border-gray-300">
+                        <select class="sec-unit-id w-full h-10 rounded-lg border-gray-300">
                             <option value="" selected>Selecciona una unidad</option>
                         </select>
                     </div>
@@ -353,21 +353,53 @@
 
                 <div class="md:col-span-2">
                     <label class="block text-xs text-gray-600 mb-1">Descripción</label>
-                    <textarea class="secDesc w-full rounded-lg border-gray-300" rows="3"></textarea>
+                    <textarea class="sec-desc w-full rounded-lg border-gray-300" rows="3"></textarea>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="block text-xs text-gray-600 mb-1">Video URL (YouTube/Vimeo)</label>
-                    <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
-                           placeholder="https://www.youtube.com/watch?v=..." />
-                    <p class="text-xs text-gray-500 mt-1">
-                        Opcional: pega un link externo.
-                    </p>
-                </div>
+ <div class="md:col-span-2">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Buscador biblioteca -->
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">
+        Biblioteca (buscar y agregar)
+      </label>
+
+      <div class="relative">
+        <input type="text"
+               class="secLibrarySearch w-full h-10 rounded-lg border-gray-300"
+               placeholder="Buscar por nombre o ID..." />
+
+        <div class="secLibraryResults absolute z-20 mt-1 w-full bg-white border rounded-lg shadow-sm hidden"></div>
+      </div>
+
+      <p class="text-xs text-gray-500 mt-1">
+        Opcional: selecciona uno o varios videos.
+      </p>
+    </div>
+ <!-- URL directa -->
+    <div>
+      <label class="block text-xs text-gray-600 mb-1">
+        Video URL (YouTube/Vimeo)
+      </label>
+      <input type="url"
+             class="sec-video-url w-full h-10 rounded-lg border-gray-300"
+             placeholder="https://www.youtube.com/watch?v=..." />
+      <p class="text-xs text-gray-500 mt-1">
+        Opcional: pega un link externo.
+      </p>
+    </div>
+  </div>
+
+  <!-- Pills debajo del buscador -->
+  <div class="secLibraryPills mt-3 flex flex-wrap gap-2"></div>
+</div>
+
+{{-- <input type="hidden" name="sections[IDX][library_video_ids][]" value="VIDEO_ID"> --}}
+
 
                 <div class="md:col-span-2">
                     <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
-                    <input type="file" class="secVideoFile w-full h-10 rounded-lg border-gray-300"
+                    <input type="file" class="sec-video-file w-full h-10 rounded-lg border-gray-300"
                            accept="video/mp4" />
                     <p class="text-xs text-gray-500 mt-1">Opcional: sube un archivo MP4. Si subes archivo, se usará ese video.</p>
                 </div>
@@ -390,106 +422,274 @@
 </script>
 
     <script>
-(function () {
-    const sectionsEl = document.getElementById('sections');
-    const tpl = document.getElementById('sectionTpl');
-    const addBtn = document.getElementById('addSection');
-    if (!sectionsEl || !tpl || !addBtn) return;
+(() => {
+  const sectionsEl = document.getElementById('sections');
+  const tpl = document.getElementById('sectionTpl');
+  const addBtn = document.getElementById('addSection');
+  if (!sectionsEl || !tpl || !addBtn) return;
 
- function toggleUnitUI(card) {
-  const resultType = card.querySelector('.secResultType');
-  const unitWrap = card.querySelector('.secUnitWrap');
-  const unitSel = card.querySelector('.secUnit');
+  const SEARCH_URL = @json(route('coach.library.search'));
+  const UNITS = Array.isArray(window.__units) ? window.__units : [];
 
-  const rt = (resultType?.value || 'none');
+  const escapeHtml = (str) =>
+    String(str).replace(/[&<>"']/g, s => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+    })[s]);
 
-  // Si no hay resultados
-  if (!rt || rt === 'none') {
-    if (unitWrap) unitWrap.classList.add('hidden');
-    if (unitSel) unitSel.value = '';
-    return;
+  // =========================
+  // NAMES builder (CRÍTICO)
+  // =========================
+  function rebuildNames() {
+    const cards = sectionsEl.querySelectorAll('[data-sec]');
+    cards.forEach((card, idx) => {
+      // número visual
+      const numSpan = card.querySelector('.secNum');
+      if (numSpan) numSpan.textContent = String(idx + 1);
+
+      // fields
+      const nameInput = card.querySelector('.sec-name');
+      if (nameInput) nameInput.name = `sections[${idx}][name]`;
+
+      const descInput = card.querySelector('.sec-desc');
+      if (descInput) descInput.name = `sections[${idx}][description]`;
+
+      const videoUrl = card.querySelector('.sec-video-url');
+      if (videoUrl) videoUrl.name = `sections[${idx}][video_url]`;
+
+      const videoFile = card.querySelector('.sec-video-file');
+      if (videoFile) videoFile.name = `sections[${idx}][video_file]`;
+
+      const resType = card.querySelector('.sec-result-type');
+      if (resType) resType.name = `sections[${idx}][result_type]`;
+
+      const unitId = card.querySelector('.sec-unit-id');
+      if (unitId) unitId.name = `sections[${idx}][unit_id]`;
+
+      // biblioteca: renombrar TODOS los hidden inputs de videos
+      card.querySelectorAll('input.sec-library-video-id').forEach(inp => {
+        inp.name = `sections[${idx}][library_video_ids][]`; // ✅ idx correcto
+      });
+    });
   }
+  window.rebuildNames = rebuildNames;
 
-  const allUnits = Array.isArray(window.__units) ? window.__units : [];
-  const options = allUnits.filter(u => u.result_type === rt);
+  // =========================
+  // Units UI (result_type -> unit options)
+  // =========================
+  function toggleUnitUI(card) {
+    const resultType = card.querySelector('.sec-result-type');
+    const unitWrap = card.querySelector('.secUnitWrap');
+    const unitSel = card.querySelector('.sec-unit-id');
 
-  // Render opciones
-  if (unitSel) {
-    const current = unitSel.value || '';
-    unitSel.innerHTML = `<option value="" selected>Selecciona una unidad</option>` +
-      options.map(u => `<option value="${u.id}">${u.name} (${u.symbol})</option>`).join('');
+    const rt = (resultType?.value || 'none');
 
-    // intenta mantener selección si sigue existiendo
-    if (current && options.some(u => String(u.id) === String(current))) {
-      unitSel.value = current;
-    } else {
-      unitSel.value = '';
+    if (!rt || rt === 'none') {
+      unitWrap?.classList.add('hidden');
+      if (unitSel) unitSel.value = '';
+      return;
     }
+
+    const options = UNITS.filter(u => String(u.result_type) === String(rt));
+
+    if (unitSel) {
+      const current = unitSel.value || '';
+      unitSel.innerHTML =
+        `<option value="" selected>Selecciona una unidad</option>` +
+        options.map(u => `<option value="${u.id}">${escapeHtml(u.name)} (${escapeHtml(u.symbol)})</option>`).join('');
+
+      if (current && options.some(u => String(u.id) === String(current))) {
+        unitSel.value = current;
+      } else {
+        unitSel.value = '';
+      }
+    }
+
+    const show = options.length > 0;
+    unitWrap?.classList.toggle('hidden', !show);
+    if (!show && unitSel) unitSel.value = '';
   }
 
-  // Mostrar u ocultar según si hay unidades disponibles
-  const show = options.length > 0;
-  if (unitWrap) unitWrap.classList.toggle('hidden', !show);
+  // =========================
+  // Pills + hidden inputs
+  // =========================
+  function addVideoPill(card, videoId, videoName) {
+    const pills = card.querySelector('.secLibraryPills');
+    if (!pills) return;
 
-  if (!show && unitSel) unitSel.value = '';
+    // evitar duplicados (por data)
+    if (pills.querySelector(`[data-pill-id="${videoId}"]`)) return;
+
+    const pill = document.createElement('span');
+    pill.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs';
+    pill.dataset.pillId = String(videoId);
+
+    pill.innerHTML = `
+      <span>${escapeHtml(videoName)}</span>
+      <input type="hidden" class="sec-library-video-id" value="${parseInt(videoId, 10)}">
+      <button type="button" class="text-slate-500 hover:text-red-600" aria-label="Quitar">&times;</button>
+    `;
+
+    pill.querySelector('button')?.addEventListener('click', () => {
+      pill.remove();
+      rebuildNames();
+    });
+
+    pills.appendChild(pill);
+    rebuildNames();
+  }
+
+  // =========================
+  // Add/remove section
+  // =========================
+  function addSection() {
+    const node = tpl.content.cloneNode(true);
+
+    const wrapper = document.createElement('div');
+    wrapper.dataset.sec = '1';
+    wrapper.appendChild(node);
+
+    // listener: result type
+    const resultType = wrapper.querySelector('.sec-result-type');
+    if (resultType) {
+      resultType.addEventListener('change', () => toggleUnitUI(wrapper));
+    }
+
+    // remove section
+    wrapper.querySelector('.removeSec')?.addEventListener('click', () => {
+      wrapper.remove();
+      rebuildNames();
+    });
+
+    sectionsEl.appendChild(wrapper);
+
+    // init
+    rebuildNames();
+    toggleUnitUI(wrapper);
+  }
+
+  addBtn.addEventListener('click', addSection);
+  addSection(); // 1 sección por defecto
+
+  // =========================
+  // Library search (delegation)
+  // =========================
+  let debounceTimer = null;
+  let abortCtrl = null;
+
+  async function doSearch(q) {
+    if (abortCtrl) abortCtrl.abort();
+    abortCtrl = new AbortController();
+
+    const res = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(q)}`, {
+      headers: { 'Accept': 'application/json' },
+      signal: abortCtrl.signal,
+      credentials: 'same-origin',
+    });
+
+    const json = await res.json();
+    return Array.isArray(json) ? json : (json.data || []);
+  }
+
+  function renderResults(box, items) {
+    if (!items || !items.length) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+      return;
+    }
+
+    box.innerHTML = items.map(v => `
+      <button type="button"
+        class="w-full text-left px-3 py-2 hover:bg-slate-50"
+        data-video-id="${v.id}"
+        data-video-name="${escapeHtml(v.name)}">
+        <div class="text-sm font-medium text-slate-900">${escapeHtml(v.name)}</div>
+        <div class="text-xs text-slate-500">ID: ${v.id}${v.youtube_id ? ` · YT: ${escapeHtml(v.youtube_id)}` : ''}</div>
+      </button>
+    `).join('');
+
+    box.classList.remove('hidden');
+  }
+
+  document.addEventListener('input', (e) => {
+    const input = e.target.closest('.secLibrarySearch');
+    if (!input) return;
+
+    const card = input.closest('[data-sec]'); // ✅ wrapper real
+    const box  = card?.querySelector('.secLibraryResults');
+    if (!card || !box) return;
+
+    const q = input.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (q.length < 2) {
+      renderResults(box, []);
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const items = await doSearch(q);
+        renderResults(box, items);
+      } catch (err) {
+        if (err?.name !== 'AbortError') console.error('Library search failed', err);
+        renderResults(box, []);
+      }
+    }, 250);
+  });
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.secLibraryResults [data-video-id]');
+    if (!btn) return;
+
+    const card = btn.closest('[data-sec]');
+    const input = card?.querySelector('.secLibrarySearch');
+    const box = card?.querySelector('.secLibraryResults');
+    if (!card || !input || !box) return;
+
+    const id = btn.dataset.videoId;
+    const name = btn.dataset.videoName || btn.querySelector('.text-sm')?.textContent?.trim() || `Video ${id}`;
+
+    addVideoPill(card, id, name);
+
+    input.value = '';
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  });
+
+  // cerrar dropdown si click fuera
+  document.addEventListener('click', (e) => {
+    const isInside = e.target.closest('.secLibrarySearch') || e.target.closest('.secLibraryResults');
+    if (isInside) return;
+    document.querySelectorAll('.secLibraryResults').forEach(b => b.classList.add('hidden'));
+  });
+})();
+
+function addVideoToSection(sectionEl, videoId, label) {
+  // 1) Evitar duplicados
+  if (sectionEl.querySelector(`input[data-library-video-id="${videoId}"]`)) return;
+
+  // 2) UI pill (lo tuyo)
+  const pillsWrap = sectionEl.querySelector('.secLibraryPills'); // tu contenedor
+  pillsWrap.appendChild(makePill(label, () => removeVideoFromSection(sectionEl, videoId)));
+
+  // 3) Hidden input (LO IMPORTANTE)
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.value = String(videoId);
+  hidden.dataset.libraryVideoId = String(videoId);
+  hidden.className = 'sec-library-video-id'; // para renombrar luego
+  sectionEl.appendChild(hidden);
+
+  // 4) Renombrar todo con el índice real
+  rebuildNames();
 }
 
-    function rebuildNames() {
-        const cards = sectionsEl.querySelectorAll('[data-sec]');
-        cards.forEach((card, idx) => {
-            const i = idx;
-            card.querySelector('.secNum').textContent = (i + 1);
+function removeVideoFromSection(sectionEl, videoId) {
+  // borrar hidden
+  sectionEl.querySelector(`input[data-library-video-id="${videoId}"]`)?.remove();
+  rebuildNames();
+}
 
-            card.querySelector('.secName').setAttribute('name', `sections[${i}][name]`);
-            card.querySelector('.secDesc').setAttribute('name', `sections[${i}][description]`);
-
-            // Hidden accepts_results (lo sigues controlando por result_type)
-            const accepts = card.querySelector('.secAccepts');
-            accepts.setAttribute('name', `sections[${i}][accepts_results]`);
-            accepts.setAttribute('value', '1');
-
-            card.querySelector('.secResultType').setAttribute('name', `sections[${i}][result_type]`);
-
-            const unitSel = card.querySelector('.secUnit');
-            if (unitSel) unitSel.setAttribute('name', `sections[${i}][unit_id]`);
-
-            const video = card.querySelector('.secVideo');
-            if (video) video.setAttribute('name', `sections[${i}][video_url]`);
-            const videoFile = card.querySelector('.secVideoFile');
-            if (videoFile) videoFile.setAttribute('name', `sections[${i}][video_file]`);
-        });
-    }
-
-    function addSection() {
-        const node = tpl.content.cloneNode(true);
-        const wrapper = document.createElement('div');
-        wrapper.dataset.sec = '1';
-        wrapper.appendChild(node);
-
-        const resultType = wrapper.querySelector('.secResultType');
-
-        // Al cambiar el tipo de resultado, mostrar/ocultar unidad
-        if (resultType) {
-            resultType.addEventListener('change', () => toggleUnitUI(wrapper));
-        }
-
-        wrapper.querySelector('.removeSec').addEventListener('click', () => {
-            wrapper.remove();
-            rebuildNames();
-        });
-
-        sectionsEl.appendChild(wrapper);
-        rebuildNames();
-        toggleUnitUI(wrapper); // estado inicial según default
-    }
-
-    addBtn.addEventListener('click', addSection);
-    addSection(); // 1 sección por defecto
-})();
-</script>
-
-    {{-- JS: Toggle visibilidad + regla Libre/Asignado --}}
-    <script>
         (function () {
             const form = document.querySelector('form');
             const visibilitySelect = document.getElementById('visibilitySelect');
@@ -559,10 +759,7 @@
 
             syncVisibilityUI();
         })();
-    </script>
-
-    {{-- JS: buscador atletas/grupos (idéntico al edit, solo que aquí aplica igual) --}}
-    <script>
+ 
 (function () {
   // =========================
   // ATLETAS (clients)
@@ -865,10 +1062,10 @@
     setEmptyState();
   }
 })();
-    </script>
+    
 
-    {{-- JS: tag color "Sin color" --}}
-    <script>
+    //{{-- JS: tag color "Sin color" --}}
+    
         (function () {
             const form = document.querySelector('form');
             const noColorCheck = document.getElementById('noColorCheck');
@@ -907,5 +1104,137 @@
             };
             reader.readAsDataURL(file);
         }
-    </script>
+    
+(() => {
+  const SEARCH_URL = @json(route('coach.library.search'));
+
+  const escapeHtml = (str) =>
+    String(str).replace(/[&<>"']/g, s => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+    })[s]);
+
+   function makePill(pillsContainer, id, name) {
+    if (pillsContainer.querySelector(`[data-pill-id="${id}"]`)) return;
+
+    const pill = document.createElement('span');
+    pill.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs';
+    pill.dataset.pillId = id;
+    
+    // El input DEBE tener la clase .pillVideoId para que rebuildNames le asigne el nombre correcto
+    pill.innerHTML = `
+      <span>${escapeHtml(name)}</span>
+      <input type="hidden" class="pillVideoId" value="${parseInt(id)}">
+      <button type="button" class="text-slate-500 hover:text-red-600">&times;</button>
+    `;
+    
+    pill.querySelector('button').addEventListener('click', () => {
+        pill.remove();
+        rebuildNames(); 
+    });
+    
+    pillsContainer.appendChild(pill);
+    rebuildNames(); 
+}
+
+  async function doSearch(q) {
+    const res = await fetch(`${SEARCH_URL}?q=${encodeURIComponent(q)}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    return res.json();
+  }
+
+  function renderResults(box, items) {
+    if (!items.length) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+      return;
+    }
+    box.innerHTML = items.map(v => `
+      <button type="button"
+        class="w-full text-left px-3 py-2 hover:bg-slate-50"
+        data-video-id="${v.id}"
+        data-video-name="${escapeHtml(v.name)}">
+        <div class="text-sm font-medium text-slate-900">${escapeHtml(v.name)}</div>
+        <div class="text-xs text-slate-500">ID: ${v.id}${v.youtube_id ? ` · YT: ${escapeHtml(v.youtube_id)}` : ''}</div>
+      </button>
+    `).join('');
+    box.classList.remove('hidden');
+  }
+
+  // ✅ Event delegation: funciona para inputs existentes y los que se agreguen por template
+  let debounceTimer = null;
+
+  document.addEventListener('input', (e) => {
+    const input = e.target.closest('.secLibrarySearch');
+    if (!input) return;
+
+ // Sube hasta encontrar el contenedor que tiene .secLibraryResults
+    const section = input.closest('.rounded-xl.border');
+    const box = section?.querySelector('.secLibraryResults');
+    if (!box) return;
+
+      const q = input.value.trim();
+    clearTimeout(debounceTimer);
+
+
+    if (q.length < 2) {
+      renderResults(box, []);
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const items = await doSearch(q);
+        renderResults(box, items);
+      } catch (err) {
+        console.error('Library search failed', err);
+        renderResults(box, []);
+      }
+    }, 250);
+  });
+
+  // Click en un resultado (por ahora solo llena el input con el nombre y cierra dropdown)
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.secLibraryResults [data-video-id]');
+    if (!btn) return;
+
+    const section = btn.closest('.rounded-xl.border');
+    const input = section?.querySelector('.secLibrarySearch');
+    const box = section?.querySelector('.secLibraryResults');
+    const pillsContainer = section?.querySelector('.secLibraryPills');
+
+    if (!input || !box || !pillsContainer) return;
+
+    const id   = btn.dataset.videoId;
+    const name = btn.dataset.videoName || btn.querySelector('.text-sm')?.textContent?.trim() || '';
+
+    makePill(pillsContainer, id, name);
+
+    input.value = '';
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  });
+
+  // Cerrar dropdown al click fuera
+  document.addEventListener('click', (e) => {
+    const isInside = e.target.closest('.secLibrarySearch') || e.target.closest('.secLibraryResults');
+    if (isInside) return;
+
+    document.querySelectorAll('.secLibraryResults').forEach(box => box.classList.add('hidden'));
+  });
+})();
+
+function makePill(id, name) {
+  const pill = document.createElement('span');
+  pill.className = "inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs";
+  pill.dataset.pillId = id;
+  pill.innerHTML = `
+    <span>${escapeHtml(name)}</span>
+    <button type="button" class="text-slate-500 hover:text-red-600" data-pill-remove aria-label="Quitar">&times;</button>
+  `;
+  return pill;
+}
+
+</script>
+
 </x-app-layout>

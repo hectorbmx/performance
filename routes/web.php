@@ -103,9 +103,7 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
 
     // routes/web.php
     Route::put('clients/{client}/health-profile', [ClientHealthProfileController::class, 'update'])->name('clients.health-profile.update');
-
     Route::post('clients/{client}/metric-records', [ClientMetricRecordController::class, 'store'])->name('clients.metric-records.store');
-
     Route::delete('clients/{client}/metric-records/{record}', [ClientMetricRecordController::class, 'destroy'])->name('clients.metric-records.destroy');
 
 
@@ -121,18 +119,17 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
             // ->name('coach.resendActivationCode');
     Route::post('clients/{client}/resend-activation-code', [CoachClientController::class, 'resendActivationCode'])->name('clients.resendActivationCode');
     Route::get('clients/{client}/trainings', [CoachClientTrainingController::class, 'index'])->name('clients.trainings.index');
+    
     Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
-
     Route::post('/library', [LibraryController::class, 'store'])->name('library.store');
-
     Route::delete('/library/{video}', [LibraryController::class, 'destroy'])->name('library.destroy');
+    Route::get('/library/search', [LibraryController::class, 'search'])->name('library.search');
 
-    Route::post('/training-sections/{section}/library-videos', [SectionLibraryVideoController::class, 'store'])
-        ->name('sections.library-videos.store');
 
-    Route::delete('/training-sections/{section}/library-videos/{video}', [SectionLibraryVideoController::class, 'destroy'])
-        ->name('sections.library-videos.destroy');
+    Route::post('/training-sections/{section}/library-videos', [SectionLibraryVideoController::class, 'store'])->name('sections.library-videos.store');
+    Route::delete('/training-sections/{section}/library-videos/{video}', [SectionLibraryVideoController::class, 'destroy'])->name('sections.library-videos.destroy');
 
+    
     Route::prefix('config')->name('config.')->group(function () {
         Route::get('/',                [ConfigController::class, 'index'])->name('index');
         Route::get('types',            [TrainingTypeCatalogController::class, 'index'])->name('types.index');

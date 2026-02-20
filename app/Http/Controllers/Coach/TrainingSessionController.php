@@ -223,6 +223,24 @@ public function store(Request $request)
 {
     $coachId = auth()->id();
 
+    \Log::info('TRAINING STORE RAW', [
+    'all' => $request->all(),
+]);
+
+\Log::info('TRAINING STORE INPUT NAMES', [
+    'input_names' => array_keys($request->all()),
+]);
+
+    if ($request->has('sections')) {
+        $sections = $request->input('sections');
+        foreach ($sections as $i => $s) {
+            if (isset($s['library_video_ids'])) {
+                // Filtra valores nulos o vacíos y convierte a int
+                $sections[$i]['library_video_ids'] = array_filter(array_map('intval', $s['library_video_ids']));
+            }
+        }
+        $request->merge(['sections' => $sections]);
+    }
     $data = $request->validate([
         'title'            => ['required','string','max:150'],
         'scheduled_at'     => ['required','date'],
@@ -250,6 +268,11 @@ public function store(Request $request)
         'sections.*.description'           => ['nullable','string'],
         'sections.*.video_url'             => ['nullable','url','max:255'],
         'sections.*.video_file'            => ['nullable','file','mimetypes:video/mp4','max:10240'],
+        'sections.*.library_video_ids'     => ['nullable','array'],
+        // 'sections.*.library_video_ids.*'   => ['integer','exists:library_videos,id'],
+        'sections.*.library_video_ids.*' => ['nullable', 'integer', 'exists:library_videos,id'],
+
+
         // 'sections.*.accepts_results'       => ['nullable','boolean'],
         // 'sections.*.result_type'           => ['nullable','string','max:30'],
         // 'sections.*.result_type' => [
@@ -263,6 +286,10 @@ public function store(Request $request)
         'sections.*.unit_id' => ['nullable','integer','exists:units,id'],
 
     ]);
+    foreach ($data['sections'] as &$s) {
+    $s['library_video_ids'] = array_map('intval', $s['library_video_ids'] ?? []);
+}
+unset($s);
 foreach (($data['sections'] ?? []) as $idx => $s) {
     $rt = $s['result_type'] ?? 'none';
     $unitId = $s['unit_id'] ?? null;
@@ -344,16 +371,51 @@ foreach ($data['sections'] as $idx => $s) {
             ->store("training-section-videos/coach-{$coachId}", 'public');
     }
 
-    $training->sections()->create([
-        'order'           => $order++,
-        'name'            => $s['name'],
-        'description'     => $s['description'] ?? null,
-        'video_url'       => $videoPath ? null : ($s['video_url'] ?? null),
-        'video_path'      => $videoPath,
-        'accepts_results' => $accepts ? 1 : 0,
-        'result_type'     => $accepts ? $rt : null,
-        'unit_id' => $accepts ? $unitId : null,
-    ]);
+    // $training->sections()->create([
+    //     'order'           => $order++,
+    //     'name'            => $s['name'],
+    //     'description'     => $s['description'] ?? null,
+    //     'video_url'       => $videoPath ? null : ($s['video_url'] ?? null),
+    //     'video_path'      => $videoPath,
+    //     'accepts_results' => $accepts ? 1 : 0,
+    //     'result_type'     => $accepts ? $rt : null,
+    //     'unit_id' => $accepts ? $unitId : null,
+    // ]);
+    $section = $training->sections()->create([
+    'order'           => $order++,
+    'name'            => $s['name'],
+    'description'     => $s['description'] ?? null,
+    'video_url'       => $videoPath ? null : ($s['video_url'] ?? null),
+    'video_path'      => $videoPath,
+    'accepts_results' => $accepts ? 1 : 0,
+    'result_type'     => $accepts ? $rt : null,
+    'unit_id'         => $accepts ? $unitId : null,
+]);
+
+// ✅ Attach videos de biblioteca (si vienen)
+$ids = array_values(array_unique($s['library_video_ids'] ?? []));
+
+if (!empty($ids)) {
+    // (Opcional recomendado) autorizar que sean globales o del coach
+    $allowed = \App\Models\LibraryVideo::query()
+        ->whereIn('id', $ids)
+        ->where('is_active', 1)
+        ->where(function ($q) use ($coachId) {
+            $q->whereNull('coach_id')->orWhere('coach_id', $coachId);
+        })
+        ->pluck('id')
+        ->all();
+
+    // order incremental dentro de la sección
+    $pivot = [];
+    $o = 1;
+    foreach ($allowed as $vid) {
+        $pivot[$vid] = ['order' => $o++]; // notes opcional si luego lo usas
+    }
+
+    $section->libraryVideos()->syncWithoutDetaching($pivot);
+}
+
 }
 
 
@@ -384,9 +446,6 @@ if ($training->visibility === 'assigned') {
     $training->assignments()->delete();
     \App\Models\GroupTrainingAssignment::where('training_session_id', $training->id)->delete();
 }
-
-
-
         return redirect()
             ->route('coach.trainings.index')
             ->with('success', 'Entrenamiento creado correctamente.');
@@ -394,70 +453,152 @@ if ($training->visibility === 'assigned') {
 }
 
 
+// public function edit(TrainingSession $training)
+//         {
+//             if ($training->coach_id !== auth()->id()) {
+//                 abort(403);
+//             }
+
+//             $training->load(['sections' => fn($q) => $q->orderBy('order')]);
+
+//             $clients = Client::where('coach_id', auth()->id())
+//                 ->where('is_active', 1)
+//                 ->orderBy('first_name')
+//                 ->get(['id','first_name','last_name','email']);
+
+//             $assignedClientIds = $training->assignedClients()->pluck('clients.id')->all();
+
+//             $assignedGroupIds = GroupTrainingAssignment::where('training_session_id', $training->id)
+//                 ->pluck('group_id')
+//                 ->all();
+
+//             $assignedGroups = \App\Models\Group::where('coach_id', auth()->id())
+//                 ->whereIn('id', $assignedGroupIds)
+//                 ->orderBy('name')
+//                 ->get(['id','name']);
+
+//             // ✅ NUEVO: tipos del coach
+//             $types = TrainingTypeCatalog::query()
+//                 ->where('coach_id', auth()->id())
+//                 ->where('is_active', true)
+//                 ->orderBy('name')
+//                 ->get(['id','name']);
+//             $goals = TrainingGoalCatalog::query()
+//                 ->where('coach_id', auth()->id())
+//                 ->where('is_active', true)
+//                 ->orderBy('name')
+//                 ->get(['id','name']);
+//             $units = Unit::query()
+//                 ->whereNull('coach_id')                 // por ahora solo globales
+//                 ->where('is_active', true)
+//                 ->orderBy('result_type')
+//                 ->orderBy('name')
+//                 ->get(['id','result_type','name','symbol','code']);
+
+//             return view('coach.trainings.edit', compact(
+//                 'training',
+//                 'clients',
+//                 'assignedClientIds',
+//                 'assignedGroups',
+//                 'goals',
+//                 'types', // ✅ NUEVO
+//                 'units'
+//             ));
+//         }
+
 public function edit(TrainingSession $training)
-        {
-            if ($training->coach_id !== auth()->id()) {
-                abort(403);
-            }
+{
+    if ($training->coach_id !== auth()->id()) {
+        abort(403);
+    }
 
-            $training->load([
-                'sections' => fn($q) => $q->orderBy('order'),
-                'sections.libraryVideos' => fn($q) => $q->orderBy('training_section_library_videos.order'),
-            ]);
+    $coachId = auth()->id();
 
-            $clients = Client::where('coach_id', auth()->id())
-                ->where('is_active', 1)
-                ->orderBy('first_name')
-                ->get(['id','first_name','last_name','email']);
+    // ✅ Secciones + videos de biblioteca ya guardados (ordenados por pivot.order)
+    $training->load([
+        'sections' => function ($q) {
+            $q->orderBy('order')
+              ->with(['libraryVideos' => function ($qq) {
+                  $qq->select([
+                      'library_videos.id',
+                      'library_videos.coach_id',
+                      'library_videos.name',
+                      'library_videos.youtube_url',
+                      'library_videos.youtube_id',
+                      'library_videos.thumbnail_url',
+                      'library_videos.training_type_catalog_id',
+                      'library_videos.is_active',
+                  ]);
+                  // el orderBy del pivot ya lo tienes en la relación ->orderBy(...)
+              }]);
+        },
+    ]);
 
-            $assignedClientIds = $training->assignedClients()->pluck('clients.id')->all();
+    $clients = Client::where('coach_id', $coachId)
+        ->where('is_active', 1)
+        ->orderBy('first_name')
+        ->get(['id','first_name','last_name','email']);
 
-            $assignedGroupIds = GroupTrainingAssignment::where('training_session_id', $training->id)
-                ->pluck('group_id')
-                ->all();
+    $assignedClientIds = $training->assignedClients()->pluck('clients.id')->all();
 
-            $assignedGroups = \App\Models\Group::where('coach_id', auth()->id())
-                ->whereIn('id', $assignedGroupIds)
-                ->orderBy('name')
-                ->get(['id','name']);
+    $assignedGroupIds = GroupTrainingAssignment::where('training_session_id', $training->id)
+        ->pluck('group_id')
+        ->all();
 
-            // ✅ NUEVO: tipos del coach
-            $types = TrainingTypeCatalog::query()
-                ->where('coach_id', auth()->id())
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id','name']);
-            $goals = TrainingGoalCatalog::query()
-                ->where('coach_id', auth()->id())
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id','name']);
-            $units = Unit::query()
-                ->whereNull('coach_id')                 // por ahora solo globales
-                ->where('is_active', true)
-                ->orderBy('result_type')
-                ->orderBy('name')
-                ->get(['id','result_type','name','symbol','code']);
+    $assignedGroups = \App\Models\Group::where('coach_id', $coachId)
+        ->whereIn('id', $assignedGroupIds)
+        ->orderBy('name')
+        ->get(['id','name']);
 
-            $libraryVideos = LibraryVideo::query()
-                ->visibleForCoach(auth()->id())
-                ->where('is_active', 1)
-                ->orderBy('name')
-                ->get(['id','name','youtube_url']);
+    $types = TrainingTypeCatalog::query()
+        ->where('coach_id', $coachId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id','name']);
 
-            return view('coach.trainings.edit', compact(
-                'training',
-                'clients',
-                'assignedClientIds',
-                'assignedGroups',
-                'goals',
-                'types', // ✅ NUEVO
-                'units',
-                'libraryVideos'
-            ));
-        }
+    $goals = TrainingGoalCatalog::query()
+        ->where('coach_id', $coachId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id','name']);
 
+    $units = Unit::query()
+        ->whereNull('coach_id')
+        ->where('is_active', true)
+        ->orderBy('result_type')
+        ->orderBy('name')
+        ->get(['id','result_type','name','symbol','code']);
 
+    // ✅ Mapa para hidratar pills por sección desde JS (si lo necesitas)
+    $preselectedLibraryBySection = $training->sections
+        ->mapWithKeys(function ($section) {
+            return [
+                (string) $section->id => $section->libraryVideos->map(function ($v) {
+                    return [
+                        'id'            => $v->id,
+                        'name'          => $v->name,
+                        'thumbnail_url' => $v->thumbnail_url,
+                        'youtube_id'    => $v->youtube_id,
+                        'youtube_url'   => $v->youtube_url,
+                        // pivot disponible si quieres mostrar orden/notes:
+                        'order'         => $v->pivot->order ?? null,
+                        'notes'         => $v->pivot->notes ?? null,
+                    ];
+                })->values()->all()
+            ];
+        });
+
+    return view('coach.trainings.edit', compact(
+        'training',
+        'clients',
+        'assignedClientIds',
+        'assignedGroups',
+        'goals',
+        'types',
+        'units',
+        'preselectedLibraryBySection'
+    ));
+}
 public function update(Request $request, TrainingSession $training)
 {
     abort_unless($training->coach_id === auth()->id(), 403);

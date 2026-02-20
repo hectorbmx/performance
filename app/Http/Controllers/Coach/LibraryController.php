@@ -87,4 +87,29 @@ class LibraryController extends Controller
 
         return null;
     }
+    public function search(Request $request)
+        {
+            $coachId = auth()->id();
+            $q = trim((string) $request->query('q', ''));
+
+            if (mb_strlen($q) < 2) {
+                return response()->json([]);
+            }
+
+            $videos = LibraryVideo::query()
+                ->visibleForCoach($coachId)
+                ->where('is_active', 1)
+                ->where(function ($qq) use ($q) {
+                    $qq->where('name', 'like', "%{$q}%")
+                    ->orWhere('id', $q)
+                    ->orWhere('youtube_id', $q);
+                })
+                ->orderBy('name')
+                ->limit(10)
+                ->get(['id','name','youtube_id']);
+
+            return response()->json($videos);
+        }
+
+
 }
