@@ -169,7 +169,38 @@
     <span>Sin resultado aún</span>
   </div>
 </ng-template>
+<div class="td-item-footer" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+        
+        <div class="td-video-buttons" *ngIf="section.videos && section.videos.length > 0" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <a *ngFor="let vid of section.videos" 
+             [href]="vid.youtube_url" 
+             target="_blank"
+             class="td-video-btn"
+             style="background-color: #ff0000; color: white; border-radius: 20px; padding: 6px 14px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 13px; font-weight: bold;">
+            <ion-icon name="logo-youtube"></ion-icon>
+            <span>{{ vid.name }}</span>
+          </a>
+        </div>
+        
+        <div class="td-item-actions" style="display: flex; justify-content: flex-start; border-top: 1px solid #333; padding-top: 10px;">
+          
+          <button class="td-link" type="button" *ngIf="section.accepts_results && !section.result" (click)="onAddResult(section)">
+            Registrar resultado
+          </button>
+          <button class="td-link" type="button" *ngIf="section.accepts_results && section.result" (click)="onEditResult(section)">
+            Editar resultado
+          </button>
 
+          <button class="td-link td-link-soft" type="button" 
+                  *ngIf="!section.accepts_results && !section.is_completed" 
+                  (click)="onMarkCompleted(section)">
+            Marcar completado
+          </button>
+        </div>
+      </div>
+
+      <div class="td-inline-form" *ngIf="section.accepts_results && expandedSectionId === section.id">
+        </div>
 
             <!-- Actions -->
   <div class="td-item-actions">
@@ -234,25 +265,31 @@
       Cancelar
     </button>
 
-<button
+<!-- <button
   class="td-btn-save"
   type="button"
   (click)="saveSectionResult(section)"
 >      Guardar
-    </button>
+    </button> -->
+    <button
+        class="td-btn-save"
+        type="button"
+        (click)="saveSectionResult(section)"
+        [disabled]="savingResult"
+      >
+        <ng-container *ngIf="savingResult">
+          <span class="spinner"></span> 
+          Enviando...
+        </ng-container>
+
+        <ng-container *ngIf="!savingResult">
+          Guardar
+        </ng-container>
+      </button>
   </div>
 </div>
 
 
-              <!-- Completar sección: SOLO si NO acepta resultados -->
-              <button
-                class="td-link td-link-soft"
-                type="button"
-                *ngIf="!section.accepts_results && !section.completed"
-                (click)="onMarkCompleted(section)"
-              >
-                Marcar completado
-              </button>
             </div>
 
           </article>

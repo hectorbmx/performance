@@ -57,12 +57,13 @@ export interface TrainingSectionDTO {
   order: number;
   unit: string | null;
   accepts_results: boolean;
-
+  videos: LibraryVideoDTO[];
   // ✅ Tipo real: lo que el coach eligió
   result_type: 'number' | 'time' | 'text' | 'bool' | 'json' | null;
+  
 
   completed: boolean;
-  
+  is_completed: boolean;
   // ✅ Resultado real (si existe)
   result: {
     value: any;
@@ -75,7 +76,15 @@ export interface TrainingSectionDTO {
     completed_at: string;
   } | null;
 }
-
+export interface LibraryVideoDTO {
+  id: number | null;
+  name: string;
+  youtube_url: string;
+  youtube_id?: string;
+  source: 'library' | 'direct';
+  order: number;
+  notes?: string | null;
+}
 export interface TrainingDetailDTO {
   assignment_id: number | null;
 
@@ -258,7 +267,8 @@ export class TrainingApiService {
 
     // ✅ Nuevo: result_type real (number|time|text|bool|json|null)
     result_type: sec.result_type ?? null,
-
+    videos: sec.videos ?? [],
+    is_completed: !!sec.is_completed, // Fuerza valor booleano
     // ✅ Nuevo: completado viene del backend (results o completions)
     completed: !!(sec.is_completed ?? sec.completed ?? r),
     unit: sec.unit_default ?? null,
@@ -350,7 +360,8 @@ const allowedTypes: ResultType[] = ['number', 'time', 'text', 'bool', 'json'];
     video_url: sec.video_url ?? null,
     accepts_results: !!sec.accepts_results,
     result_type: rt,
-
+    videos: sec.videos ?? [],
+is_completed: !!sec.is_completed, // Fuerza valor booleano
     // free no tiene results todavía
     completed: false,
     result: null,
@@ -433,5 +444,10 @@ async saveSectionResult(
 startFreeSession(sessionId: number): Promise<StartFreeResponse> {
   return this.api.post<StartFreeResponse>(`app/training-sessions/${sessionId}/start`, {});
 }
-
+updateAssignmentStatus(assignmentId: number, status: string): Promise<{ ok: boolean; message?: string }> {
+  return this.api.patch<{ ok: boolean; message?: string }>(
+    `app/training-assignments/${assignmentId}/status`,
+    { status }
+  );
+}
 }

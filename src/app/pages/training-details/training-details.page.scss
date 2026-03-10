@@ -624,3 +624,30 @@
 .td-btn-save:hover {
   filter: brightness(1.05);
 }
+.td-btn-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  /* Tus estilos actuales... */
+}
+
+/* Estado deshabilitado */
+.td-btn-save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* El círculo que gira */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

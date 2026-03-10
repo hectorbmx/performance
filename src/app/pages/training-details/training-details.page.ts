@@ -23,8 +23,7 @@ import {
   barbellOutline,
   playCircle,
   flashOutline,
-  fitnessOutline,
-} from 'ionicons/icons';
+  fitnessOutline, logoYoutube } from 'ionicons/icons';
 
 import {
   TrainingApiService,
@@ -68,7 +67,7 @@ export class TrainingDetailsPage implements OnInit {
 
 
   savingResult = false;
-
+  data: any;
   savingSectionId: number | null = null;
 
   // Este es el que usa el HTML (detailed)
@@ -83,14 +82,7 @@ export class TrainingDetailsPage implements OnInit {
     private sanitizer: DomSanitizer,
     
   ) {
-    addIcons({
-      timeOutline,
-      barbellOutline,
-      flashOutline,
-      fitnessOutline,
-      arrowBack,
-      playCircle,
-    });
+    addIcons({timeOutline,barbellOutline,flashOutline,fitnessOutline,logoYoutube,arrowBack,playCircle,});
   }
 
 async ngOnInit() {
@@ -313,56 +305,73 @@ cancelResultEdit() {
   this.editingResultValue = '';
   this.editingResultNotes = '';
 }
-
 async saveSectionResult(section: TrainingSectionDTO) {
-  console.log('[saveSectionResult] click', { sectionId: section?.id, assignmentId: this.assignmentId });
+  if (!this.assignmentId) return;
+  
+  // Forzamos a TS a tratarlo como número para la API
+  const assignmentId = this.assignmentId as number;
 
-  if (!this.assignmentId) {
-    console.warn('[saveSectionResult] STOP: no assignmentId');
+  const value = (this.editingResultValue ?? '').toString().trim();
+  if (!value) {
+    this.errorMsg = 'Captura un resultado.';
     return;
   }
 
-  const value = (this.editingResultValue ?? '').toString().trim();
-  console.log('[saveSectionResult] value raw/trim', { raw: this.editingResultValue, value });
-
-  if (!value) {
-    console.warn('[saveSectionResult] STOP: empty value');
-    this.errorMsg = 'Captura un resultado.';
+  if (!section.result_type) {
+    this.errorMsg = 'Esta sección no tiene tipo de resultado configurado.';
+    this.savingResult = false;
     return;
   }
 
   this.savingResult = true;
   this.errorMsg = null;
-if (!section.result_type) {
-  this.errorMsg = 'Esta sección no tiene tipo de resultado configurado.';
-  return;
-}
 
   try {
-    console.log('[saveSectionResult] calling API...');
-    const res = await this.trainingApi.saveSectionResult(this.assignmentId, section.id, {
-      
-      training_assignment_id: this.assignmentId,
+    const res = await this.trainingApi.saveSectionResult(assignmentId, section.id, {
+      training_assignment_id: assignmentId,
       result_type: section.result_type,
       value,
       notes: (this.editingResultNotes ?? '').trim() || null,
     });
 
-    console.log('[saveSectionResult] API response', res);
-
     if (!res?.ok) {
+      await this.loadDetails();
       this.errorMsg = res?.message ?? 'No se pudo guardar el resultado';
       return;
     }
 
+    // 1. Recargamos detalles (esto debería actualizar this.data internamente)
     await this.loadDetails();
+
+    // 2. Verificamos progreso usando la estructura de tu JSON
+    const progress = this.data?.progress;
+    const assignment = this.data?.assignment;
+
+    if (progress?.pct === 100 && assignment?.status !== 'completed') {
+      await this.completeTraining();
+    }
+
     this.cancelResultEdit();
   } catch (e: any) {
     console.error('[saveSectionResult] ERROR', e);
     this.errorMsg = e?.message ?? 'Error guardando resultado';
   } finally {
     this.savingResult = false;
-    console.log('[saveSectionResult] done');
+  }
+}
+async completeTraining() {
+  if (!this.assignmentId) return;
+
+  try {
+    console.log('¡Entrenamiento completado! Actualizando estado...');
+    const res = await this.trainingApi.updateAssignmentStatus(this.assignmentId as number, 'completed');
+    
+    if (res.ok && this.data?.assignment) {
+      this.data.assignment.status = 'completed'; 
+      console.log('Estado actualizado a completed en la UI');
+    }
+  } catch (e) {
+    console.error('No se pudo marcar como completado', e);
   }
 }
 onEditResult(section: TrainingSectionDTO) {

@@ -226,12 +226,26 @@ private async buildHeaders(
   }
 
 
-  private normalizeUrl(path: string): string {
-    // permite pasar "app/login" o "/app/login"
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    return `${this.baseUrl}/${cleanPath}`;
-  }
+  // private normalizeUrl(path: string): string {
+  //   // permite pasar "app/login" o "/app/login"
+  //   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    
+  //   return `${this.baseUrl}/${cleanPath}`;
+  // }
 
+  private normalizeUrl(path: string): string {
+  // 1. Si por error el path ya trae "api/v1" o "/api/v1", lo removemos 
+  // para que no se duplique con la baseUrl
+  let cleanPath = path.replace(/^\/?api\/v1\//, '');
+
+  // 2. Quitamos el slash inicial si existe
+  cleanPath = cleanPath.startsWith('/') ? cleanPath.slice(1) : cleanPath;
+  
+  // 3. Limpiamos la baseUrl de un posible slash final
+  const cleanBase = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl;
+
+  return `${cleanBase}/${cleanPath}`;
+}
   private normalizeError(err: unknown): Error {
     if (err instanceof HttpErrorResponse) {
       const msg =

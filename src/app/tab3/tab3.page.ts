@@ -64,7 +64,7 @@ type ProfileResponse = {
 })
 export class Tab3Page {
   loading = false;
-
+  isUploadingAvatar = false;
   vm: ProfileVM = {
     fullName: '—',
     roleLabel: 'ATHLETE',
@@ -160,16 +160,45 @@ export class Tab3Page {
 //   const blob = await resp.blob();
 //   return new File([blob], filename, { type: blob.type || 'image/jpeg' });
 // }
+// async changeAvatar() {
+//   try {
+//     // Web fallback (ionic serve)
+//     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+//     if (!isNative) {
+//       await this.pickAvatarFromBrowser();
+//       return;
+//     }
+
+//     // Native prompt (camera/gallery)
+//     const photo = await Camera.getPhoto({
+//       quality: 75,
+//       resultType: CameraResultType.Uri,
+//       source: CameraSource.Prompt,
+//       allowEditing: false,
+//       correctOrientation: true,
+//       saveToGallery: false,
+//     });
+
+//     if (!photo.webPath) return;
+
+//     const file = await this.fileFromWebPath(photo.webPath, `avatar_${Date.now()}.jpg`);
+//     await this.uploadAvatar(file);
+//   } catch (e) {
+//     console.error('changeAvatar failed', e);
+//   }
+// }
+
 async changeAvatar() {
   try {
-    // Web fallback (ionic serve)
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    
     if (!isNative) {
+      // Nota: Asegúrate de que pickAvatarFromBrowser también maneje el loader internamente
+      // o envuélvelo aquí si es necesario.
       await this.pickAvatarFromBrowser();
       return;
     }
 
-    // Native prompt (camera/gallery)
     const photo = await Camera.getPhoto({
       quality: 75,
       resultType: CameraResultType.Uri,
@@ -181,13 +210,19 @@ async changeAvatar() {
 
     if (!photo.webPath) return;
 
+    // Activamos el loader justo antes de procesar y subir
+    this.isUploadingAvatar = true;
+
     const file = await this.fileFromWebPath(photo.webPath, `avatar_${Date.now()}.jpg`);
     await this.uploadAvatar(file);
+
   } catch (e) {
     console.error('changeAvatar failed', e);
+  } finally {
+    // Apagamos el loader pase lo que pase
+    this.isUploadingAvatar = false;
   }
 }
-
 private async pickAvatarFromBrowser() {
   return new Promise<void>((resolve) => {
     const input = document.createElement('input');

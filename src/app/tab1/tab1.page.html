@@ -17,48 +17,56 @@
         </div>
       </div>
       <div class="notification-icon" (click)="openNotifications()">
-          <ion-icon name="notifications-outline"></ion-icon>
+  <ion-icon name="notifications-outline"></ion-icon>
 
-         <span class="notification-badge" *ngIf="notifCount() > 0">
-  {{ notifCount() }}
-</span>
-<ion-modal [isOpen]="isNotifOpen" (didDismiss)="isNotifOpen = false">
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>Notificaciones</ion-title>
-      <ion-buttons slot="end">
-        <ion-button (click)="isNotifOpen = false">Cerrar</ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
+  <span class="notification-badge" *ngIf="notifCount() > 0">
+    {{ notifCount() }}
+  </span>
 
-  <ion-content class="ion-padding">
-    <ng-container *ngIf="notifications.length > 0; else emptyState">
-      <ion-list lines="none">
-        <ion-item *ngFor="let n of notifications()" class="notif-item">
-          <ion-icon
-            slot="start"
-            [name]="iconFor(n.type)"
-            [color]="colorFor(n.type)"
-          ></ion-icon>
+  <ion-modal
+    [isOpen]="isNotifOpen"
+    (didDismiss)="isNotifOpen = false"
+    cssClass="notif-sheet"
+    [breakpoints]="[0, 0.35, 0.7, 1]"
+    [initialBreakpoint]="0.7"
+    [backdropBreakpoint]="0.35"
+    [handle]="true"
+  >
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Notificaciones</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="isNotifOpen = false">Cerrar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
 
-          <ion-label>
-            <h3 class="notif-title">{{ n.title }}</h3>
-            <p class="notif-message">{{ n.message }}</p>
-          </ion-label>
-        </ion-item>
-      </ion-list>
-    </ng-container>
+    <ion-content class="ion-padding">
+      <ng-container *ngIf="notifications().length > 0; else emptyState">
+        <ion-list lines="none">
+          <ion-item *ngFor="let n of notifications()" class="notif-item">
+            <ion-icon
+              slot="start"
+              [name]="iconFor(n.type)"
+              [color]="colorFor(n.type)"
+            ></ion-icon>
 
-    <ng-template #emptyState>
-      <div class="empty">
-        <ion-text color="medium">No tienes notificaciones.</ion-text>
-      </div>
-    </ng-template>
-  </ion-content>
-</ion-modal>
+            <ion-label>
+              <h3 class="notif-title">{{ n.title }}</h3>
+              <p class="notif-message">{{ n.message }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ng-container>
 
-      </div>
+      <ng-template #emptyState>
+        <div class="empty">
+          <ion-text color="medium">No tienes notificaciones.</ion-text>
+        </div>
+      </ng-template>
+    </ion-content>
+  </ion-modal>
+</div>
 
       <!-- <div class="notification-icon">
         <ion-icon name="notifications-outline"></ion-icon>
@@ -81,53 +89,56 @@
       </div>
     </div>
 
-    <!-- Today's Workout Card -->
-    <div class="workout-card" *ngIf="today">
-      <div class="workout-image">
-        <!-- <img 
-          src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80" 
-          alt="Workout"
-        /> -->
-        <!-- <img src="{{ today.training_session.cover_image || 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80' }}" alt="Workout" /> -->
+ 
+    <div class="workout-card-container" *ngIf="todayItems.length > 0">
+  <div class="workout-card" *ngFor="let item of todayItems" style="margin-bottom: 15px;">
+    <div class="workout-image">
       <img
-        [src]="today?.training_session?.cover_image || fallbackCover"
+        [src]="item?.training_session?.cover_image || fallbackCover"
         alt="Workout"
         (error)="onImgError($event)"
       />
-
-        <div class="live-badge">LIVE SESSION</div>
-      </div>
-      
-      <div class="workout-info">
-        <h2 class="workout-title">{{ today.training_session.title || 'Power HIIT' }}</h2>
-        
-        <div class="workout-meta">
-          <div class="meta-item">
-            <ion-icon name="time-outline"></ion-icon>
-            <span>{{ today.training_session.duration_minutes || 45 }} mins</span>
-          </div>
-          <span class="meta-separator">•</span>
-          <div class="meta-item">
-            <span>{{ today.training_session.level || 'Advanced' }}</span>
-          </div>
-        </div>
-
-        <p class="workout-description">
-          {{ today.training_session.goal || 'High-energy interval session designed for max burn.' }}
-        </p>
-
-        <button class="start-btn" (click)="startToday()">
-          <ion-icon name="play"></ion-icon>
-          VER ENTRENAMIENTO
-        </button>
+      <div class="live-badge" [ngClass]="item.source">
+        {{ item.source === 'personal' ? 'PERSONAL' : (item.group ? 'GRUPAL' : 'LIBRE') }}
       </div>
     </div>
+    
+    <div class="workout-info">
+      <h2 class="workout-title">{{ item.training_session.title }}</h2>
+      
+      <div class="workout-meta">
+        <div class="meta-item">
+          <ion-icon name="time-outline"></ion-icon>
+          <span>{{ item.training_session.duration_minutes }} mins</span>
+        </div>
+        <span class="meta-separator">•</span>
+        <div class="meta-item">
+          <span>{{ item.training_session.level }}</span>
+        </div>
+      </div>
+
+      <p class="workout-description">
+        {{ item.training_session.goal }}
+      </p>
+
+      <button class="start-btn" (click)="startWorkout(item)">
+        <ion-icon name="play"></ion-icon>
+        VER ENTRENAMIENTO
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="empty-state" *ngIf="todayItems.length === 0 && !loading">
+  <ion-icon name="barbell-outline"></ion-icon>
+  <p>No hay entrenamientos para este día</p>
+</div>
 
     <!-- Empty State -->
-    <div class="empty-state" *ngIf="!today && !loading">
+    <!-- <div class="empty-state" *ngIf="!today && !loading">
       <ion-icon name="barbell-outline"></ion-icon>
       <p>No workout scheduled for today</p>
-    </div>
+    </div> -->
 
     <!-- Daily Progress -->
     <div class="section-header">

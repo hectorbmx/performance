@@ -649,3 +649,33 @@
   display: grid;
   place-items: center;
 }
+ion-modal.notif-sheet {
+  --border-radius: 18px;
+}
+
+ion-modal.notif-sheet::part(content) {
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+}
+.workout-scroll-wrapper {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 16px;
+  padding: 10px 0;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none; /* Oculta barra para un look más limpio */
+  }
+}
+
+.slider-item {
+  min-width: 85%; /* Permite ver un pedazo de la siguiente tarjeta */
+  scroll-snap-align: center;
+  margin: 0;
+}
+
+.free-badge {
+  background: #2dd36f !important; /* Verde para diferenciar del azul del LIVE */
+}

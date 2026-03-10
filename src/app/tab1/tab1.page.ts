@@ -22,7 +22,7 @@ import {
   notificationsOutline,
   timeOutline,
   barbellOutline,
-  play, walkOutline, flameOutline, flashOutline, calendarOutline } from 'ionicons/icons';
+  play, walkOutline, flameOutline, flashOutline, calendarOutline, notificationsOffOutline } from 'ionicons/icons';
 
 import { TrainingApiService, TrainingFeedItemDTO } from '../services/training-api.service';
 import { ApiService } from '../services/api.service';
@@ -70,6 +70,7 @@ export class Tab1Page {
 
   items: TrainingFeedItemDTO[] = [];
   today: TrainingFeedItemDTO | null = null;
+  todayItems: TrainingFeedItemDTO[] = [];
   upcoming: TrainingFeedItemDTO[] = [];
   mode: 'assigned' | 'free' = 'assigned';
   sessionId: number | null = null;
@@ -93,18 +94,19 @@ goals = {
 readonly CIRC = 2 * Math.PI * 40; // r=40
 
 healthLoading = false;
-
+notifEvent: any;
   constructor(
     private trainingApi: TrainingApiService,
     private api: ApiService,
     private auth: AuthService,
     private router: Router, // Inyectar Router
   ) {
-    addIcons({notificationsOutline,timeOutline,play,barbellOutline,walkOutline,flameOutline,flashOutline,calendarOutline,});
+    addIcons({notificationsOffOutline,timeOutline,play,barbellOutline,walkOutline,flameOutline,flashOutline,calendarOutline,notificationsOutline,});
 
     this.buildDays();
   }
   openNotifications() {
+    
     this.isNotifOpen = true;
   }
     iconFor(type: AppNotificationDTO['type']) {
@@ -252,6 +254,29 @@ healthLoading = false;
     this.computeTodayUpcoming();
   }
 
+// private computeTodayUpcoming() {
+//   const sorted = [...this.items].sort((a, b) => {
+//     const ad = a.scheduled_for ?? '9999-12-31';
+//     const bd = b.scheduled_for ?? '9999-12-31';
+//     return ad.localeCompare(bd);
+//   });
+
+//   const baseDate = this.selectedDate; // YYYY-MM-DD
+
+//   // 1) TODAY: SOLO match exacto del día seleccionado
+//   this.today = baseDate
+//     ? (sorted.find(x => x.scheduled_for === baseDate) ?? null)
+//     : null;
+
+//   // 2) UPCOMING: SOLO días futuros respecto a la fecha seleccionada
+//   // (si baseDate no existe, upcoming vacío)
+//   this.upcoming = baseDate
+//     ? sorted
+//         .filter(x => !!x.scheduled_for && x.scheduled_for > baseDate)
+//         .slice(0, 2)
+//     : [];
+// }
+
 private computeTodayUpcoming() {
   const sorted = [...this.items].sort((a, b) => {
     const ad = a.scheduled_for ?? '9999-12-31';
@@ -261,13 +286,12 @@ private computeTodayUpcoming() {
 
   const baseDate = this.selectedDate; // YYYY-MM-DD
 
-  // 1) TODAY: SOLO match exacto del día seleccionado
-  this.today = baseDate
-    ? (sorted.find(x => x.scheduled_for === baseDate) ?? null)
-    : null;
+  // 1) TODAY: Filtramos TODOS los que coincidan con la fecha, no solo el primero
+  this.todayItems = baseDate
+    ? sorted.filter(x => x.scheduled_for === baseDate)
+    : [];
 
-  // 2) UPCOMING: SOLO días futuros respecto a la fecha seleccionada
-  // (si baseDate no existe, upcoming vacío)
+  // 2) UPCOMING: Días futuros
   this.upcoming = baseDate
     ? sorted
         .filter(x => !!x.scheduled_for && x.scheduled_for > baseDate)
@@ -275,7 +299,20 @@ private computeTodayUpcoming() {
     : [];
 }
 
+// Actualiza también el método startToday para que acepte un item específico
+async startWorkout(item: TrainingFeedItemDTO) {
+  const assignmentId = item?.assignment_id ?? null;
+  const sessionId = item?.training_session?.id ?? null;
 
+  if (assignmentId) {
+    await this.router.navigate(['/training-details', assignmentId]);
+    return;
+  }
+  if (sessionId) {
+    await this.router.navigate(['/training-details/free', sessionId]);
+    return;
+  }
+}
 
   async load(event?: any) {
   this.loading = true;
