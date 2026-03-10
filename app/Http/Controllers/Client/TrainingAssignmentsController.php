@@ -13,121 +13,128 @@ use Illuminate\Support\Facades\DB;
 class TrainingAssignmentsController extends Controller
 {
     public function show(Request $request, TrainingAssignment $assignment)
-{
-    $user = $request->user();
-    $clientId = $user->client_id ?? null;
+    {
+        $user = $request->user();
+        $clientId = $user->client_id ?? null;
 
-    if (!$clientId) {
-        return response()->json(['ok' => false, 'message' => 'Cliente no identificado.'], 422);
-    }
-
-    if ((int)$assignment->client_id !== (int)$clientId) {
-        return response()->json(['ok' => false, 'message' => 'No autorizado.'], 403);
-    }
-
-    // Carga training_session
-    $session = $assignment->trainingSession()->first();
-
-    $sections = TrainingSection::query()
-        ->where('training_session_id', $assignment->training_session_id)
-        ->orderBy('order')
-        ->get(['id', 'training_session_id', 'order', 'name', 'description', 'video_url', 'accepts_results', 'result_type']);
-
-    // ✅ Con UNIQUE ya es 1 fila por sección (no historial)
-    $resultsBySection = TrainingSectionResult::query()
-        ->where('training_assignment_id', $assignment->id)
-        ->get()
-        ->keyBy('training_section_id');
-
-    // ✅ completions solo para secciones sin resultados
-    $completionsBySection = DB::table('training_section_completions')
-        ->where('training_assignment_id', $assignment->id)
-        ->get()
-        ->keyBy('training_section_id');
-
-    $sectionsPayload = $sections->map(function ($s) use ($resultsBySection, $completionsBySection) {
-        $r = $resultsBySection->get($s->id);
-
-        $isCompleted = false;
-        if ((bool)$s->accepts_results) {
-            $isCompleted = (bool)$r;
-        } else {
-            $isCompleted = (bool)$completionsBySection->get($s->id);
+        if (!$clientId) {
+            return response()->json(['ok' => false, 'message' => 'Cliente no identificado.'], 422);
         }
 
-        return [
-            'id' => $s->id,
-            'order' => $s->order,
-            'name' => $s->name,
-            'description' => $s->description,
-            'video_url' => $s->video_url,
+        if ((int)$assignment->client_id !== (int)$clientId) {
+            return response()->json(['ok' => false, 'message' => 'No autorizado.'], 403);
+        }
 
-            'accepts_results' => (bool)$s->accepts_results,
-            // ✅ ESTE es el tipo que eligió el coach
-            'result_type' => $s->result_type, // number|time|text|bool|json|null
+        $session = $assignment->trainingSession()->first();
 
-            'is_completed' => $isCompleted,
+        // 1. Cargamos secciones con libraryVideos (usamos get() sin filtros para asegurar que traiga los IDs de relación)
+        $sections = TrainingSection::query()
+            ->where('training_session_id', $assignment->training_session_id)
+            ->with(['libraryVideos']) 
+            ->orderBy('order')
+            ->get();
 
-            // ✅ Resultado si existe (solo si accepts_results=1)
-            'result' => $r ? [
-                'id' => $r->id,
-                'result_type' => $r->result_type,
-                'value' => method_exists($r, 'normalizedValue')
-                    ? $r->normalizedValue()
-                    : ($r->value_number ?? $r->value_time_seconds ?? $r->value_text ?? $r->value_bool ?? $r->value_json),
-                'unit' => $r->unit,
-                'notes' => $r->notes,
-                'recorded_at' => optional($r->recorded_at)->toISOString(),
-                'updated_at' => optional($r->updated_at)->toISOString(),
-            ] : null,
-        ];
-    })->values();
+        $resultsBySection = TrainingSectionResult::query()
+            ->where('training_assignment_id', $assignment->id)
+            ->get()
+            ->keyBy('training_section_id');
 
-    // Progreso real: completadas (por results o completions)
-    $sectionsTotal = $sections->count();
-    $sectionsWithResults = $resultsBySection->count();
-    $sectionsCompletedNoResults = $completionsBySection->count();
+        $completionsBySection = DB::table('training_section_completions')
+            ->where('training_assignment_id', $assignment->id)
+            ->get()
+            ->keyBy('training_section_id');
 
-    $sectionsCompleted = $sectionsWithResults + $sectionsCompletedNoResults;
-    if ($sectionsCompleted > $sectionsTotal) $sectionsCompleted = $sectionsTotal;
+        // 2. Construcción del Payload Unificado
+        $sectionsPayload = $sections->map(function ($s) use ($resultsBySection, $completionsBySection) {
+            $r = $resultsBySection->get($s->id);
 
-    $pct = $sectionsTotal > 0 ? (int) round(($sectionsCompleted / $sectionsTotal) * 100) : 0;
+            // --- Lógica de Unificación de Videos ---
+            $allVideos = collect();
 
-    $coverUrl = $session?->cover_image
-        ? url(Storage::disk('public')->url($session->cover_image))
-        : null;
+            // Opción A: Video directo (el de la columna video_url)
+            if (!empty($s->video_url)) {
+                $allVideos->push([
+                    'id' => null,
+                    'name' => 'Video de Referencia',
+                    'youtube_url' => $s->video_url,
+                    'source' => 'direct_url',
+                    'order' => 0
+                ]);
+            }
 
-    return response()->json([
-        'ok' => true,
-        'data' => [
-            'assignment' => [
-                'id' => $assignment->id,
-                'status' => $assignment->status,
-                'scheduled_for' => $assignment->scheduled_for?->format('Y-m-d'),
+            // Opción B: Videos de la Librería (Relación belongsToMany)
+            foreach ($s->libraryVideos as $lv) {
+                $allVideos->push([
+                    'id' => $lv->id,
+                    'name' => $lv->name,
+                    'youtube_url' => $lv->youtube_url,
+                    'youtube_id' => $lv->youtube_id,
+                    'source' => 'library',
+                    'order' => $lv->pivot->order ?? 0,
+                    'notes' => $lv->pivot->notes ?? null,
+                ]);
+            }
+
+            // Ordenar por el campo order (opcional)
+            $sortedVideos = $allVideos->sortBy('order')->values();
+
+            $isCompleted = (bool)$s->accepts_results 
+                ? (bool)$r 
+                : (bool)$completionsBySection->get($s->id);
+
+            return [
+                'id' => $s->id,
+                'order' => $s->order,
+                'name' => $s->name,
+                'description' => $s->description,
+                
+                // ✅ Aquí enviamos todos los videos unificados para tus botones rojos
+                'videos' => $sortedVideos,
+
+                'accepts_results' => (bool)$s->accepts_results,
+                'result_type' => $s->result_type,
+                'is_completed' => $isCompleted,
+                'result' => $r ? [
+                    'id' => $r->id,
+                    'value' => method_exists($r, 'normalizedValue') ? $r->normalizedValue() : $r->value_text,
+                    'unit' => $r->unit,
+                    'notes' => $r->notes,
+                ] : null,
+            ];
+        })->values();
+
+        // 3. Cálculos de progreso
+        $sectionsTotal = $sections->count();
+        $sectionsCompleted = $resultsBySection->count() + $completionsBySection->count();
+        if ($sectionsCompleted > $sectionsTotal) $sectionsCompleted = $sectionsTotal;
+        $pct = $sectionsTotal > 0 ? (int) round(($sectionsCompleted / $sectionsTotal) * 100) : 0;
+
+        $coverUrl = $session?->cover_image ? url(Storage::disk('public')->url($session->cover_image)) : null;
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'assignment' => [
+                    'id' => $assignment->id,
+                    'status' => $assignment->status,
+                    'scheduled_for' => $assignment->scheduled_for?->format('Y-m-d'),
+                ],
+                'training_session' => $session ? [
+                    'id' => $session->id,
+                    'title' => $session->title,
+                    'cover_image' => $coverUrl,
+                    'notes' => $session->notes,
+                ] : null,
+                'sections' => $sectionsPayload,
+                'progress' => [
+                    'sections_total' => $sectionsTotal,
+                    'sections_completed' => $sectionsCompleted,
+                    'pct' => $pct,
+                ],
             ],
-            'training_session' => $session ? [
-                'id' => $session->id,
-                'coach_id' => $session->coach_id,
-                'title' => $session->title,
-                'cover_image' => $coverUrl,
-                'duration_minutes' => $session->duration_minutes,
-                'level' => $session->level,
-                'goal' => $session->goal,
-                'type' => $session->type,
-                'visibility' => $session->visibility,
-                'notes' => $session->notes,
-            ] : null,
-            'sections' => $sectionsPayload,
-            'progress' => [
-                'sections_total' => $sectionsTotal,
-                'sections_completed' => $sectionsCompleted,
-                'pct' => $pct,
-            ],
-        ],
-    ]);
-}
-
-    public function start(Request $request, TrainingAssignment $assignment)
+        ]);
+    }
+        public function start(Request $request, TrainingAssignment $assignment)
     {
         $user = $request->user();
         $clientId = $user->client_id ?? null;

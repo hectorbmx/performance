@@ -513,6 +513,11 @@ public function edit(TrainingSession $training)
     }
 
     $coachId = auth()->id();
+    $libraryVideos = \App\Models\LibraryVideo::query()
+    ->where('coach_id', $coachId)
+    ->where('is_active', true)
+    ->orderBy('name')
+    ->get(['id','name','youtube_url','youtube_id','thumbnail_url','training_type_catalog_id']);
 
     // ✅ Secciones + videos de biblioteca ya guardados (ordenados por pivot.order)
     $training->load([
@@ -569,6 +574,17 @@ public function edit(TrainingSession $training)
         ->orderBy('name')
         ->get(['id','result_type','name','symbol','code']);
 
+   $libraryVideos = $libraryVideos->map(function ($video) {
+    return [
+        'id' => $video->id,
+        'name' => $video->name,
+        'youtube_url' => $video->youtube_url,
+        'youtube_id' => $video->youtube_id,
+        'thumbnail_url' => $video->thumbnail_url,
+        'training_type_catalog_id' => $video->training_type_catalog_id,
+    ];
+})->values();
+
     // ✅ Mapa para hidratar pills por sección desde JS (si lo necesitas)
     $preselectedLibraryBySection = $training->sections
         ->mapWithKeys(function ($section) {
@@ -596,6 +612,7 @@ public function edit(TrainingSession $training)
         'goals',
         'types',
         'units',
+        'libraryVideos',
         'preselectedLibraryBySection'
     ));
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
 USE App\Http\Controllers\Api\V1\App\Client\TrainingSessionsController;
 use App\Models\UserApp;
+use App\Http\Controllers\Api\V1\App\Client\LibraryVideoController;
 
 
 /*
@@ -27,6 +28,10 @@ use App\Models\UserApp;
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/billing/coach/checkout', [BillingController::class, 'checkout']);
     Route::post('/billing/client/checkout', [BillingController::class, 'clientCheckout']);
+       //para ver videos
+        Route::get('library/videos', [LibraryVideoController::class, 'index']);
+        Route::get('library/videos/{video}', [LibraryVideoController::class, 'show']);
+        Route::get('training/catalog',[LibraryVideoController::class, 'catalog']);
 
 });
 Route::prefix('v1')->group(function () {
@@ -71,8 +76,10 @@ Route::prefix('v1')->group(function () {
 
         //obtiene la foto del atleta
           Route::get('client/profile', [ProfileController::class, 'show']);
-    //actualiza la foto desde la app movil
+        //actualiza la foto desde la app movil
           Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
+
+     
 
         // =========================
         // ATHLETE
@@ -81,6 +88,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/groups', [GroupController::class, 'index']);
             Route::get('/trainings', [TrainingController::class, 'index']);
             Route::get('/trainings/{training}', [TrainingController::class, 'show']);
+            Route::patch('trainings/assignments/{id}/status', [TrainingsController::class, 'updateStatus']);
         });
     });
 });

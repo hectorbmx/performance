@@ -297,14 +297,12 @@
     </div>
 
     {{-- Exponer unidades a JS (para secciones nuevas y cambios de tipo) --}}
-    <script>
-        window.__units = @json($units);
-        window.__libraryVideos = @json(($libraryVideos ?? collect())->map(fn ($video) => [
-            'id' => $video->id,
-            'name' => $video->name,
-            'youtube_url' => $video->youtube_url,
-        ])->values());
-    </script>
+
+<script>
+  window.__units = @json($units);
+  window.__libraryVideos = @json($libraryVideos);
+  window.__preselectedLibraryBySection = @json($preselectedLibraryBySection);
+</script>
 
     <div id="sections" class="mt-4 space-y-4">
         @foreach($training->sections as $i => $s)
@@ -462,9 +460,9 @@
                                     <input type="checkbox"
                                            class="rounded border-gray-300 secLibraryVideo"
                                            name="sections[{{ $i }}][library_video_ids][]"
-                                           value="{{ $video->id }}"
-                                           @checked(in_array($video->id, $selectedLibraryVideoIds))>
-                                    <span>{{ $video->name }}</span>
+                                           value="{{ $video['id'] }}"
+                                           @checked(in_array($video['id'], $selectedLibraryVideoIds))>
+                                    <span>{{ $video['name'] }}</span>
                                 </label>
                             @empty
                                 <p class="text-xs text-gray-500">No hay videos en tu biblioteca.</p>
