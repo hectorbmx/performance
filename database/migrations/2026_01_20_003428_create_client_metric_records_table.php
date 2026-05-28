@@ -39,8 +39,17 @@ return new class extends Migration
                 ->onDelete('cascade');
 
             // Para "último valor por métrica" y listados por fecha
-            $table->index(['client_id', 'training_metric_id', 'recorded_at']);
-            $table->index(['training_metric_id', 'recorded_at']);
+            // $table->index(['client_id', 'training_metric_id', 'recorded_at']);
+            // $table->index(['training_metric_id', 'recorded_at']);
+            $table->index(
+    ['client_id', 'training_metric_id', 'recorded_at'],
+    'cmr_client_metric_date_idx'
+);
+
+$table->index(
+    ['training_metric_id', 'recorded_at'],
+    'cmr_metric_date_idx'
+);
         });
     }
 
