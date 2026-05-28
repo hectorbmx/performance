@@ -2,29 +2,47 @@
 
 namespace Database\Seeders;
 
+use App\Models\TrainingGoalCatalog;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class TrainingGoalCatalogSeeder extends Seeder
 {
     public function run(): void
     {
+        $coachId = 1;
+
         $rows = [
-            ['key' => 'strength',  'name' => 'Fuerza'],
-            ['key' => 'cardio',    'name' => 'Cardio'],
-            ['key' => 'technique', 'name' => 'Técnica'],
-            ['key' => 'mobility',  'name' => 'Movilidad'],
-            ['key' => 'mixed',     'name' => 'Mixto'],
+            [
+                'name' => 'Fuerza',
+                'description' => 'Entrenamientos enfocados en fuerza',
+            ],
+            [
+                'name' => 'Cardio',
+                'description' => 'Entrenamientos cardiovasculares',
+            ],
+            [
+                'name' => 'Técnica',
+                'description' => 'Trabajo técnico y habilidades',
+            ],
+            [
+                'name' => 'Movilidad',
+                'description' => 'Movilidad y recuperación',
+            ],
+            [
+                'name' => 'Mixto',
+                'description' => 'Entrenamiento combinado',
+            ],
         ];
 
-        foreach ($rows as $r) {
-            DB::table('training_goal_catalogs')->updateOrInsert(
-                ['key' => $r['key']],
+        foreach ($rows as $row) {
+            TrainingGoalCatalog::updateOrCreate(
                 [
-                    'name' => $r['name'],
+                    'coach_id' => $coachId,
+                    'name' => $row['name'],
+                ],
+                [
+                    'description' => $row['description'],
                     'is_active' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]
             );
         }
