@@ -11,8 +11,9 @@ use App\Http\Controllers\Coach\DashboardController as CoachDashboardController;
 use App\Http\Controllers\Coach\ClientController as CoachClientController;
 use App\Http\Controllers\Coach\CoachClientPlanController;
 use App\Http\Controllers\Coach\CoachClientMembershipController;
+use App\Http\Controllers\Coach\ClientMembershipStripeCheckoutController;
+use App\Http\Controllers\Coach\StripeConnectController;
 use App\Http\Controllers\Coach\ClientPaymentController;
-use App\Http\Controllers\Coach\TrainingController;
 use App\Models\CoachSubscription;
 use App\Http\Controllers\Coach\TrainingSessionController;
 use App\Http\Controllers\Coach\GroupClientController;
@@ -83,7 +84,6 @@ Route::middleware(['auth', 'admin'])
         Route::post('subscriptions', [CoachSubscriptionController::class, 'store'])->name('subscriptions.store');
         Route::get('subscriptions', [CoachSubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::resource('payments', PaymentController::class);
-        Route::post('/plans', [MembershipPlanController::class, 'store'])->name('plans.store');   
     });
 //rutas coach para setear sus metricas preferidas
  
@@ -96,7 +96,6 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
     //     });
    Route::get('groups/search', [GroupController::class, 'search'])->name('groups.search'); // ✅ NUEVO: buscador de grupos
 
-    Route::resource('groups', GroupClientController::class);
     Route::resource('groups', GroupController::class);
     
     Route::get('clients/search', [CoachClientController::class, 'search'])->name('clients.search');
@@ -214,6 +213,18 @@ Route::prefix('coach')->name('coach.')->group(function () {
         ->middleware(['auth', 'role:coach', 'coach.subscription'])
         ->except(['show']);
 
+    Route::get('stripe/connect', [StripeConnectController::class, 'start'])
+        ->middleware(['auth', 'role:coach', 'coach.subscription'])
+        ->name('stripe-connect.start');
+
+    Route::get('stripe/connect/refresh', [StripeConnectController::class, 'refresh'])
+        ->middleware(['auth', 'role:coach', 'coach.subscription'])
+        ->name('stripe-connect.refresh');
+
+    Route::get('stripe/connect/return', [StripeConnectController::class, 'return'])
+        ->middleware(['auth', 'role:coach', 'coach.subscription'])
+        ->name('stripe-connect.return');
+
             // Rutas para asignar membresías a clientes
     Route::get('clients/{client}/assign-membership', [CoachClientMembershipController::class, 'create'])
         ->middleware(['auth', 'role:coach', 'coach.subscription'])
@@ -232,14 +243,12 @@ Route::prefix('coach')->name('coach.')->group(function () {
         ->middleware(['auth', 'role:coach', 'coach.subscription'])
         ->name('client-payments.store');
 
+    Route::post('memberships/{membership}/stripe-checkout', [ClientMembershipStripeCheckoutController::class, 'store'])
+        ->middleware(['auth', 'role:coach', 'coach.subscription'])
+        ->name('client-memberships.stripe-checkout');
+
   Route::delete('client-memberships/{membership}', [CoachClientMembershipController::class, 'destroy'])
         ->name('client-memberships.destroy');
-
-
-
-    // Rutas de Trainings
-    Route::resource('trainings', TrainingController::class)
-        ->middleware(['auth', 'role:coach', 'coach.subscription']);
 });
 Route::middleware(['auth', 'role:coach'])
     ->prefix('coach')
@@ -247,6 +256,8 @@ Route::middleware(['auth', 'role:coach'])
     ->group(function () {
 
         Route::resource('trainings', TrainingSessionController::class)
+            ->except(['show'])
+            ->middleware(['coach.subscription'])
             ->parameters(['trainings' => 'training']); // opcional
     });
 Route::get('/dashboard', function () {

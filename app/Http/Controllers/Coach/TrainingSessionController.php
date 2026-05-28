@@ -120,9 +120,15 @@ public function create(Request $request)
         ->orderBy('name')
         ->get(['id','result_type','name','symbol','code']);
 
+    $libraryVideos = LibraryVideo::query()
+        ->visibleForCoach($coachId)
+        ->where('is_active', true)
+        ->orderByDesc('id')
+        ->limit(3)
+        ->get(['id','name','thumbnail_url','youtube_id','training_type_catalog_id']);
 
 
-return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups','units'));
+return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups','units','libraryVideos'));
 
 }
 

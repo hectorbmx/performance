@@ -34,6 +34,9 @@ return [
         'secret' => env('STRIPE_SECRET'),
         'key' => env('STRIPE_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'connect_webhook_secret' => env('STRIPE_CONNECT_WEBHOOK_SECRET'),
+        'connect_account_type' => env('STRIPE_CONNECT_ACCOUNT_TYPE', 'express'),
+        'application_fee_percent' => env('STRIPE_APPLICATION_FEE_PERCENT'),
     ],
 
 

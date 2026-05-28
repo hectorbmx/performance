@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Coach;
 
 use App\Http\Controllers\Controller;
 use App\Models\CoachClientPlan;
+use App\Services\Billing\StripeConnectService;
 use Illuminate\Http\Request;
 
 class CoachClientPlanController extends Controller
@@ -23,20 +24,30 @@ class CoachClientPlanController extends Controller
         return view('coach.membresias.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, StripeConnectService $connect)
     {
         // Validación temporal, luego crearemos el FormRequest
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'currency' => 'nullable|string|size:3',
             'billing_cycle_days' => 'required|integer|min:1',
+            'reminder_days_before' => 'nullable|integer|min:1|max:365',
+            'grace_days' => 'nullable|integer|min:0|max:365',
             'status' => 'required|in:active,inactive',
         ]);
 
         $validated['coach_id'] = auth()->id();
+        $validated['currency'] = strtolower($validated['currency'] ?? 'mxn');
+        $validated['reminder_days_before'] = $validated['reminder_days_before'] ?? 5;
+        $validated['grace_days'] = $validated['grace_days'] ?? 0;
 
-        CoachClientPlan::create($validated);
+        $plan = CoachClientPlan::create($validated);
+
+        if (auth()->user()->coachProfile?->stripe_charges_enabled) {
+            $connect->ensurePlanPrice($plan);
+        }
 
         return redirect()->route('coach.membresias.index')
             ->with('success', 'Plan creado exitosamente.');
@@ -52,7 +63,7 @@ class CoachClientPlanController extends Controller
         return view('coach.membresias.edit', compact('membresia'));
     }
 
-    public function update(Request $request, CoachClientPlan $membresia)
+    public function update(Request $request, CoachClientPlan $membresia, StripeConnectService $connect)
     {
         // Verificar que el plan pertenezca al coach autenticado
         if ($membresia->coach_id !== auth()->id()) {
@@ -64,11 +75,29 @@ class CoachClientPlanController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'currency' => 'nullable|string|size:3',
             'billing_cycle_days' => 'required|integer|min:1',
+            'reminder_days_before' => 'nullable|integer|min:1|max:365',
+            'grace_days' => 'nullable|integer|min:0|max:365',
             'status' => 'required|in:active,inactive',
         ]);
 
+        $validated['currency'] = strtolower($validated['currency'] ?? ($membresia->currency ?: 'mxn'));
+        $validated['reminder_days_before'] = $validated['reminder_days_before'] ?? 5;
+        $validated['grace_days'] = $validated['grace_days'] ?? 0;
+        $priceChanged = (float) $membresia->price !== (float) $validated['price']
+            || (int) $membresia->billing_cycle_days !== (int) $validated['billing_cycle_days']
+            || strtolower($membresia->currency ?: 'mxn') !== $validated['currency'];
+
+        if ($priceChanged) {
+            $validated['stripe_price_id'] = null;
+        }
+
         $membresia->update($validated);
+
+        if (auth()->user()->coachProfile?->stripe_charges_enabled) {
+            $connect->ensurePlanPrice($membresia->fresh());
+        }
 
         return redirect()->route('coach.membresias.index')
             ->with('success', 'Plan actualizado exitosamente.');

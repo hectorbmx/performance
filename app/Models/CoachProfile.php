@@ -16,6 +16,11 @@ class CoachProfile extends Model
         'user_id',
         'display_name',
         'phone',
+        'stripe_account_id',
+        'stripe_charges_enabled',
+        'stripe_payouts_enabled',
+        'stripe_details_submitted',
+        'stripe_onboarding_completed_at',
         'status',
         'suspended_at',
         'suspension_reason',
@@ -25,6 +30,10 @@ class CoachProfile extends Model
 
     protected $casts = [
         'suspended_at' => 'datetime',
+        'stripe_charges_enabled' => 'boolean',
+        'stripe_payouts_enabled' => 'boolean',
+        'stripe_details_submitted' => 'boolean',
+        'stripe_onboarding_completed_at' => 'datetime',
     ];
 
     // --- Relaciones ---

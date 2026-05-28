@@ -22,6 +22,8 @@ class UserApp extends Authenticatable
         'activation_expires_at',
         'activated_at',
         'last_login_at',
+        'stripe_customer_id',
+        'stripe_customer_account_id',
     ];
 
     protected $hidden = [

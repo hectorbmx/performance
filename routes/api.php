@@ -1,19 +1,18 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\App\AuthController;
-// use App\Http\Controllers\Api\V1\App\Athlete\GroupController;
-// use App\Http\Controllers\Api\V1\App\Athlete\TrainingController;
 use App\Http\Controllers\Client\TrainingsController;
 use App\Http\Controllers\Client\TrainingAssignmentsController;
 use App\Http\Controllers\Api\V1\App\Client\ProfileController;
+use App\Http\Controllers\Api\V1\App\Client\MembershipController;
+use App\Http\Controllers\Api\V1\App\Client\HealthMetricController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
 USE App\Http\Controllers\Api\V1\App\Client\TrainingSessionsController;
-use App\Models\UserApp;
 use App\Http\Controllers\Api\V1\App\Client\LibraryVideoController;
+use App\Http\Controllers\Api\V1\StripeWebhookController;
 
 
 /*
@@ -26,7 +25,7 @@ use App\Http\Controllers\Api\V1\App\Client\LibraryVideoController;
 |
 */
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    Route::post('/billing/coach/checkout', [BillingController::class, 'checkout']);
+    Route::post('/billing/coach/checkout', [BillingController::class, 'coachCheckout']);
     Route::post('/billing/client/checkout', [BillingController::class, 'clientCheckout']);
        //para ver videos
         Route::get('library/videos', [LibraryVideoController::class, 'index']);
@@ -34,6 +33,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::get('training/catalog',[LibraryVideoController::class, 'catalog']);
 
 });
+
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 Route::prefix('v1')->group(function () {
 
     // =========================
@@ -64,6 +65,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/app/training-sessions/{trainingSession}/start', [TrainingSessionsController::class, 'start']);
 
 
+        Route::patch('/app/me/profile', [AuthController::class, 'updateProfile']);
         Route::patch('/app/me/health-profile', [AuthController::class, 'updateHealthProfile']);
         Route::post('/app/me/body-records', [AuthController::class, 'storeBodyRecord']);
         Route::post('/app/me/metric-records', [AuthController::class, 'storeMetricRecord']);
@@ -77,18 +79,15 @@ Route::prefix('v1')->group(function () {
         //obtiene la foto del atleta
           Route::get('client/profile', [ProfileController::class, 'show']);
         //actualiza la foto desde la app movil
-          Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
+        Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
+
+        Route::get('/app/memberships', [MembershipController::class, 'index']);
+        Route::post('/app/memberships/future', [MembershipController::class, 'storeFuture']);
+        Route::get('/app/health-metrics', [HealthMetricController::class, 'index']);
+        Route::post('/app/health-metrics/sync', [HealthMetricController::class, 'sync']);
 
      
 
-        // =========================
-        // ATHLETE
-        // =========================
-        Route::prefix('app/athlete')->group(function () {
-            Route::get('/groups', [GroupController::class, 'index']);
-            Route::get('/trainings', [TrainingController::class, 'index']);
-            Route::get('/trainings/{training}', [TrainingController::class, 'show']);
-            Route::patch('trainings/assignments/{id}/status', [TrainingsController::class, 'updateStatus']);
-        });
+        Route::patch('/app/athlete/trainings/assignments/{id}/status', [TrainingsController::class, 'updateStatus']);
     });
 });

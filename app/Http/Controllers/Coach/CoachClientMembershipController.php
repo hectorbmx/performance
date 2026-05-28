@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ClientMembership;
 use App\Models\CoachClientPlan;
+use App\Services\Billing\StripeConnectService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,21 +29,24 @@ class CoachClientMembershipController extends Controller
 
         return view('coach.client-memberships.create', compact('client', 'plans', 'activeMembership'));
     }
-public function store(Request $request, Client $client)
+public function store(Request $request, Client $client, StripeConnectService $connect)
 {
     abort_unless($client->coach_id === auth()->id(), 403, 'No tienes permiso para asignar planes a este cliente.');
 
     $validated = $request->validate([
         'coach_client_plan_id' => ['required','exists:coach_client_plans,id'],
         'reminder_days_before' => ['nullable','integer','min:1'],
-        'register_payment'     => ['nullable'], // checkbox
-        'grace_days'           => ['required_if:register_payment,false','integer','min:0'],
+        'register_payment'     => ['nullable'], // compatibilidad con el checkbox anterior
+        'payment_flow'         => ['nullable','in:later,manual_now,stripe_now'],
+        'grace_days'           => ['nullable','integer','min:0'],
     ]);
 
     $plan = CoachClientPlan::findOrFail($validated['coach_client_plan_id']);
     abort_unless($plan->coach_id === auth()->id(), 403, 'Este plan no te pertenece.');
 
-    $registerPaymentNow = $request->boolean('register_payment');
+    $paymentFlow = $validated['payment_flow'] ?? ($request->boolean('register_payment') ? 'manual_now' : 'later');
+    $registerPaymentNow = $paymentFlow === 'manual_now';
+    $collectWithStripe = $paymentFlow === 'stripe_now';
 
     // ✅ OJO: para renovar debe considerar la ÚLTIMA membresía (activa o vencida)
     $lastMembership = $client->memberships()->latest('ends_at')->first();
@@ -57,8 +61,9 @@ public function store(Request $request, Client $client)
 
     // Si NO pagará ahora, calcula gracia
     $grace_until = null;
-    if (!$registerPaymentNow && (int)($validated['grace_days'] ?? 0) > 0) {
-        $grace_until = $starts_at->copy()->addDays((int)$validated['grace_days']);
+    $graceDays = (int)($validated['grace_days'] ?? $plan->grace_days ?? 0);
+    if (!$registerPaymentNow && !$collectWithStripe && $graceDays > 0) {
+        $grace_until = $starts_at->copy()->addDays($graceDays);
     }
 
     // ✅ Crea SIEMPRE como unpaid. El pago real lo cambia a paid.
@@ -72,7 +77,7 @@ public function store(Request $request, Client $client)
         'starts_at' => $starts_at,
         'ends_at' => $ends_at,
         'next_renewal_at' => $next_renewal_at,
-        'reminder_days_before' => $validated['reminder_days_before'] ?? null,
+        'reminder_days_before' => $validated['reminder_days_before'] ?? $plan->reminder_days_before,
         'status' => 'active',
         'billing_status' => 'unpaid',
         'grace_until' => $grace_until,
@@ -87,6 +92,18 @@ public function store(Request $request, Client $client)
     }
 
     // ✅ Flujo 1: no pagar ahora -> index
+    if ($collectWithStripe) {
+        try {
+            $session = $connect->createMembershipCheckout($membership);
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('coach.client-payments.create', $membership)
+                ->withErrors(['stripe' => $e->getMessage()]);
+        }
+
+        return redirect()->away($session->url);
+    }
+
     return redirect()
         ->route('coach.clients.index')
         ->with('success', 'Membresía asignada correctamente (pendiente de pago).');

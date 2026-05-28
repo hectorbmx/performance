@@ -14,13 +14,20 @@ class CoachClientPlan extends Model
         'name',
         'description',
         'price',
+        'currency',
         'billing_cycle_days',
+        'reminder_days_before',
+        'grace_days',
         'status',
+        'stripe_product_id',
+        'stripe_price_id',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'billing_cycle_days' => 'integer',
+        'reminder_days_before' => 'integer',
+        'grace_days' => 'integer',
     ];
 
     // Relaciones

@@ -1,20 +1,60 @@
 <x-app-layout>
-    <div class="max-w-5xl mx-auto px-4 py-6">
+    @php
+        $selectedDate = old('scheduled_at', $date ?? now()->toDateString());
+        $selectedCarbon = \Carbon\Carbon::parse($selectedDate);
+        $weekStart = $selectedCarbon->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+        $weekDays = collect(range(0, 6))->map(fn ($offset) => $weekStart->copy()->addDays($offset));
+        $dayLabels = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+    @endphp
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="text-sm font-semibold text-gray-950">Dashboard &gt; Nuevo entrenamiento</div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <div id="dateNavigator" class="flex items-center gap-1 rounded-2xl bg-blue-50 p-1">
+                    @foreach($weekDays as $idx => $day)
+                        <button type="button"
+                                class="date-nav-day min-w-[54px] rounded-xl px-3 py-2 text-center text-sm transition"
+                                data-date="{{ $day->toDateString() }}">
+                            <span class="block text-[11px] font-bold text-gray-500">{{ $dayLabels[$idx] }}</span>
+                            <span class="block text-lg font-semibold text-gray-950">{{ $day->format('d') }}</span>
+                        </button>
+                    @endforeach
+                </div>
+
+                <button type="button"
+                        id="addDateToNavigator"
+                        class="inline-flex h-11 items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                        title="Agregar fecha">
+                    <i class="fa-solid fa-plus"></i>
+                    Fecha
+                </button>
+            </div>
+        </div>
+
         <div class="flex items-start justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Nuevo entrenamiento</h1>
-                <p class="text-sm text-gray-600">Crea la cabecera y define tus secciones.</p>
+                <h1 class="text-3xl font-bold text-gray-950">Crear nuevo entrenamiento</h1>
+                <p class="mt-1 text-lg text-gray-700">Configura los detalles y programa las secciones.</p>
             </div>
 
-            <a href="{{ route('coach.trainings.index') }}"
-               class="px-4 py-2 rounded-lg border text-sm text-gray-700">
-                Volver
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('coach.trainings.index') }}"
+                   class="px-8 py-3 rounded-lg bg-indigo-100 text-sm font-semibold text-gray-700">
+                    Cancelar
+                </a>
+                <button form="newTrainingForm"
+                        class="px-9 py-3 rounded-lg bg-blue-700 text-white text-sm font-semibold shadow-md shadow-blue-900/15">
+                    Guardar
+                </button>
+            </div>
         </div>
 
         <form method="POST"
+              id="newTrainingForm"
               action="{{ route('coach.trainings.store') }}"
-              class="mt-6 space-y-6"
+              class="mt-8 space-y-8"
               enctype="multipart/form-data">
             @csrf
 
@@ -30,47 +70,57 @@
             @endif
 
             {{-- Card: Cabecera --}}
-            <div class="rounded-2xl border bg-white p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="rounded-xl border border-slate-300 bg-white p-6 shadow-sm">
+                <div class="mb-6 flex items-center gap-3 border-b border-slate-300 pb-5">
+                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-blue-700 text-blue-700">
+                        <i class="fa-solid fa-info text-sm"></i>
+                    </span>
+                    <h2 class="text-2xl font-bold text-gray-950">Detalles del entrenamiento</h2>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
                     {{-- Nombre --}}
-                    <div class="lg:col-span-2">
-                        <label class="block text-xs text-gray-600 mb-1">Nombre</label>
+                    <div class="lg:col-span-5">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Nombre</label>
                         <input type="text"
                                name="title"
                                value="{{ old('title') }}"
-                               class="w-full h-10 rounded-lg border-gray-300"
+                               placeholder="Ej. AMRAP Power Hour"
+                               class="w-full h-12 rounded-lg border-slate-300 text-lg"
                                required>
                         @error('title') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     {{-- Fecha --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Fecha</label>
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Fecha</label>
                         <input type="date"
+                               id="scheduledAtInput"
                                name="scheduled_at"
-                               value="{{ old('scheduled_at', $date ?? '') }}"
-                               class="w-full h-10 rounded-lg border-gray-300"
+                               value="{{ $selectedDate }}"
+                               class="w-full h-12 rounded-lg border-slate-300 text-lg"
                                required>
                         @error('scheduled_at') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     {{-- Duración --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Duración (min)</label>
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Duración (min)</label>
                         <input type="number"
                                name="duration_minutes"
                                value="{{ old('duration_minutes') }}"
                                min="1" max="600"
-                               class="w-full h-10 rounded-lg border-gray-300">
+                               placeholder="60"
+                               class="w-full h-12 rounded-lg border-slate-300 text-lg">
                         @error('duration_minutes') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     {{-- Visibilidad --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Visibilidad</label>
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Visibilidad</label>
                         <select id="visibilitySelect"
                                 name="visibility"
-                                class="w-full h-10 rounded-lg border-gray-300">
+                                class="w-full h-12 rounded-lg border-slate-300 text-lg">
                             <option value="free" @selected(old('visibility','free')==='free')>Libre</option>
                             <option value="assigned" @selected(old('visibility')==='assigned')>Asignado</option>
                         </select>
@@ -78,9 +128,9 @@
                     </div>
 
                     {{-- Nivel --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Nivel</label>
-                        <select name="level" class="w-full h-10 rounded-lg border-gray-300" required>
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Nivel</label>
+                        <select name="level" class="w-full h-12 rounded-lg border-slate-300 text-lg" required>
                             <option value="beginner" @selected(old('level','beginner')==='beginner')>Beginner</option>
                             <option value="intermediate" @selected(old('level')==='intermediate')>Intermediate</option>
                             <option value="advanced" @selected(old('level')==='advanced')>Advanced</option>
@@ -91,10 +141,10 @@
                 
 
                     {{-- Tipo (catálogo) --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Tipo</label>
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Tipo</label>
                         <select name="training_type_catalog_id"
-                                class="w-full h-10 rounded-lg border-gray-300">
+                                class="w-full h-12 rounded-lg border-slate-300 text-lg">
                             <option value="">Selecciona un tipo</option>
                             @foreach(($types ?? []) as $t)
                                 <option value="{{ $t->id }}" @selected((string)old('training_type_catalog_id') === (string)$t->id)>
@@ -108,7 +158,7 @@
                         <input type="hidden" name="type" value="{{ old('type','fitness') }}">
                     </div>
     {{-- Objetivo --}}
-                    <div>
+                    <div class="lg:col-span-3">
                         {{-- <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
                         <select name="goal" class="w-full h-10 rounded-lg border-gray-300" required>
                             <option value="strength" @selected(old('goal','strength')==='strength')>Fuerza</option>
@@ -118,8 +168,8 @@
                             <option value="mixed" @selected(old('goal')==='mixed')>Mixto</option>
                         </select>
                         @error('goal') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror --}}
-                        <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
-                            <select name="training_goal_catalog_id" class="w-full h-10 rounded-lg border-gray-300" required>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Objetivo</label>
+                            <select name="training_goal_catalog_id" class="w-full h-12 rounded-lg border-slate-300 text-lg" required>
                                 @foreach ($goals as $goal)
                                     <option value="{{ $goal->id }}"
                                         @selected(old('training_goal_catalog_id') == $goal->id)>
@@ -133,8 +183,8 @@
 
                     </div>
                     {{-- Color etiqueta --}}
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Color etiqueta</label>
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Color etiqueta</label>
                         <div class="flex items-center gap-2">
                             <input id="tagColorInput"
                                    type="color"
@@ -150,8 +200,8 @@
                     </div>
 
                     {{-- Cover image --}}
-                    <div class="lg:col-span-2">
-                        <label class="block text-xs text-gray-600 mb-1">Cover image</label>
+                    <div class="lg:col-span-6">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Imagen de portada</label>
                         <input type="file"
                                name="cover_image"
                                accept="image/*"
@@ -171,11 +221,11 @@
                     </div>
 
                     {{-- Notas --}}
-                    <div class="lg:col-span-3">
-                        <label class="block text-xs text-gray-600 mb-1">Notas</label>
+                    <div class="lg:col-span-6">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Notas</label>
                         <textarea name="notes"
-                                  rows="3"
-                                  class="w-full rounded-lg border-gray-300">{{ old('notes') }}</textarea>
+                                  rows="8"
+                                  class="w-full rounded-lg border-slate-300">{{ old('notes') }}</textarea>
                         @error('notes') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
                 </div>
@@ -296,28 +346,28 @@
             </div>
 
             {{-- Card: Secciones --}}
-<div class="bg-white border rounded-xl p-5">
-    <div class="flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-gray-900">Secciones</h2>
+<div class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+    <div class="flex items-center justify-between gap-4 border-b border-slate-300 bg-blue-50 px-5">
+        <div id="sectionTabs" class="flex min-h-[60px] flex-1 items-end gap-6 overflow-x-auto"></div>
         <button type="button" id="addSection"
-                class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 hover:bg-blue-100">
             + Agregar sección
         </button>
     </div>
 
-    <div id="sections" class="mt-4 space-y-4" secLibraryHidden></div>
+    <div id="sections" secLibraryHidden></div>
 
     <template id="sectionTpl">
-        <div class="rounded-xl border p-4">
+        <div class="section-panel p-6">
             <div class="flex items-center justify-between gap-3">
                 <div class="font-semibold text-gray-900">Sección <span class="secNum"></span></div>
                 <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
             </div>
 
-            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
-                    <label class="block text-xs text-gray-600 mb-1">Nombre</label>
-                    <input class="sec-name w-full h-10 rounded-lg border-gray-300" required />
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">Nombre de sección</label>
+                    <input class="sec-name w-full h-12 rounded-lg border-slate-300 text-lg" placeholder="Warm-up / Main Lift" required />
                 </div>
 
                 <div class="flex items-end gap-3">
@@ -328,8 +378,8 @@
                     <input type="hidden" class="secAccepts" value="1" />
 
                     <div class="flex-1">
-                        <label class="block text-xs text-gray-600 mb-1">Tipo de resultado</label>
-                        <select class="sec-result-type w-full h-10 rounded-lg border-gray-300">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Tipo de resultado</label>
+                        <select class="sec-result-type w-full h-12 rounded-lg border-slate-300 text-lg">
                             <option value="none" selected>Sin resultados</option>
                             <option value="time">Tiempo</option>
                             <option value="weight">Peso</option>
@@ -344,30 +394,30 @@
 
                     {{-- ✅ Unidad (solo si acepta resultados y tiene tipo != none) --}}
                     <div class="flex-1 secUnitWrap hidden">
-                        <label class="block text-xs text-gray-600 mb-1">Unidad</label>
-                        <select class="sec-unit-id w-full h-10 rounded-lg border-gray-300">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Unidad</label>
+                        <select class="sec-unit-id w-full h-12 rounded-lg border-slate-300 text-lg">
                             <option value="" selected>Selecciona una unidad</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="block text-xs text-gray-600 mb-1">Descripción</label>
-                    <textarea class="sec-desc w-full rounded-lg border-gray-300" rows="3"></textarea>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">Descripción / instrucciones</label>
+                    <textarea class="sec-desc w-full rounded-lg border-slate-300 text-lg" rows="5" placeholder="Escribe instrucciones detalladas..."></textarea>
                 </div>
 
- <div class="md:col-span-2">
+ <div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- Buscador biblioteca -->
     <div>
-      <label class="block text-xs text-gray-600 mb-1">
+      <label class="block text-sm font-semibold text-gray-900 mb-2">
         Biblioteca (buscar y agregar)
       </label>
 
       <div class="relative">
         <input type="text"
-               class="secLibrarySearch w-full h-10 rounded-lg border-gray-300"
-               placeholder="Buscar por nombre o ID..." />
+               class="secLibrarySearch w-full h-12 rounded-lg border-slate-300 text-lg"
+               placeholder="Buscar ejercicios..." />
 
         <div class="secLibraryResults absolute z-20 mt-1 w-full bg-white border rounded-lg shadow-sm hidden"></div>
       </div>
@@ -378,12 +428,12 @@
     </div>
  <!-- URL directa -->
     <div>
-      <label class="block text-xs text-gray-600 mb-1">
+      <label class="block text-sm font-semibold text-gray-900 mb-2">
         Video URL (YouTube/Vimeo)
       </label>
       <input type="url"
-             class="sec-video-url w-full h-10 rounded-lg border-gray-300"
-             placeholder="https://www.youtube.com/watch?v=..." />
+             class="sec-video-url w-full h-12 rounded-lg border-slate-300 text-lg"
+             placeholder="https://..." />
       <p class="text-xs text-gray-500 mt-1">
         Opcional: pega un link externo.
       </p>
@@ -397,9 +447,9 @@
 {{-- <input type="hidden" name="sections[IDX][library_video_ids][]" value="VIDEO_ID"> --}}
 
 
-                <div class="md:col-span-2">
+                <div>
                     <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
-                    <input type="file" class="sec-video-file w-full h-10 rounded-lg border-gray-300"
+                    <input type="file" class="sec-video-file w-full h-12 rounded-lg border-slate-300"
                            accept="video/mp4" />
                     <p class="text-xs text-gray-500 mt-1">Opcional: sube un archivo MP4. Si subes archivo, se usará ese video.</p>
                 </div>
@@ -408,6 +458,34 @@
     </template>
 </div>
 
+            @if(($libraryVideos ?? collect())->isNotEmpty())
+                <section>
+                    <h2 class="mb-5 text-2xl font-bold text-gray-950">Contenido recomendado de biblioteca</h2>
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        @foreach($libraryVideos as $video)
+                            @php
+                                $thumb = $video->thumbnail_url ?: ($video->youtube_id ? "https://img.youtube.com/vi/{$video->youtube_id}/hqdefault.jpg" : null);
+                            @endphp
+                            <article class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+                                <div class="relative h-40 bg-slate-900">
+                                    @if($thumb)
+                                        <img src="{{ $thumb }}" alt="{{ $video->name }}" class="h-full w-full object-cover">
+                                    @else
+                                        <div class="flex h-full items-center justify-center text-slate-400">
+                                            <i class="fa-solid fa-dumbbell text-4xl"></i>
+                                        </div>
+                                    @endif
+                                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-4">
+                                        <h3 class="font-bold text-white">{{ $video->name }}</h3>
+                                        <p class="text-sm text-slate-200">Disponible para agregar en secciones</p>
+                                    </div>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
+
             <div class="flex items-center justify-end gap-3">
                 <a href="{{ route('coach.trainings.index') }}"
                    class="px-4 py-2 rounded-lg border text-sm">Cancelar</a>
@@ -415,6 +493,71 @@
             </div>
         </form>
     </div>
+
+    <script>
+        (() => {
+            const input = document.getElementById('scheduledAtInput');
+            const nav = document.getElementById('dateNavigator');
+            const addBtn = document.getElementById('addDateToNavigator');
+            if (!input || !nav) return;
+
+            const dayLabels = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+
+            function paintActive() {
+                nav.querySelectorAll('.date-nav-day').forEach(btn => {
+                    const active = btn.dataset.date === input.value;
+                    btn.classList.toggle('bg-blue-700', active);
+                    btn.classList.toggle('text-white', active);
+                    btn.classList.toggle('shadow-md', active);
+                    btn.querySelectorAll('span').forEach(span => {
+                        span.classList.toggle('text-white', active);
+                    });
+                });
+            }
+
+            function appendDate(dateString) {
+                if (nav.querySelector(`[data-date="${dateString}"]`)) return;
+
+                const date = new Date(`${dateString}T00:00:00`);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'date-nav-day min-w-[54px] rounded-xl px-3 py-2 text-center text-sm transition';
+                btn.dataset.date = dateString;
+                btn.innerHTML = `
+                    <span class="block text-[11px] font-bold text-gray-500">${dayLabels[date.getDay()]}</span>
+                    <span class="block text-lg font-semibold text-gray-950">${String(date.getDate()).padStart(2, '0')}</span>
+                `;
+                btn.addEventListener('click', () => {
+                    input.value = dateString;
+                    paintActive();
+                });
+                nav.appendChild(btn);
+            }
+
+            nav.querySelectorAll('.date-nav-day').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    input.value = btn.dataset.date;
+                    paintActive();
+                });
+            });
+
+            input.addEventListener('change', () => {
+                if (input.value) appendDate(input.value);
+                paintActive();
+            });
+
+            addBtn?.addEventListener('click', () => {
+                const base = input.value ? new Date(`${input.value}T00:00:00`) : new Date();
+                base.setDate(base.getDate() + 1);
+                const next = base.toISOString().slice(0, 10);
+                appendDate(next);
+                input.value = next;
+                paintActive();
+            });
+
+            paintActive();
+        })();
+    </script>
 
     {{-- JS: Secciones (tu lógica) --}}
     <script>
@@ -426,10 +569,12 @@
   const sectionsEl = document.getElementById('sections');
   const tpl = document.getElementById('sectionTpl');
   const addBtn = document.getElementById('addSection');
+  const sectionTabs = document.getElementById('sectionTabs');
   if (!sectionsEl || !tpl || !addBtn) return;
 
   const SEARCH_URL = @json(route('coach.library.search'));
   const UNITS = Array.isArray(window.__units) ? window.__units : [];
+  let activeSectionIndex = 0;
 
   const escapeHtml = (str) =>
     String(str).replace(/[&<>"']/g, s => ({
@@ -441,6 +586,7 @@
   // =========================
   function rebuildNames() {
     const cards = sectionsEl.querySelectorAll('[data-sec]');
+    if (activeSectionIndex >= cards.length) activeSectionIndex = Math.max(cards.length - 1, 0);
     cards.forEach((card, idx) => {
       // número visual
       const numSpan = card.querySelector('.secNum');
@@ -469,9 +615,30 @@
       card.querySelectorAll('input.sec-library-video-id').forEach(inp => {
         inp.name = `sections[${idx}][library_video_ids][]`; // ✅ idx correcto
       });
+      card.classList.toggle('hidden', idx !== activeSectionIndex);
     });
+    renderSectionTabs(cards);
   }
   window.rebuildNames = rebuildNames;
+
+  function renderSectionTabs(cards) {
+    if (!sectionTabs) return;
+
+    sectionTabs.innerHTML = '';
+    cards.forEach((card, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = idx === activeSectionIndex
+        ? 'h-[60px] border-b-2 border-blue-700 px-5 text-sm font-bold text-blue-700'
+        : 'h-[60px] px-5 text-sm font-semibold text-gray-700 hover:text-blue-700';
+      btn.textContent = `Sección ${idx + 1}`;
+      btn.addEventListener('click', () => {
+        activeSectionIndex = idx;
+        rebuildNames();
+      });
+      sectionTabs.appendChild(btn);
+    });
+  }
 
   // =========================
   // Units UI (result_type -> unit options)
@@ -561,6 +728,7 @@
     });
 
     sectionsEl.appendChild(wrapper);
+    activeSectionIndex = sectionsEl.querySelectorAll('[data-sec]').length - 1;
 
     // init
     rebuildNames();

@@ -100,4 +100,9 @@ class Client extends Model
             ->latest('id');
     }
 
+    public function dailyHealthMetrics()
+    {
+        return $this->hasMany(\App\Models\ClientDailyHealthMetric::class, 'client_id');
+    }
+
 }

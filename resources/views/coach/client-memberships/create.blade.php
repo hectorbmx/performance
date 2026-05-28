@@ -54,6 +54,8 @@
                                     <option value="{{ $plan->id }}" 
                                             data-price="{{ $plan->price }}"
                                             data-days="{{ $plan->billing_cycle_days }}"
+                                            data-reminder="{{ $plan->reminder_days_before ?? 5 }}"
+                                            data-grace="{{ $plan->grace_days ?? 0 }}"
                                             {{ old('coach_client_plan_id') == $plan->id ? 'selected' : '' }}>
                                         {{ $plan->name }} - ${{ number_format($plan->price, 2) }} 
                                         ({{ $plan->billing_cycle_days }} días)
@@ -178,6 +180,8 @@
             }
 
             const days = parseInt(selectedOption.dataset.days);
+            document.getElementById('reminder_days_before').value = selectedOption.dataset.reminder || 5;
+            document.getElementById('grace_days').value = selectedOption.dataset.grace || 0;
             
             @if($activeMembership)
                 const startDate = new Date('{{ $activeMembership->ends_at->addDay()->format('Y-m-d') }}');

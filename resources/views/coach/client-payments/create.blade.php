@@ -12,6 +12,12 @@
             <div class="bg-white shadow rounded-lg p-6">
                 <h1 class="text-2xl font-bold mb-6">Registrar Pago</h1>
 
+                @if($errors->has('stripe'))
+                    <div class="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {{ $errors->first('stripe') }}
+                    </div>
+                @endif
+
                 {{-- Información de la membresía --}}
                 <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <h3 class="font-medium text-gray-900 mb-3">Información de la membresía</h3>
@@ -189,6 +195,21 @@
                         </button>
                     </div>
                 </form>
+
+                @if($membership->billing_status !== 'paid')
+                    <div class="mt-6 border-t pt-6">
+                        <form action="{{ route('coach.client-memberships.stripe-checkout', $membership) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full px-4 py-3 bg-slate-900 text-white rounded-md hover:bg-slate-800 font-semibold">
+                                Cobrar con Stripe
+                            </button>
+                            <p class="mt-2 text-sm text-gray-500">
+                                El pago se hará como direct charge en la cuenta Stripe conectada del coach.
+                            </p>
+                        </form>
+                    </div>
+                @endif
             </div>
 
         </div>

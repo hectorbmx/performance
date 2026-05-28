@@ -68,6 +68,23 @@
                         @enderror
                     </div>
 
+                    <div class="mb-4">
+                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-2">
+                            Moneda <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               name="currency"
+                               id="currency"
+                               value="{{ old('currency', 'mxn') }}"
+                               maxlength="3"
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               required>
+                        <p class="mt-1 text-sm text-gray-500">Ejemplo: mxn, usd.</p>
+                        @error('currency')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     {{-- Duración --}}
                     <div class="mb-4">
                         <label for="billing_cycle_days" class="block text-sm font-medium text-gray-700 mb-2">
@@ -86,6 +103,38 @@
                         @error('billing_cycle_days')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="reminder_days_before" class="block text-sm font-medium text-gray-700 mb-2">
+                                Alerta antes de vencer (dias)
+                            </label>
+                            <input type="number"
+                                   name="reminder_days_before"
+                                   id="reminder_days_before"
+                                   value="{{ old('reminder_days_before', 5) }}"
+                                   min="1"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            @error('reminder_days_before')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="grace_days" class="block text-sm font-medium text-gray-700 mb-2">
+                                Dias de gracia default
+                            </label>
+                            <input type="number"
+                                   name="grace_days"
+                                   id="grace_days"
+                                   value="{{ old('grace_days', 0) }}"
+                                   min="0"
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            @error('grace_days')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     {{-- Estatus --}}

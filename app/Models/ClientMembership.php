@@ -24,6 +24,11 @@ class ClientMembership extends Model
         'billing_status',
         'grace_until',
         'paid_at',
+        'stripe_connected_account_id',
+        'stripe_checkout_session_id',
+        'stripe_subscription_id',
+        'stripe_status',
+        'stripe_current_period_end',
     ];
 
     protected $casts = [
@@ -35,6 +40,7 @@ class ClientMembership extends Model
         'next_renewal_at' => 'date',
         'grace_until' => 'date',
         'paid_at' => 'date',
+        'stripe_current_period_end' => 'datetime',
     ];
 
     // Relaciones

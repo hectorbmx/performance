@@ -41,7 +41,7 @@ class ClientPaymentController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0|lte:amount',
             'payment_method' => 'required|string|in:efectivo,transferencia,tarjeta,paypal,otro',
             'payment_date' => 'required|date',
             'notes' => 'nullable|string|max:500',

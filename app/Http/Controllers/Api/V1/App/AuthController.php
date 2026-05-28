@@ -302,6 +302,7 @@ public function me(Request $request)
 
     if ($userApp->client) {
         $membership = ClientMembership::query()
+            ->with('coachClientPlan:id,name,price,currency,billing_cycle_days,reminder_days_before,grace_days')
             ->where('client_id', $userApp->client_id)
             ->where('coach_id', $userApp->client->coach_id)
             ->whereNull('deleted_at')
@@ -330,6 +331,38 @@ public function me(Request $request)
                 ],
             ];
         }
+
+        if ($membership && $membership->ends_at) {
+            $endsAt = Carbon::parse($membership->ends_at)->startOfDay();
+            $reminderDays = (int) ($membership->reminder_days_before ?? $membership->coachClientPlan?->reminder_days_before ?? 0);
+            $daysLeft = $today->diffInDays($endsAt, false);
+
+            if ($daysLeft < 0) {
+                $notifications[] = [
+                    'id' => 'membership_expired',
+                    'type' => 'danger',
+                    'title' => 'Membresia vencida',
+                    'message' => 'Tu plan ya vencio. Renueva tu membresia para mantener el acceso.',
+                    'action' => 'open_membership',
+                    'meta' => [
+                        'ends_at' => $membership->ends_at,
+                        'grace_until' => $membership->grace_until,
+                    ],
+                ];
+            } elseif ($reminderDays > 0 && $daysLeft <= $reminderDays) {
+                $notifications[] = [
+                    'id' => 'membership_expiring',
+                    'type' => 'warning',
+                    'title' => 'Tu plan esta por vencer',
+                    'message' => "Tu membresia vence en {$daysLeft} dia(s). Puedes contratar tu siguiente plan desde Mis membresias.",
+                    'action' => 'open_membership',
+                    'meta' => [
+                        'ends_at' => $membership->ends_at,
+                        'days_left' => $daysLeft,
+                    ],
+                ];
+            }
+        }
     }
 
     return response()->json([
@@ -354,12 +387,18 @@ public function me(Request $request)
         // ✅ nuevos
         'membership' => $membership ? [
             'id'             => $membership->id,
+            'plan_id'        => $membership->coach_client_plan_id,
+            'plan_name'      => $membership->plan_name_snapshot ?: $membership->coachClientPlan?->name,
+            'price'          => (float) $membership->price_snapshot,
+            'currency'       => strtoupper($membership->coachClientPlan?->currency ?: 'MXN'),
             'status'         => $membership->status,
             'billing_status' => $membership->billing_status,
-            'starts_at'      => $membership->starts_at,
-            'ends_at'        => $membership->ends_at,
-            'grace_until'    => $membership->grace_until,
-            'paid_at'        => $membership->paid_at,
+            'starts_at'      => optional($membership->starts_at)->toDateString(),
+            'ends_at'        => optional($membership->ends_at)->toDateString(),
+            'next_renewal_at'=> optional($membership->next_renewal_at)->toDateString(),
+            'grace_until'    => optional($membership->grace_until)->toDateString(),
+            'paid_at'        => optional($membership->paid_at)->toDateString(),
+            'is_stripe'      => (bool) $membership->stripe_subscription_id,
         ] : null,
 
         'notifications' => $notifications,
@@ -567,6 +606,64 @@ public function updateHealthProfile(Request $request)
         ],
     ]);
 }
+
+public function updateProfile(Request $request)
+{
+    $auth = $request->user();
+
+    if (!$auth) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'No autenticado.'
+        ], 401);
+    }
+
+    $data = $request->validate([
+        'first_name' => ['required', 'string', 'max:100'],
+        'last_name' => ['required', 'string', 'max:100'],
+        'email' => ['nullable', 'email', 'max:255'],
+        'phone' => ['nullable', 'string', 'max:30'],
+        'state' => ['nullable', 'string', 'max:100'],
+        'city' => ['nullable', 'string', 'max:120'],
+        'zip_code' => ['nullable', 'string', 'max:20'],
+        'birth_date' => ['nullable', 'date'],
+        'gender' => ['nullable', 'string', 'max:30'],
+        'height_cm' => ['nullable', 'integer', 'min:50', 'max:260'],
+    ]);
+
+    $userApp = UserApp::query()
+        ->with('client')
+        ->findOrFail($auth->id);
+
+    if (!$userApp->client) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'Cliente no asociado a este usuario.'
+        ], 422);
+    }
+
+    $client = $userApp->client;
+    $client->update([
+        'first_name' => $data['first_name'],
+        'last_name' => $data['last_name'],
+        'email' => $data['email'] ?? $client->email,
+        'phone' => $data['phone'] ?? null,
+    ]);
+
+    $health = $client->healthProfile()->firstOrCreate([]);
+    $health->fill([
+        'state' => $data['state'] ?? null,
+        'city' => $data['city'] ?? null,
+        'zip_code' => $data['zip_code'] ?? null,
+        'birth_date' => $data['birth_date'] ?? null,
+        'gender' => $data['gender'] ?? null,
+        'height_cm' => $data['height_cm'] ?? null,
+    ]);
+    $health->save();
+
+    return $this->meProfile($request);
+}
+
 public function storeBodyRecord(Request $request)
 {
     $auth = $request->user();
@@ -790,4 +887,3 @@ public function registerDevice(Request $request)
     ], 200);
 }
 }
-
