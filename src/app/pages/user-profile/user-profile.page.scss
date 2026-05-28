@@ -149,6 +149,12 @@ ion-title {
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.data-card.expanded {
+  background: var(--card2);
+  border-color: rgba(47, 128, 255, 0.22);
 }
 
 .data-row {
@@ -357,6 +363,12 @@ ion-title {
   margin-bottom: 10px;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .form-group label {
   display: block;
   font-size: 12px;
@@ -461,4 +473,5 @@ ion-title {
 @media (max-width: 360px) {
   .weight-value { font-size: 32px; }
   .metric-value { font-size: 24px; }
+  .form-grid { grid-template-columns: 1fr; }
 }

@@ -4,6 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { TimerService, TimerMode, TimerState, TimerData } from '../../services/timer.service';
 import { Subscription } from 'rxjs';
+import { addIcons } from 'ionicons';
+import {
+  pauseOutline,
+  playOutline,
+  refreshOutline,
+  settingsOutline,
+  stopOutline,
+  timerOutline,
+} from 'ionicons/icons';
 
 @Component({
   selector: 'app-timer',
@@ -39,7 +48,16 @@ export class TimerPage implements OnInit, OnDestroy {
   selectedMode: TimerMode = TimerMode.STOPWATCH;
   showConfig: boolean = false;
 
-  constructor(private timerService: TimerService) {}
+  constructor(private timerService: TimerService) {
+    addIcons({
+      pauseOutline,
+      playOutline,
+      refreshOutline,
+      settingsOutline,
+      stopOutline,
+      timerOutline,
+    });
+  }
 
   ngOnInit() {
     // Suscribirse a los cambios del timer

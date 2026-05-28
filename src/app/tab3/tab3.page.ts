@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonButton, IonIcon, IonList, IonItem, IonLabel, IonAvatar, IonChip, IonFooter } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonIcon, IonList, IonItem, IonLabel, IonAvatar, IonChip, IonLoading } from '@ionic/angular/standalone';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { firstValueFrom } from 'rxjs';
@@ -18,14 +18,14 @@ import {
 type ProfileVM = {
   fullName: string;
   roleLabel: string;        // ATHLETE / COACH
-  memberSinceLabel: string; // Member since Jan 2023
+  memberSinceLabel: string;
   photoUrl?: string | null;
 
   stats: {
     workouts: number;
     dayStreak: number;
     volumeLabel: string;    // "450K"
-  };
+  } | null;
 };
 type ProfileResponse = {
   ok: boolean;
@@ -57,9 +57,8 @@ type ProfileResponse = {
   imports: [
     CommonModule,
     IonHeader, IonToolbar, IonTitle, IonContent,
-    IonButtons, IonBackButton, IonButton, IonIcon,
-    IonList, IonItem, IonLabel, IonAvatar, IonChip,
-    IonFooter
+    IonButtons, IonBackButton, IonIcon,
+    IonList, IonItem, IonLabel, IonAvatar, IonChip, IonLoading,
   ],
 })
 export class Tab3Page {
@@ -70,7 +69,7 @@ export class Tab3Page {
     roleLabel: 'ATHLETE',
     memberSinceLabel: 'Member since —',
     photoUrl: null,
-    stats: { workouts: 0, dayStreak: 0, volumeLabel: '0' }
+    stats: null
   };
 
   constructor(
@@ -98,7 +97,9 @@ export class Tab3Page {
       // Si quieres derivar el rol por presencia de coach_id, ajústalo a tu lógica real.
       const roleLabel = res?.client?.coach_id ? 'ATHLETE' : 'ATHLETE';
       // Si aún no tienes fecha real, lo dejamos "simple" (puedes mapearlo luego desde DB)
-      const memberSinceLabel = 'Member since Jan 2023';
+      const memberSinceLabel = res?.membership?.starts_at
+        ? `Membresia desde ${this.formatDate(res.membership.starts_at)}`
+        : 'Membresia activa';
       // Foto: si aún no existe, queda null y mostramos fallback
       const raw = res?.client?.avatar_url ?? null;
       const photoUrl = raw ? raw.replace(/\\/g, '/') : null;
@@ -109,11 +110,11 @@ export class Tab3Page {
         roleLabel,
         memberSinceLabel,
         photoUrl,
-        stats: {
-          workouts: 128,
-          dayStreak: 15,
-          volumeLabel: '450K'
-        }
+        stats: res?.stats ? {
+          workouts: Number(res.stats.workouts ?? 0),
+          dayStreak: Number(res.stats.day_streak ?? 0),
+          volumeLabel: this.formatVolume(Number(res.stats.volume ?? 0))
+        } : null
       };
     } catch (e) {
       // Puedes mostrar toast si quieres.
@@ -122,6 +123,33 @@ export class Tab3Page {
     } finally {
       this.loading = false;
     }
+  }
+
+  private formatDate(value: string): string {
+    const date = this.parseDate(value);
+    if (!date) return '';
+
+    return date.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  private parseDate(value: string | null | undefined): Date | null {
+    if (!value) return null;
+
+    const raw = String(value);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+      ? new Date(`${raw}T00:00:00`)
+      : new Date(raw);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private formatVolume(value: number): string {
+    if (value >= 1000) return `${Math.round(value / 1000)}K`;
+    return String(value);
   }
 
   goSettings() {
@@ -231,7 +259,12 @@ private async pickAvatarFromBrowser() {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (file) {
-        await this.uploadAvatar(file);
+        this.isUploadingAvatar = true;
+        try {
+          await this.uploadAvatar(file);
+        } finally {
+          this.isUploadingAvatar = false;
+        }
       }
       resolve();
     };
@@ -247,6 +280,7 @@ private async uploadAvatar(file: File) {
 
   if (res?.ok && res?.avatar?.avatar_url) {
     this.vm = { ...this.vm, photoUrl: res.avatar.avatar_url };
+    await this.auth.me();
   } else {
     console.error('uploadAvatar response', res);
   }

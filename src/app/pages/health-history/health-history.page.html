@@ -1,0 +1,87 @@
+<ion-header class="history-header">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab1" text="Back"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ config.title }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="history-content">
+  <div class="history-shell">
+    <div class="metric-hero">
+      <div class="hero-icon">
+        <ion-icon [name]="config.icon"></ion-icon>
+      </div>
+      <div>
+        <p>{{ config.label }}</p>
+        <h1>{{ formatValue(total7) }}</h1>
+        <span>Ultimos 7 dias</span>
+      </div>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <div class="error-state" *ngIf="errorMsg && !loading">
+      {{ errorMsg }}
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMsg">
+      <div class="summary-grid">
+        <div class="summary-tile">
+          <span>Promedio 7 dias</span>
+          <strong>{{ formatValue(average7) }}</strong>
+        </div>
+        <div class="summary-tile">
+          <span>Mejor dia 7 dias</span>
+          <strong>{{ best7 ? formatValue(valueFor(best7)) : '0' }}</strong>
+          <small *ngIf="best7">{{ friendlyDate(best7.date) }}</small>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Ultimos 7 dias</h2>
+          <span>Meta {{ formatValue(config.goal) }}</span>
+        </div>
+
+        <div class="bar-chart" *ngIf="last7.length > 0">
+          <div class="bar-column" *ngFor="let item of last7">
+            <div class="bar-value">{{ formatValue(valueFor(item)) }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.height]="barHeight(item)"></div>
+            </div>
+            <span>{{ shortDay(item.date) }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Top ultimos 30 dias</h2>
+          <span>{{ items.length }} registros</span>
+        </div>
+
+        <div class="ranking-list">
+          <div class="ranking-row" *ngFor="let item of best30; let i = index">
+            <div class="rank-number">{{ i + 1 }}</div>
+            <div class="rank-info">
+              <strong>{{ friendlyDate(item.date) }}</strong>
+              <span>{{ shortDay(item.date) }}</span>
+            </div>
+            <div class="rank-value">
+              {{ formatValue(valueFor(item)) }}
+            </div>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</ion-content>

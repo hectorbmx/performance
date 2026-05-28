@@ -13,8 +13,12 @@ export const authGuard: CanMatchFn = async (route, segments) => {
   console.log('🔒 Usuario logueado:', isLoggedIn);
 
   if (!isLoggedIn) {
+    const redirectUrl = `/${segments.map(segment => segment.path).join('/')}`;
     console.log('🔒 Acceso denegado. Redirigiendo a /login');
-    await router.navigateByUrl('/login', { replaceUrl: true });
+    await router.navigateByUrl('/login', {
+      replaceUrl: true,
+      state: { redirectUrl },
+    });
     return false;
   }
 

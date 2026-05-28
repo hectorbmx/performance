@@ -5,9 +5,10 @@
       <div class="user-greeting">
         <div class="avatar-wrapper">
           <img 
-            [src]="clientAvatarUrl || 'https://i.pravatar.cc/100?img=12'"
+            [src]="clientAvatarUrl || fallbackCover"
             alt="User Avatar" 
             class="user-avatar"
+            (error)="onImgError($event)"
           />
         </div>
         <div class="greeting-text">
@@ -143,11 +144,11 @@
     <!-- Daily Progress -->
     <div class="section-header">
       <h3 class="section-title">Daily Progress</h3>
-      <a class="view-details">View Details</a>
+      <a class="view-details" (click)="openMetric('steps')">View Details</a>
     </div>
 
     <div class="progress-cards">
-      <div class="progress-card">
+      <div class="progress-card" (click)="openMetric('steps')">
         <div class="progress-circle">
           <svg viewBox="0 0 100 100" class="progress-svg">
             <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
@@ -169,7 +170,7 @@
         <div class="progress-label">STEPS</div>
       </div>
 
-      <div class="progress-card">
+      <div class="progress-card" (click)="openMetric('calories')">
         <div class="progress-circle">
           <svg viewBox="0 0 100 100" class="progress-svg">
             <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
@@ -192,7 +193,7 @@
         <div class="progress-label">BURNED</div>
       </div>
 
-      <div class="progress-card">
+      <div class="progress-card" (click)="openMetric('active_minutes')">
         <div class="progress-circle">
           <svg viewBox="0 0 100 100" class="progress-svg">
             <circle cx="50" cy="50" r="40" class="progress-bg"></circle>

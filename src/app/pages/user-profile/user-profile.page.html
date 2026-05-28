@@ -44,7 +44,7 @@
         <h2 class="section-title">DATOS PERSONALES</h2>
       </div>
       
-      <div class="data-card">
+      <div class="data-card" [class.expanded]="personalExpanded" (click)="togglePersonal()">
         <div class="data-row">
           <span class="data-label">Ciudad</span>
           <span class="data-value">{{ healthProfile?.city || '—' }}</span>
@@ -60,6 +60,57 @@
         <div class="data-row">
           <span class="data-label">Estatura</span>
           <span class="data-value primary">{{ healthProfile?.height_cm || '—' }} cm</span>
+        </div>
+        <div class="edit-form" *ngIf="personalExpanded" (click)="$event.stopPropagation()">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nombre</label>
+              <input class="custom-input" [(ngModel)]="personalForm.first_name" />
+            </div>
+            <div class="form-group">
+              <label>Apellido</label>
+              <input class="custom-input" [(ngModel)]="personalForm.last_name" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input class="custom-input" type="email" [(ngModel)]="personalForm.email" />
+          </div>
+          <div class="form-group">
+            <label>Telefono</label>
+            <input class="custom-input" [(ngModel)]="personalForm.phone" />
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Ciudad</label>
+              <input class="custom-input" [(ngModel)]="personalForm.city" />
+            </div>
+            <div class="form-group">
+              <label>Estado</label>
+              <input class="custom-input" [(ngModel)]="personalForm.state" />
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Fecha nacimiento</label>
+              <input class="custom-input" type="date" [(ngModel)]="personalForm.birth_date" />
+            </div>
+            <div class="form-group">
+              <label>Estatura (cm)</label>
+              <input class="custom-input" type="number" [(ngModel)]="personalForm.height_cm" />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-cancel" (click)="cancelPersonal($event)">Cancelar</button>
+            <button class="btn-save" (click)="savePersonal($event)">
+              <ion-icon name="save-outline"></ion-icon>
+              Guardar
+            </button>
+          </div>
         </div>
       </div>
     </div>

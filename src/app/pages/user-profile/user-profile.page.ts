@@ -96,12 +96,14 @@ export class UserProfilePage implements OnInit {
   // Estado de expansión
   weightExpanded = false;
   expandedMetricId: number | null = null;
+  personalExpanded = false;
 
   // Valores de edición
   editingWeight: number | null = null;
   editingWeightNotes: string | null = null;
   editingMetricValue: number | null = null;
   editingMetricNotes: string | null = null;
+  personalForm: any = {};
 
   constructor(
     private profileService: ProfileService,
@@ -179,6 +181,48 @@ export class UserProfilePage implements OnInit {
   private async reloadProfile() {
     const res = await this.profileService.getMyProfile();
     this.applyProfile(res);
+  }
+
+  togglePersonal() {
+    this.personalExpanded = !this.personalExpanded;
+    if (this.personalExpanded) {
+      this.personalForm = {
+        first_name: this.client?.first_name ?? '',
+        last_name: this.client?.last_name ?? '',
+        email: this.client?.email ?? '',
+        phone: this.client?.phone ?? '',
+        city: this.healthProfile?.city ?? '',
+        state: this.healthProfile?.state ?? '',
+        zip_code: this.healthProfile?.zip_code ?? '',
+        birth_date: this.healthProfile?.birth_date ?? '',
+        gender: this.healthProfile?.gender ?? '',
+        height_cm: this.healthProfile?.height_cm ?? null,
+      };
+    }
+  }
+
+  async savePersonal(event: Event) {
+    event.stopPropagation();
+
+    if (!this.personalForm.first_name || !this.personalForm.last_name) {
+      await this.showToast('Nombre y apellido son requeridos', 'warning');
+      return;
+    }
+
+    try {
+      const res = await this.profileService.updateMyProfile(this.personalForm);
+      this.applyProfile(res);
+      this.personalExpanded = false;
+      await this.showToast('Datos personales actualizados', 'success');
+    } catch (err) {
+      console.error(err);
+      await this.showToast('Error al guardar datos personales', 'danger');
+    }
+  }
+
+  cancelPersonal(event: Event) {
+    event.stopPropagation();
+    this.personalExpanded = false;
   }
 
   logout() {

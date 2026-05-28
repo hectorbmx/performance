@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 
 export type HealthProfilePayload = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
   state?: string | null;
   city?: string | null;
   zip_code?: string | null;
@@ -32,6 +36,10 @@ export class ProfileService {
 
   getMyProfile(): Promise<any> {
     return this.api.get<any>('/app/me/profile');
+  }
+
+  updateMyProfile(payload: HealthProfilePayload): Promise<any> {
+    return this.api.patch<any>('/app/me/profile', payload);
   }
 
   updateHealthProfile(payload: HealthProfilePayload): Promise<any> {

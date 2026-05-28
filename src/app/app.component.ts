@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
+import { Capacitor } from '@capacitor/core';
 import { PushNotifications, PermissionStatus, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 
 @Component({
@@ -16,6 +17,10 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
 
   async initPush() {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        return;
+      }
+
       // 1) Pedir permisos
       let permStatus: PermissionStatus = await PushNotifications.checkPermissions();
 

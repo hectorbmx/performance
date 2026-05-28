@@ -24,7 +24,10 @@
 }
 
 .profile-wrap {
+  min-height: 100%;
   padding: 18px 16px 28px;
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-avatar {
@@ -224,14 +227,11 @@
       .sub-badge {
         margin-top: 4px;
         width: fit-content;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0;
         color: rgba(47, 125, 255, 0.95);
-        background: rgba(47, 125, 255, 0.10);
-        border: 1px solid rgba(47, 125, 255, 0.18);
-        padding: 3px 8px;
-        border-radius: 999px;
+        line-height: 1.3;
       }
     }
 
@@ -253,9 +253,13 @@
   }
 }
 
+.profile-footer {
+  margin-top: auto;
+  padding-top: 26px;
+}
+
 .logout {
   width: 100%;
-  margin-top: 18px;
   padding: 14px 12px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.10);

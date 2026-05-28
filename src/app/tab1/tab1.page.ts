@@ -27,6 +27,7 @@ import {
 import { TrainingApiService, TrainingFeedItemDTO } from '../services/training-api.service';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
+import { HealthMetricsService, type HealthMetricKey } from '../services/health-metrics.service';
 import type { AppNotificationDTO } from 'src/app/services/auth.service'; // ajusta ruta si aplica
 
 /* =========================
@@ -99,6 +100,7 @@ notifEvent: any;
     private trainingApi: TrainingApiService,
     private api: ApiService,
     private auth: AuthService,
+    private healthMetrics: HealthMetricsService,
     private router: Router, // Inyectar Router
   ) {
     addIcons({notificationsOffOutline,timeOutline,play,barbellOutline,walkOutline,flameOutline,flashOutline,calendarOutline,notificationsOutline,});
@@ -125,7 +127,7 @@ notifEvent: any;
   }
   async ionViewWillEnter() {
     // 1) carga rápida desde storage
-    await this.testHealthToday();
+    await this.loadHealthToday();
     await this.auth.hydrateFromStorage();
     this.clientName = this.auth.getClientDisplayName();
     this.clientAvatarUrl = this.auth.getClientAvatarUrl();
@@ -143,6 +145,28 @@ notifEvent: any;
 
     await this.load();
   }
+  private async loadHealthToday() {
+    this.healthLoading = true;
+
+    try {
+      const today = await this.healthMetrics.getToday();
+      this.healthToday = {
+        steps: today.steps,
+        kcal: today.calories,
+        activeMin: today.active_minutes,
+      };
+      await this.healthMetrics.sync([today]);
+    } catch (err) {
+      console.warn('No se pudieron cargar metricas de salud', err);
+    } finally {
+      this.healthLoading = false;
+    }
+  }
+
+  openMetric(metric: HealthMetricKey) {
+    this.router.navigate(['/health-history', metric]);
+  }
+
   private async testHealthToday() {
   console.log('🧪 Health test: START');
 

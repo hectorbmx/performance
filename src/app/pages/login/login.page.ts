@@ -72,7 +72,7 @@ export class LoginPage {
   async ionViewWillEnter() {
     const loggedIn = await this.auth.isLoggedIn();
     if (loggedIn) {
-      await this.router.navigateByUrl('/tabs', { replaceUrl: true });
+      await this.router.navigateByUrl(this.getRedirectUrl(), { replaceUrl: true });
     }
   }
 
@@ -121,7 +121,7 @@ export class LoginPage {
 
       // Login exitoso → área privada
       console.log('Navegando a /tabs...');
-      const navigated = await this.router.navigateByUrl('/tabs', { replaceUrl: true });
+      const navigated = await this.router.navigateByUrl(this.getRedirectUrl(), { replaceUrl: true });
       console.log('Navegación exitosa:', navigated);
 
       if (!navigated) {
@@ -192,6 +192,17 @@ async goToActivacion() {
     state: { email }
   }).then(ok => console.log('[goToActivacion] navigate ok?', ok))
     .catch(err => console.error('[goToActivacion] navigate error', err));
+}
+
+private getRedirectUrl(): string {
+  const currentNavigation = this.router.getCurrentNavigation();
+  const redirectUrl =
+    currentNavigation?.extras?.state?.['redirectUrl'] ||
+    history.state?.redirectUrl;
+
+  return typeof redirectUrl === 'string' && redirectUrl.startsWith('/')
+    ? redirectUrl
+    : '/tabs';
 }
 
 

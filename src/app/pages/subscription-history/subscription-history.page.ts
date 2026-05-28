@@ -1,7 +1,5 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
 import {
   IonContent,
   IonHeader,
@@ -10,26 +8,48 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  IonSearchbar,
-  IonChip,
-  IonLabel,
 } from '@ionic/angular/standalone';
-
 import { addIcons } from 'ionicons';
-import { chevronBackOutline, downloadOutline, cashOutline, hourglassOutline } from 'ionicons/icons';
+import { chevronBackOutline, cardOutline, calendarOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import { ApiService } from '../../services/api.service';
 
-type PaymentStatus = 'completed' | 'pending' | 'failed';
+type MembershipStatus = 'active' | 'expired' | 'canceled' | string;
+type BillingStatus = 'paid' | 'unpaid' | 'past_due' | 'canceled' | string;
 
-interface PaymentItem {
+interface Membership {
   id: number;
-  title: string;
-  amount: number;
-  status: PaymentStatus;
-  dateISO: string; // '2023-11-01T10:45:00'
-  icon: 'cash' | 'hourglass';
+  plan_id: number;
+  plan_name: string;
+  price: number;
+  currency: string;
+  billing_cycle_days: number;
+  status: MembershipStatus;
+  billing_status: BillingStatus;
+  starts_at: string | null;
+  ends_at: string | null;
+  next_renewal_at: string | null;
+  grace_until: string | null;
+  paid_at: string | null;
+  is_stripe: boolean;
 }
 
-type FilterKey = 'all' | 'this_month' | 'oct' | 'sep';
+interface AvailablePlan {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  currency: string;
+  billing_cycle_days: number;
+  can_checkout: boolean;
+}
+
+interface MembershipsResponse {
+  ok: boolean;
+  current_membership: Membership | null;
+  future_membership: Membership | null;
+  memberships: Membership[];
+  available_plans: AvailablePlan[];
+}
 
 @Component({
   selector: 'app-subscription-history',
@@ -38,8 +58,6 @@ type FilterKey = 'all' | 'this_month' | 'oct' | 'sep';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-
     IonContent,
     IonHeader,
     IonTitle,
@@ -47,118 +65,133 @@ type FilterKey = 'all' | 'this_month' | 'oct' | 'sep';
     IonButtons,
     IonButton,
     IonIcon,
-    IonSearchbar,
-    IonChip,
-    IonLabel,
   ],
 })
 export class SubscriptionHistoryPage {
-  totalPaid = 4250;
-  activePlan = 'ELITE COACHING';
-  growthText = '12% vs last year';
+  loading = false;
+  creatingPlanId: number | null = null;
+  error = '';
+  showPlans = false;
 
-  search = '';
-  activeFilter: FilterKey = 'all';
+  currentMembership: Membership | null = null;
+  futureMembership: Membership | null = null;
+  memberships: Membership[] = [];
+  availablePlans: AvailablePlan[] = [];
 
-  filters: { key: FilterKey; label: string }[] = [
-    { key: 'all', label: 'All Time' },
-    { key: 'this_month', label: 'This Month' },
-    { key: 'oct', label: 'October' },
-    { key: 'sep', label: 'Sep' },
-  ];
+  constructor(private api: ApiService) {
+    addIcons({ chevronBackOutline, cardOutline, calendarOutline, checkmarkCircleOutline });
+  }
 
-  payments: PaymentItem[] = [
-    {
-      id: 1,
-      title: 'Premium Coaching',
-      amount: 299,
-      status: 'completed',
-      dateISO: '2023-11-01T10:45:00',
-      icon: 'cash',
-    },
-    {
-      id: 2,
-      title: 'Personal Training - 5 Sess.',
-      amount: 450,
-      status: 'completed',
-      dateISO: '2023-10-15T14:15:00',
-      icon: 'cash',
-    },
-    {
-      id: 3,
-      title: 'Nutrition Plan',
-      amount: 99,
-      status: 'pending',
-      dateISO: '2023-10-08T09:30:00',
-      icon: 'hourglass',
-    },
-  ];
+  ionViewWillEnter() {
+    this.loadMemberships();
+  }
 
-  constructor() {
-    addIcons({ chevronBackOutline, downloadOutline, cashOutline, hourglassOutline });
+  async loadMemberships() {
+    this.loading = true;
+    this.error = '';
+
+    try {
+      const res = await this.api.get<MembershipsResponse>('app/memberships');
+      this.currentMembership = res.current_membership;
+      this.futureMembership = res.future_membership;
+      this.memberships = res.memberships ?? [];
+      this.availablePlans = res.available_plans ?? [];
+      this.showPlans = false;
+    } catch (err: any) {
+      this.error = err?.message || 'No se pudieron cargar tus membresias.';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async buyFuture(plan: AvailablePlan) {
+    if (this.futureMembership || !plan.can_checkout) return;
+
+    this.creatingPlanId = plan.id;
+    this.error = '';
+
+    try {
+      const res: any = await this.api.post('app/memberships/future', {
+        coach_client_plan_id: plan.id,
+        checkout: true,
+      });
+
+      if (res?.checkout_url) {
+        this.openCheckout(res.checkout_url);
+        return;
+      }
+
+      await this.loadMemberships();
+    } catch (err: any) {
+      this.error = err?.message || 'No se pudo crear la membresia futura.';
+    } finally {
+      this.creatingPlanId = null;
+    }
+  }
+
+  openPlans() {
+    this.showPlans = true;
   }
 
   goBack() {
     history.back();
   }
 
-  download() {
-    // mock: luego aquí exportas PDF/CSV
-    console.log('download payments...');
+  formatMoney(amount: number, currency = 'MXN'): string {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: currency || 'MXN',
+    }).format(amount || 0);
   }
 
-  setFilter(key: FilterKey) {
-    this.activeFilter = key;
-  }
+  formatDate(value: string | null): string {
+    if (!value) return 'Sin fecha';
 
-  get filteredPayments(): PaymentItem[] {
-    const q = (this.search || '').trim().toLowerCase();
+    const date = this.parseDate(value);
+    if (!date) return 'Sin fecha';
 
-    let list = [...this.payments];
-
-    // filtro por chip (mock)
-    if (this.activeFilter === 'oct') {
-      list = list.filter(p => new Date(p.dateISO).getMonth() === 9); // Oct = 9
-    }
-    if (this.activeFilter === 'sep') {
-      list = list.filter(p => new Date(p.dateISO).getMonth() === 8); // Sep = 8
-    }
-    if (this.activeFilter === 'this_month') {
-      const now = new Date();
-      list = list.filter(p => {
-        const d = new Date(p.dateISO);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      });
-    }
-
-    // búsqueda
-    if (q) {
-      list = list.filter(p => p.title.toLowerCase().includes(q));
-    }
-
-    // orden desc por fecha
-    list.sort((a, b) => +new Date(b.dateISO) - +new Date(a.dateISO));
-    return list;
-  }
-
-  formatMoney(n: number): string {
-    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  formatDate(dateISO: string): string {
-    const d = new Date(dateISO);
-    return d.toLocaleString('en-US', {
-      month: 'short',
+    return date.toLocaleDateString('es-MX', {
       day: '2-digit',
+      month: 'short',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   }
 
-  statusLabel(s: PaymentStatus): string {
-    if (s === 'completed') return 'COMPLETED';
-    if (s === 'pending') return 'PENDING';
-    return 'FAILED';
+  private parseDate(value: string | null | undefined): Date | null {
+    if (!value) return null;
+
+    const raw = String(value);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+      ? new Date(`${raw}T00:00:00`)
+      : new Date(raw);
+
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private openCheckout(url: string) {
+    const opened = window.open(url, '_blank', 'location=yes');
+    if (!opened) {
+      window.location.assign(url);
+    }
+  }
+
+  billingLabel(status: BillingStatus): string {
+    if (status === 'paid') return 'Pagada';
+    if (status === 'unpaid') return 'Pendiente de pago';
+    if (status === 'past_due') return 'Pago vencido';
+    if (status === 'canceled') return 'Cancelada';
+    return status;
+  }
+
+  renewalText(membership: Membership): string {
+    if (membership.is_stripe) {
+      return membership.next_renewal_at
+        ? `Renovacion Stripe: ${this.formatDate(membership.next_renewal_at)}`
+        : 'Renovacion Stripe activa';
+    }
+
+    return membership.ends_at
+      ? `Vence: ${this.formatDate(membership.ends_at)}`
+      : 'Sin vencimiento registrado';
   }
 }

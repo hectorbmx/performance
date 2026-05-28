@@ -36,6 +36,11 @@ export const routes: Routes = [
     canMatch: [authGuard],
     loadComponent: () => import('./pages/subscription-history/subscription-history.page').then( m => m.SubscriptionHistoryPage)
   },
+  {
+    path: 'health-history/:metric',
+    canMatch: [authGuard],
+    loadComponent: () => import('./pages/health-history/health-history.page').then(m => m.HealthHistoryPage)
+  },
   // Timer route - OPCIÓN 1: Sin autenticación (accesible sin login)
   // {
   //   path: 'timer',
