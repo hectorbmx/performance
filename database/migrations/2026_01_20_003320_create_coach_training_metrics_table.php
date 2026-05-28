@@ -26,7 +26,7 @@ return new class extends Migration
 
             $table->foreign('coach_id')
                 ->references('id')
-                ->on('coaches')
+                ->on('coach_profiles')
                 ->onDelete('cascade');
 
             $table->foreign('training_metric_id')
