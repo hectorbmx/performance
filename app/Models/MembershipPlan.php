@@ -17,6 +17,7 @@ class MembershipPlan extends Model
         'description',
         'amount',
         'currency',
+        'payment_provider',
         'billing_cycle_days',
         'is_active',
         'client_limit',
@@ -27,4 +28,9 @@ class MembershipPlan extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function getUsesStripeAttribute(): bool
+    {
+        return $this->payment_provider === 'stripe';
+    }
 }

@@ -44,6 +44,7 @@ class BillingController extends Controller
         ]);
 
         $plan = MembershipPlan::findOrFail($data['membership_plan_id']);
+        abort_if(($plan->payment_provider ?? 'stripe') === 'manual', 422, 'Este plan se cobra manualmente.');
         abort_if(!$plan->stripe_price_id, 422, 'Plan no tiene stripe_price_id');
 
         $user = $request->user();

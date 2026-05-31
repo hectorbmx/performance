@@ -17,6 +17,10 @@ class EnsureCoachSubscriptionIsActive
         return $next($request);
     }
 
+    if (!$user->hasVerifiedEmail()) {
+        return redirect()->route('verification.notice');
+    }
+
     $sub = \App\Models\CoachSubscription::where('coach_id', $user->id)
         ->orderByDesc('ends_at')
         ->first();

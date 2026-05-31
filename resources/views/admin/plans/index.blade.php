@@ -24,6 +24,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ciclo (días)</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Límite clientes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cobro</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stripe Price ID</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estatus</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
@@ -43,6 +44,13 @@
 
                                 <td class="px-6 py-4">
                                     {{ $plan->client_limit ?? 'Ilimitado' }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    @php $provider = $plan->payment_provider ?? ($plan->stripe_price_id ? 'stripe' : 'manual'); @endphp
+                                    <span class="px-2 inline-flex text-xs font-semibold rounded-full
+                                        {{ $provider === 'stripe' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800' }}">
+                                        {{ strtoupper($provider) }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 font-mono text-xs">
                                     {{ $plan->stripe_price_id ?? '—' }}
@@ -96,7 +104,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-10 text-center text-gray-500">
                                     No hay planes registrados.
                                 </td>
                             </tr>

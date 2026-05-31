@@ -89,6 +89,34 @@
     </div>
 </div>
 
+                <div class="border rounded-md p-4 space-y-3">
+                    <label class="block text-sm font-medium text-gray-700">Forma de cobro</label>
+
+                    @php $provider = old('payment_provider', $plan->payment_provider ?? 'stripe'); @endphp
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="flex items-start gap-3 rounded-md border p-3 cursor-pointer">
+                            <input type="radio" name="payment_provider" value="stripe"
+                                   class="mt-1 border-gray-300"
+                                   @checked($provider === 'stripe')>
+                            <span>
+                                <span class="block font-medium text-gray-800">Stripe</span>
+                                <span class="block text-xs text-gray-500">Mantiene o crea Product y Price en Stripe.</span>
+                            </span>
+                        </label>
+
+                        <label class="flex items-start gap-3 rounded-md border p-3 cursor-pointer">
+                            <input type="radio" name="payment_provider" value="manual"
+                                   class="mt-1 border-gray-300"
+                                   @checked($provider === 'manual')>
+                            <span>
+                                <span class="block font-medium text-gray-800">Manual</span>
+                                <span class="block text-xs text-gray-500">No usa Stripe; el pago se registra en Pagos.</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-md border">
     <div>
         <label class="block text-sm font-medium text-gray-700">Stripe Product ID</label>

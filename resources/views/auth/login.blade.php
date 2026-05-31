@@ -160,8 +160,8 @@
                 <div class="mt-8 text-center">
                     <p class="text-gray-500 text-sm">
                         New to the platform? 
-                        <a href="#" class="text-blue-400 hover:text-blue-300 transition-colors font-medium">
-                            Contact Administrator
+                        <a href="{{ route('register') }}" class="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                            Registrate y Prueba
                         </a>
                     </p>
                 </div>
