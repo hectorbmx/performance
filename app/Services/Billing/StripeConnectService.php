@@ -89,6 +89,10 @@ class StripeConnectService
 
     public function ensurePlanPrice(CoachClientPlan $plan): CoachClientPlan
     {
+        if (($plan->payment_provider ?? 'manual') !== 'stripe') {
+            throw new \RuntimeException('Este plan se cobra de forma manual.');
+        }
+
         $profile = $plan->coach->coachProfile;
 
         if (!$profile?->stripe_account_id) {

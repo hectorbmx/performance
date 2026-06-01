@@ -13,6 +13,12 @@ use App\Http\Controllers\Client\TrainingSectionResultsController;
 USE App\Http\Controllers\Api\V1\App\Client\TrainingSessionsController;
 use App\Http\Controllers\Api\V1\App\Client\LibraryVideoController;
 use App\Http\Controllers\Api\V1\StripeWebhookController;
+use App\Http\Controllers\Api\V1\Coach\AuthController as CoachAuthController;
+use App\Http\Controllers\Api\V1\Coach\ClientController as CoachApiClientController;
+use App\Http\Controllers\Api\V1\Coach\GroupController as CoachApiGroupController;
+use App\Http\Controllers\Api\V1\Coach\PlanController as CoachApiPlanController;
+use App\Http\Controllers\Api\V1\Coach\SubscriptionController as CoachApiSubscriptionController;
+use App\Http\Controllers\Api\V1\Coach\TrainingController as CoachApiTrainingController;
 
 
 /*
@@ -89,5 +95,27 @@ Route::prefix('v1')->group(function () {
      
 
         Route::patch('/app/athlete/trainings/assignments/{id}/status', [TrainingsController::class, 'updateStatus']);
+    });
+
+    Route::prefix('coach')->group(function () {
+        Route::post('/login', [CoachAuthController::class, 'login']);
+
+        Route::middleware(['auth:sanctum'])->group(function () {
+            Route::post('/logout', [CoachAuthController::class, 'logout']);
+            Route::get('/me', [CoachAuthController::class, 'me']);
+
+            Route::middleware('coach.api')->group(function () {
+                Route::get('clients/{client}/trainings', [CoachApiClientController::class, 'trainings']);
+                Route::apiResource('clients', CoachApiClientController::class);
+                Route::post('groups/{group}/clients', [CoachApiGroupController::class, 'attachClient']);
+                Route::delete('groups/{group}/clients/{client}', [CoachApiGroupController::class, 'detachClient']);
+                Route::apiResource('groups', CoachApiGroupController::class)->except(['destroy']);
+                Route::apiResource('plans', CoachApiPlanController::class);
+                Route::get('subscriptions', [CoachApiSubscriptionController::class, 'index']);
+
+                Route::get('trainings/meta', [CoachApiTrainingController::class, 'meta']);
+                Route::apiResource('trainings', CoachApiTrainingController::class);
+            });
+        });
     });
 });

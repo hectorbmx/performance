@@ -15,6 +15,7 @@ class CoachClientPlan extends Model
         'description',
         'price',
         'currency',
+        'payment_provider',
         'billing_cycle_days',
         'reminder_days_before',
         'grace_days',
@@ -29,6 +30,11 @@ class CoachClientPlan extends Model
         'reminder_days_before' => 'integer',
         'grace_days' => 'integer',
     ];
+
+    public function getUsesStripeAttribute(): bool
+    {
+        return $this->payment_provider === 'stripe';
+    }
 
     // Relaciones
     public function coach()

@@ -17,6 +17,10 @@ class ClientMembershipStripeCheckoutController extends Controller
             return back()->with('error', 'Esta membresía ya está pagada.');
         }
 
+        if (($membership->coachClientPlan?->payment_provider ?? 'manual') !== 'stripe') {
+            return back()->with('error', 'Este plan se cobra de forma manual.');
+        }
+
         try {
             $session = $connect->createMembershipCheckout($membership);
         } catch (\Throwable $e) {

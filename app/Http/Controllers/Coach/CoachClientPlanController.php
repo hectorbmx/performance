@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CoachClientPlan;
 use App\Services\Billing\StripeConnectService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CoachClientPlanController extends Controller
 {
@@ -32,6 +33,7 @@ class CoachClientPlanController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'currency' => 'nullable|string|size:3',
+            'payment_provider' => ['required', Rule::in(['manual', 'stripe'])],
             'billing_cycle_days' => 'required|integer|min:1',
             'reminder_days_before' => 'nullable|integer|min:1|max:365',
             'grace_days' => 'nullable|integer|min:0|max:365',
@@ -40,12 +42,13 @@ class CoachClientPlanController extends Controller
 
         $validated['coach_id'] = auth()->id();
         $validated['currency'] = strtolower($validated['currency'] ?? 'mxn');
+        $validated['payment_provider'] = $validated['payment_provider'] ?? 'manual';
         $validated['reminder_days_before'] = $validated['reminder_days_before'] ?? 5;
         $validated['grace_days'] = $validated['grace_days'] ?? 0;
 
         $plan = CoachClientPlan::create($validated);
 
-        if (auth()->user()->coachProfile?->stripe_charges_enabled) {
+        if ($plan->payment_provider === 'stripe' && auth()->user()->coachProfile?->stripe_charges_enabled) {
             $connect->ensurePlanPrice($plan);
         }
 
@@ -76,6 +79,7 @@ class CoachClientPlanController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'currency' => 'nullable|string|size:3',
+            'payment_provider' => ['required', Rule::in(['manual', 'stripe'])],
             'billing_cycle_days' => 'required|integer|min:1',
             'reminder_days_before' => 'nullable|integer|min:1|max:365',
             'grace_days' => 'nullable|integer|min:0|max:365',
@@ -83,19 +87,24 @@ class CoachClientPlanController extends Controller
         ]);
 
         $validated['currency'] = strtolower($validated['currency'] ?? ($membresia->currency ?: 'mxn'));
+        $validated['payment_provider'] = $validated['payment_provider'] ?? 'manual';
         $validated['reminder_days_before'] = $validated['reminder_days_before'] ?? 5;
         $validated['grace_days'] = $validated['grace_days'] ?? 0;
         $priceChanged = (float) $membresia->price !== (float) $validated['price']
             || (int) $membresia->billing_cycle_days !== (int) $validated['billing_cycle_days']
             || strtolower($membresia->currency ?: 'mxn') !== $validated['currency'];
 
-        if ($priceChanged) {
+        if ($priceChanged || $validated['payment_provider'] === 'manual') {
             $validated['stripe_price_id'] = null;
+        }
+
+        if ($validated['payment_provider'] === 'manual') {
+            $validated['stripe_product_id'] = null;
         }
 
         $membresia->update($validated);
 
-        if (auth()->user()->coachProfile?->stripe_charges_enabled) {
+        if ($membresia->payment_provider === 'stripe' && auth()->user()->coachProfile?->stripe_charges_enabled) {
             $connect->ensurePlanPrice($membresia->fresh());
         }
 

@@ -31,6 +31,7 @@
                     Fecha
                 </button>
             </div>
+
         </div>
 
         <div class="flex items-start justify-between gap-4">
@@ -349,8 +350,7 @@
 <div class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
     <div class="flex items-center justify-between gap-4 border-b border-slate-300 bg-blue-50 px-5">
         <div id="sectionTabs" class="flex min-h-[60px] flex-1 items-end gap-6 overflow-x-auto"></div>
-        <button type="button" id="addSection"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-blue-700 hover:bg-blue-100">
+        <button type="button" id="addSection" class="hidden">
             + Agregar sección
         </button>
     </div>
@@ -384,6 +384,7 @@
                             <option value="time">Tiempo</option>
                             <option value="weight">Peso</option>
                             <option value="distance">Distancia</option>
+                            <option value="reps">Repeticiones</option>
                             <option value="rounds">Rounds</option>
                             <option value="sets">Sets</option>
                             <option value="calories">Calorias</option>
@@ -453,6 +454,13 @@
                            accept="video/mp4" />
                     <p class="text-xs text-gray-500 mt-1">Opcional: sube un archivo MP4. Si subes archivo, se usará ese video.</p>
                 </div>
+            </div>
+
+            <div class="mt-6 flex justify-end border-t border-slate-200 pt-4">
+                <button type="button"
+                        class="addSecInline inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">
+                    + Agregar otra seccion
+                </button>
             </div>
         </div>
     </template>
@@ -562,6 +570,7 @@
     {{-- JS: Secciones (tu lógica) --}}
     <script>
   window.__units = @json($units);
+  window.__oldSections = @json(old('sections', []));
 </script>
 
     <script>
@@ -574,6 +583,8 @@
 
   const SEARCH_URL = @json(route('coach.library.search'));
   const UNITS = Array.isArray(window.__units) ? window.__units : [];
+  const OLD_SECTIONS = Array.isArray(window.__oldSections) ? window.__oldSections : Object.values(window.__oldSections || {});
+  const UNIT_REQUIRED_TYPES = ['weight','time','distance','reps','rounds','sets','calories','points'];
   let activeSectionIndex = 0;
 
   const escapeHtml = (str) =>
@@ -615,6 +626,8 @@
       card.querySelectorAll('input.sec-library-video-id').forEach(inp => {
         inp.name = `sections[${idx}][library_video_ids][]`; // ✅ idx correcto
       });
+      const inlineAdd = card.querySelector('.addSecInline');
+      inlineAdd?.classList.toggle('hidden', idx !== cards.length - 1);
       card.classList.toggle('hidden', idx !== activeSectionIndex);
     });
     renderSectionTabs(cards);
@@ -653,6 +666,7 @@
     if (!rt || rt === 'none') {
       unitWrap?.classList.add('hidden');
       if (unitSel) unitSel.value = '';
+      if (unitSel) unitSel.required = false;
       return;
     }
 
@@ -662,16 +676,17 @@
       const current = unitSel.value || '';
       unitSel.innerHTML =
         `<option value="" selected>Selecciona una unidad</option>` +
-        options.map(u => `<option value="${u.id}">${escapeHtml(u.name)} (${escapeHtml(u.symbol)})</option>`).join('');
+        options.map(u => `<option value="${u.id}">${escapeHtml(u.name)}${u.symbol ? ` (${escapeHtml(u.symbol)})` : ''}</option>`).join('');
 
       if (current && options.some(u => String(u.id) === String(current))) {
         unitSel.value = current;
       } else {
         unitSel.value = '';
       }
+      unitSel.required = UNIT_REQUIRED_TYPES.includes(rt);
     }
 
-    const show = options.length > 0;
+    const show = options.length > 0 || UNIT_REQUIRED_TYPES.includes(rt);
     unitWrap?.classList.toggle('hidden', !show);
     if (!show && unitSel) unitSel.value = '';
   }
@@ -708,7 +723,7 @@
   // =========================
   // Add/remove section
   // =========================
-  function addSection() {
+  function addSection(initial = {}, shouldScroll = true) {
     const node = tpl.content.cloneNode(true);
 
     const wrapper = document.createElement('div');
@@ -720,6 +735,22 @@
     if (resultType) {
       resultType.addEventListener('change', () => toggleUnitUI(wrapper));
     }
+
+    wrapper.querySelector('.addSecInline')?.addEventListener('click', () => addSection({}, true));
+
+    const nameInput = wrapper.querySelector('.sec-name');
+    if (nameInput) nameInput.value = initial.name || '';
+
+    const descInput = wrapper.querySelector('.sec-desc');
+    if (descInput) descInput.value = initial.description || '';
+
+    const videoUrl = wrapper.querySelector('.sec-video-url');
+    if (videoUrl) videoUrl.value = initial.video_url || '';
+
+    if (resultType) resultType.value = initial.result_type || 'none';
+
+    const unitSel = wrapper.querySelector('.sec-unit-id');
+    if (unitSel) unitSel.dataset.initialUnitId = initial.unit_id || '';
 
     // remove section
     wrapper.querySelector('.removeSec')?.addEventListener('click', () => {
@@ -733,10 +764,34 @@
     // init
     rebuildNames();
     toggleUnitUI(wrapper);
+
+    if (unitSel?.dataset.initialUnitId) {
+      unitSel.value = unitSel.dataset.initialUnitId;
+    }
+
+    (initial.library_video_ids || []).forEach((videoId) => {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.value = String(videoId);
+      hidden.dataset.libraryVideoId = String(videoId);
+      hidden.className = 'sec-library-video-id';
+      wrapper.appendChild(hidden);
+    });
+
+    rebuildNames();
+    if (shouldScroll) {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
-  addBtn.addEventListener('click', addSection);
-  addSection(); // 1 sección por defecto
+  addBtn.addEventListener('click', () => addSection({}, true));
+  if (OLD_SECTIONS.length) {
+    OLD_SECTIONS.forEach(section => addSection(section || {}, false));
+    activeSectionIndex = 0;
+    rebuildNames();
+  } else {
+    addSection({}, false); // 1 seccion por defecto
+  }
 
   // =========================
   // Library search (delegation)

@@ -94,7 +94,11 @@ public function create(Request $request)
         ->get(['id','first_name','last_name','email']);
 
 
-    $assignedGroups = collect(); // vacío
+    $assignedGroups = Group::query()
+        ->where('coach_id', $coachId)
+        ->whereIn('id', collect(old('assigned_groups', []))->map(fn ($id) => (int) $id)->all())
+        ->orderBy('name')
+        ->get(['id','name']);
         $types = TrainingTypeCatalog::query()
         ->where('coach_id', $coachId)
         ->where('is_active', true)

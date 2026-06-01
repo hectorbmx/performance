@@ -21,6 +21,7 @@ class TrainingSession extends Model
         'duration_minutes',
         'level',
         'goal',
+        'training_goal_catalog_id',
         'type',
         'training_type_catalog_id',
         'visibility',

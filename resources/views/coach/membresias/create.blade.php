@@ -10,7 +10,7 @@
             </div>
 
             <div class="bg-white shadow rounded-lg p-6">
-                <h1 class="text-2xl font-bold mb-6">Nueva Membresía</h1>
+                <h1 class="text-2xl font-bold mb-6">Nuevo Plan</h1>
 
                 <form action="{{ route('coach.membresias.store') }}" method="POST">
                     @csrf
@@ -81,6 +81,32 @@
                                required>
                         <p class="mt-1 text-sm text-gray-500">Ejemplo: mxn, usd.</p>
                         @error('currency')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Forma de cobro <span class="text-red-500">*</span>
+                        </label>
+                        @php $provider = old('payment_provider', 'manual'); @endphp
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-start gap-3 rounded-md border p-3 cursor-pointer">
+                                <input type="radio" name="payment_provider" value="manual" class="mt-1" @checked($provider === 'manual')>
+                                <span>
+                                    <span class="block font-medium text-gray-800">Manual</span>
+                                    <span class="block text-xs text-gray-500">Registra pagos sin usar Stripe.</span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-3 rounded-md border p-3 cursor-pointer">
+                                <input type="radio" name="payment_provider" value="stripe" class="mt-1" @checked($provider === 'stripe')>
+                                <span>
+                                    <span class="block font-medium text-gray-800">Stripe</span>
+                                    <span class="block text-xs text-gray-500">Crea Price si Stripe Connect esta listo.</span>
+                                </span>
+                            </label>
+                        </div>
+                        @error('payment_provider')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -167,7 +193,7 @@
 
                         <button type="submit"
                                 class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                            Crear membresía
+                            Crear plan
                         </button>
                     </div>
                 </form>

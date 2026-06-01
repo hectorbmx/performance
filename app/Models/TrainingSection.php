@@ -19,6 +19,7 @@ class TrainingSection extends Model
         'video_path',
         'accepts_results',
         'result_type',
+        'unit_id',
     ];
 
     protected $casts = [
