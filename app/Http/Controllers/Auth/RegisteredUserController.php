@@ -7,6 +7,7 @@ use App\Models\CoachProfile;
 use App\Models\CoachSubscription;
 use App\Models\MembershipPlan;
 use App\Models\User;
+use App\Services\TenantBaseCatalogService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class RegisteredUserController extends Controller
         return view('auth.register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TenantBaseCatalogService $catalogs): RedirectResponse
     {
         $this->guardAgainstAutomatedRegistration($request);
 
@@ -70,6 +71,8 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        $catalogs->seedForCoach($user);
 
         $request->session()->forget('coach_registration_started_at');
 

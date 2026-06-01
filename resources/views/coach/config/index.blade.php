@@ -26,11 +26,13 @@
                 <div class="text-xs text-gray-600 mt-1">Define tipos para secciones de entrenamientos.</div>
             </a>
 
+            {{-- Metricas (catalogo) queda pausado mientras definimos mejor el contexto.
             <a href="{{ route('coach.config.metrics.index') }}"
                class="rounded-xl border border-gray-100 p-4 hover:bg-gray-50">
                 <div class="text-sm font-semibold text-gray-900">Métricas (catálogo)</div>
                 <div class="text-xs text-gray-600 mt-1">Administra métricas disponibles.</div>
             </a>
+            --}}
 
             <a href="{{ route('coach.config.settings.coach-metrics.index') }}"
                class="rounded-xl border border-gray-100 p-4 hover:bg-gray-50">

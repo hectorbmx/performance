@@ -16,7 +16,7 @@
                 ['label' => 'Tipos',           'route' => 'coach.config.types.index'],
                 ['label' => 'Objetivos',       'route' => 'coach.config.goals.index'],
                 ['label' => 'Tipos de sección','route' => 'coach.config.section-types.index'],
-                ['label' => 'Métricas (catálogo)', 'route' => 'coach.config.metrics.index'],
+                // ['label' => 'Métricas (catálogo)', 'route' => 'coach.config.metrics.index'],
                 ['label' => 'Métricas del coach',  'route' => 'coach.config.settings.coach-metrics.index'],
                 // Si usas secciones
                 // ['label' => 'Secciones', 'route' => 'coach.config.sections.index'],
