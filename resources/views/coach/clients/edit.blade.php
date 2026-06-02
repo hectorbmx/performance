@@ -74,18 +74,40 @@
         {{-- Email --}}
         <div class="col-span-12 lg:col-span-3">
             <label class="block text-xs font-medium text-gray-600">Email</label>
-            <input name="email"
-                   type="email"
-                   value="{{ old('email', $client->email) }}"
-                   class="mt-1 w-full rounded-md border-gray-300 text-sm">
+            <div class="relative mt-1">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2 6.75A2.75 2.75 0 014.75 4h14.5A2.75 2.75 0 0122 6.75v10.5A2.75 2.75 0 0119.25 20H4.75A2.75 2.75 0 012 17.25V6.75zm2.75-1.25c-.3 0-.57.1-.78.27l7.35 5.14c.41.29.95.29 1.36 0l7.35-5.14a1.24 1.24 0 00-.78-.27H4.75zm15.75 2.03l-6.96 4.87a2.75 2.75 0 01-3.08 0L3.5 7.53v9.72c0 .69.56 1.25 1.25 1.25h14.5c.69 0 1.25-.56 1.25-1.25V7.53z"/>
+                    </svg>
+                </span>
+                <input name="email"
+                       type="email"
+                       value="{{ old('email', $client->email) }}"
+                       data-validate="email"
+                       pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$"
+                       class="w-full rounded-md border-gray-300 text-sm pl-9">
+            </div>
+            <p class="mt-1 hidden text-xs" data-feedback-for="email"></p>
+            @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
 
         {{-- Teléfono --}}
         <div class="col-span-12 lg:col-span-2">
             <label class="block text-xs font-medium text-gray-600">Teléfono</label>
-            <input name="phone"
-                   value="{{ old('phone', $client->phone) }}"
-                   class="mt-1 w-full rounded-md border-gray-300 text-sm">
+            <div class="relative mt-1">
+                <span class="absolute inset-y-0 left-3 flex items-center text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20.52 3.48A11.84 11.84 0 0012.08 0C5.52 0 .18 5.34.18 11.9c0 2.1.55 4.15 1.6 5.96L0 24l6.3-1.65a11.88 11.88 0 005.78 1.47h.01c6.56 0 11.9-5.34 11.9-11.9 0-3.18-1.24-6.17-3.47-8.44zM12.09 21.8h-.01a9.9 9.9 0 01-5.05-1.38l-.36-.21-3.74.98 1-3.64-.24-.37a9.86 9.86 0 01-1.51-5.27c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.13 1.03 7 2.9a9.84 9.84 0 012.9 7c0 5.45-4.44 9.88-9.89 9.88zm5.42-7.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47a8.95 8.95 0 01-1.65-2.05c-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35z"/>
+                    </svg>
+                </span>
+                <input name="phone"
+                       value="{{ old('phone', $client->phone) }}"
+                       data-validate="phone"
+                       pattern="^(?:\+52\s?)?(?:\d{10}|(?:\d{2}\s?){5})$"
+                       class="w-full rounded-md border-gray-300 text-sm pl-9">
+            </div>
+            <p class="mt-1 hidden text-xs" data-feedback-for="phone"></p>
+            @error('phone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
 
         {{-- Activo --}}
@@ -269,9 +291,16 @@
 
             <div class="col-span-12 lg:col-span-2">
                 <label class="block text-xs font-medium text-gray-600">Estado</label>
-                <input name="state"
-                       value="{{ old('state', $hp?->state) }}"
-                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
+                <select name="state"
+                        class="mt-1 w-full rounded-md border-gray-300 text-sm">
+                    @php $selectedState = old('state', $hp?->state); @endphp
+                    <option value="">Selecciona estado</option>
+                    @foreach($mexicoStates as $state)
+                        <option value="{{ $state }}" {{ $selectedState === $state ? 'selected' : '' }}>
+                            {{ $state }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="col-span-12 lg:col-span-2">
@@ -475,4 +504,6 @@
 </div>
 
     </div>
+
+    @include('coach.clients.partials.contact-validation')
 </x-app-layout>

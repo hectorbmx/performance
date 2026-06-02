@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Support;
+
+class MexicoStates
+{
+    public static function all(): array
+    {
+        return [
+            'Aguascalientes',
+            'Baja California',
+            'Baja California Sur',
+            'Campeche',
+            'Chiapas',
+            'Chihuahua',
+            'Ciudad de Mexico',
+            'Coahuila',
+            'Colima',
+            'Durango',
+            'Estado de Mexico',
+            'Guanajuato',
+            'Guerrero',
+            'Hidalgo',
+            'Jalisco',
+            'Michoacan',
+            'Morelos',
+            'Nayarit',
+            'Nuevo Leon',
+            'Oaxaca',
+            'Puebla',
+            'Queretaro',
+            'Quintana Roo',
+            'San Luis Potosi',
+            'Sinaloa',
+            'Sonora',
+            'Tabasco',
+            'Tamaulipas',
+            'Tlaxcala',
+            'Veracruz',
+            'Yucatan',
+            'Zacatecas',
+        ];
+    }
+}

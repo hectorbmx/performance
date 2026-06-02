@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Coach;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ClientHealthProfile;
+use App\Support\MexicoStates;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClientHealthProfileController extends Controller
 {
@@ -14,7 +16,7 @@ class ClientHealthProfileController extends Controller
         abort_unless($client->coach_id === auth()->id(), 403);
 
         $data = $request->validate([
-            'state'      => ['nullable','string','max:100'],
+            'state'      => ['nullable', Rule::in(MexicoStates::all())],
             'city'       => ['nullable','string','max:120'],
             'zip_code'   => ['nullable','string','max:20'],
             'birth_date' => ['nullable','date'],
