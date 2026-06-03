@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\UserDevice;
 use App\Models\ClientMembership;
 use Illuminate\Support\Carbon;
+use App\Services\AppNotificationService;
 
 class AuthController extends Controller
 {
@@ -364,6 +365,10 @@ public function me(Request $request)
             }
         }
     }
+
+    $notificationService = app(AppNotificationService::class);
+    $membership = $notificationService->currentMembershipFor($userApp);
+    $notifications = $notificationService->forUserApp($userApp, $membership);
 
     return response()->json([
         'ok' => true,
@@ -820,8 +825,9 @@ public function registerDevice(Request $request)
     $user = $request->user();
 
     $result = DB::transaction(function () use ($data, $user) {
-        // 1) Upsert por token (token es unique)
-        $device = UserDevice::query()->where('token', $data['token'])->first();
+        // 1) Upsert por token hash
+        $tokenHash = hash('sha256', $data['token']);
+        $device = UserDevice::query()->where('token_hash', $tokenHash)->first();
 
         if ($device) {
             // si el token existía con otro user (caso raro), se reasigna al usuario actual
@@ -838,6 +844,7 @@ public function registerDevice(Request $request)
                 'user_id'      => $user->id,
                 'platform'     => $data['platform'],
                 'token'        => $data['token'],
+                'token_hash'   => $tokenHash,
                 'is_enabled'   => true,
                 'last_seen_at' => now(),
                 'device_name'  => $data['device_name'] ?? null,

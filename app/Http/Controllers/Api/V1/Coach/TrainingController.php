@@ -11,6 +11,7 @@ use App\Models\TrainingSection;
 use App\Models\TrainingSession;
 use App\Models\TrainingTypeCatalog;
 use App\Models\Unit;
+use App\Services\AppNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -89,7 +90,7 @@ class TrainingController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AppNotificationService $notifications)
     {
         $coachId = $request->user()->id;
         $data = $this->validatedTrainingData($request, $coachId, true);
@@ -104,6 +105,15 @@ class TrainingController extends Controller
         });
 
         $training->load(['sections.unit', 'assignments.client']);
+
+        if ($training->visibility === 'free') {
+            $notifications->notifyFreeTrainingCreated($coachId, $training);
+        } else {
+            $notifications->notifyTrainingAssigned(
+                $this->notificationClientIds($coachId, $data['assigned_client_ids'] ?? [], $data['assigned_group_ids'] ?? []),
+                $training
+            );
+        }
 
         return response()->json([
             'ok' => true,
@@ -124,12 +134,14 @@ class TrainingController extends Controller
         ]);
     }
 
-    public function update(Request $request, TrainingSession $training)
+    public function update(Request $request, TrainingSession $training, AppNotificationService $notifications)
     {
         $this->authorizeTraining($request, $training);
 
         $coachId = $request->user()->id;
         $data = $this->validatedTrainingData($request, $coachId, false);
+        $previousRecipientIds = $this->currentRecipientClientIds($training);
+        $wasFree = $training->visibility === 'free';
 
         DB::transaction(function () use ($training, $coachId, $data) {
             $training->update($this->trainingHeaderPayload($coachId, $data, $training));
@@ -146,6 +158,13 @@ class TrainingController extends Controller
         });
 
         $training->refresh()->load(['sections.unit', 'assignments.client']);
+
+        if (!$wasFree && $training->visibility === 'free') {
+            $notifications->notifyFreeTrainingCreated($coachId, $training);
+        } elseif ($training->visibility === 'assigned' && (array_key_exists('assigned_client_ids', $data) || array_key_exists('assigned_group_ids', $data))) {
+            $newRecipientIds = $this->notificationClientIds($coachId, $data['assigned_client_ids'] ?? [], $data['assigned_group_ids'] ?? []);
+            $notifications->notifyTrainingAssigned(array_values(array_diff($newRecipientIds, $previousRecipientIds)), $training);
+        }
 
         return response()->json([
             'ok' => true,
@@ -342,6 +361,43 @@ class TrainingController extends Controller
             ->where('training_session_id', $training->id)
             ->when(!empty($groupIds), fn ($query) => $query->whereNotIn('group_id', $groupIds))
             ->delete();
+    }
+
+    private function notificationClientIds(int $coachId, array $clientIds, array $groupIds = []): array
+    {
+        $groupClientIds = [];
+
+        if (!empty($groupIds)) {
+            $groupClientIds = DB::table('client_group')
+                ->join('clients', 'clients.id', '=', 'client_group.client_id')
+                ->whereIn('client_group.group_id', collect($groupIds)->unique()->values())
+                ->where('clients.coach_id', $coachId)
+                ->where('clients.is_active', true)
+                ->pluck('clients.id')
+                ->all();
+        }
+
+        return collect($clientIds)
+            ->merge($groupClientIds)
+            ->unique()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    private function currentRecipientClientIds(TrainingSession $training): array
+    {
+        $directClientIds = $training->assignments()
+            ->pluck('client_id')
+            ->filter()
+            ->all();
+
+        $groupIds = GroupTrainingAssignment::query()
+            ->where('training_session_id', $training->id)
+            ->pluck('group_id')
+            ->all();
+
+        return $this->notificationClientIds((int) $training->coach_id, $directClientIds, $groupIds);
     }
 
     private function authorizeTraining(Request $request, TrainingSession $training): void

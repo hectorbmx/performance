@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TrainingAssignment;
 use App\Models\TrainingSection;
 use App\Models\TrainingSectionResult;
+use App\Services\TrainingAssignmentProgressService;
 use Illuminate\Http\Request;
 
 class TrainingSectionResultsController extends Controller
@@ -161,13 +162,13 @@ class TrainingSectionResultsController extends Controller
         $payload
     );
 
-    if ($assignment->status === 'scheduled') {
-        $assignment->update(['status' => 'in_progress']);
-    }
+    $progress = app(TrainingAssignmentProgressService::class)->syncStatus($assignment);
 
     return response()->json([
         'ok' => true,
         'data' => [
+            'status' => $assignment->status,
+            'progress' => $progress,
             'id' => $result->id,
             'training_assignment_id' => $result->training_assignment_id,
             'training_section_id' => $result->training_section_id,

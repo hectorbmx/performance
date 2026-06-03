@@ -7,6 +7,7 @@ use App\Http\Controllers\Client\TrainingAssignmentsController;
 use App\Http\Controllers\Api\V1\App\Client\ProfileController;
 use App\Http\Controllers\Api\V1\App\Client\MembershipController;
 use App\Http\Controllers\Api\V1\App\Client\HealthMetricController;
+use App\Http\Controllers\Api\V1\App\Client\StreakController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
@@ -88,6 +89,7 @@ Route::prefix('v1')->group(function () {
         Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
 
         Route::get('/app/memberships', [MembershipController::class, 'index']);
+        Route::get('/app/streak', [StreakController::class, 'show']);
         Route::post('/app/memberships/future', [MembershipController::class, 'storeFuture']);
         Route::get('/app/health-metrics', [HealthMetricController::class, 'index']);
         Route::post('/app/health-metrics/sync', [HealthMetricController::class, 'sync']);

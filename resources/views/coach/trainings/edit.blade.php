@@ -1,18 +1,49 @@
 <x-app-layout>
-    <div class="max-w-5xl mx-auto px-4 py-6">
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Editar entrenamiento</h1>
-                <p class="text-sm text-gray-600">Actualiza la cabecera y las secciones.</p>
-            </div>
+    @php
+        $selectedDate = old('scheduled_at', optional($training->scheduled_at)->toDateString() ?? now()->toDateString());
+        $selectedCarbon = \Carbon\Carbon::parse($selectedDate);
+        $weekStart = $selectedCarbon->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+        $weekDays = collect(range(0, 6))->map(fn ($offset) => $weekStart->copy()->addDays($offset));
+        $dayLabels = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+    @endphp
 
-            <a href="{{ route('coach.trainings.index') }}"
-               class="px-4 py-2 rounded-lg border text-sm text-gray-700">
-                Volver
-            </a>
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="text-sm font-semibold text-gray-950">Dashboard &gt; Editar entrenamiento</div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <div id="dateNavigator" class="flex items-center gap-1 rounded-2xl bg-blue-50 p-1">
+                    @foreach($weekDays as $idx => $day)
+                        <button type="button"
+                                class="date-nav-day min-w-[54px] rounded-xl px-3 py-2 text-center text-sm transition"
+                                data-date="{{ $day->toDateString() }}">
+                            <span class="block text-[11px] font-bold text-gray-500">{{ $dayLabels[$idx] }}</span>
+                            <span class="block text-lg font-semibold text-gray-950">{{ $day->format('d') }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
-        <form method="POST" action="{{ route('coach.trainings.update', $training) }}" class="mt-6 space-y-6" enctype="multipart/form-data">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-950">Editar entrenamiento</h1>
+                <p class="mt-1 text-lg text-gray-700">Actualiza los detalles y programa las secciones.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="{{ route('coach.trainings.index') }}"
+                   class="px-8 py-3 rounded-lg bg-indigo-100 text-sm font-semibold text-gray-700">
+                    Cancelar
+                </a>
+                <button form="editTrainingForm"
+                        class="px-9 py-3 rounded-lg bg-blue-700 text-white text-sm font-semibold shadow-md shadow-blue-900/15">
+                    Guardar
+                </button>
+            </div>
+        </div>
+
+        <form method="POST" id="editTrainingForm" action="{{ route('coach.trainings.update', $training) }}" class="mt-8 space-y-8" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -29,40 +60,50 @@
             @endif
 
             {{-- CABECERA --}}
-            <div class="bg-white border rounded-xl p-5 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Nombre</label>
+            <div class="rounded-xl border border-slate-300 bg-white p-6 shadow-sm">
+                <div class="mb-6 flex items-center gap-3 border-b border-slate-300 pb-5">
+                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-blue-700 text-blue-700">
+                        <i class="fa-solid fa-info text-sm"></i>
+                    </span>
+                    <h2 class="text-2xl font-bold text-gray-950">Detalles del entrenamiento</h2>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
+                    <div class="lg:col-span-5">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Nombre</label>
                         <input name="title" required
                                value="{{ old('title', $training->title) }}"
-                               class="w-full h-10 rounded-lg border-gray-300"/>
+                               placeholder="Ej. AMRAP Power Hour"
+                               class="w-full h-12 rounded-lg border-slate-300 text-lg"/>
                     </div>
 
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Fecha</label>
-                        <input type="date" name="scheduled_at" required
-                               value="{{ old('scheduled_at', $training->scheduled_at->toDateString()) }}"
-                               class="w-full h-10 rounded-lg border-gray-300"/>
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Fecha</label>
+                        <input type="date" id="scheduledAtInput" name="scheduled_at" required
+                               value="{{ $selectedDate }}"
+                               class="w-full h-12 rounded-lg border-slate-300 text-lg"/>
                     </div>
 
-                    <div>
+                    <div class="lg:col-span-2">
                         <label class="block text-xs text-gray-600 mb-1">Duración (min)</label>
                         <input type="number" name="duration_minutes"
                                value="{{ old('duration_minutes', $training->duration_minutes) }}"
-                               class="w-full h-10 rounded-lg border-gray-300"/>
+                               min="1" max="600"
+                               placeholder="60"
+                               class="w-full h-12 rounded-lg border-slate-300 text-lg"/>
                     </div>
 
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Visibilidad</label>
-                        <select name="visibility" class="w-full h-10 rounded-lg border-gray-300">
-                            <option value="assigned" @selected(old('visibility', $training->visibility)==='assigned')>Asignado</option>
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Visibilidad</label>
+                        <select id="visibilitySelect" name="visibility" class="w-full h-12 rounded-lg border-slate-300 text-lg">
                             <option value="free" @selected(old('visibility', $training->visibility)==='free')>Libre</option>
+                            <option value="assigned" @selected(old('visibility', $training->visibility)==='assigned')>Asignado</option>
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Nivel</label>
-                        <select name="level" class="w-full h-10 rounded-lg border-gray-300">
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Nivel</label>
+                        <select name="level" class="w-full h-12 rounded-lg border-slate-300 text-lg">
                             @foreach(['beginner','intermediate','advanced'] as $lvl)
                                 <option value="{{ $lvl }}" @selected(old('level',$training->level)===$lvl)>
                                     {{ ucfirst($lvl) }}
@@ -70,12 +111,12 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
-                          <label class="block text-xs text-gray-600 mb-1">Objetivo</label>
-                            <select name="training_goal_catalog_id" class="w-full h-10 rounded-lg border-gray-300" required>
+                    <div class="lg:col-span-3">
+                          <label class="block text-sm font-semibold text-gray-900 mb-2">Objetivo</label>
+                            <select name="training_goal_catalog_id" class="w-full h-12 rounded-lg border-slate-300 text-lg" required>
                                 @foreach ($goals as $goal)
                                     <option value="{{ $goal->id }}"
-                                        @selected(old('training_goal_catalog_id') == $goal->id)>
+                                        @selected((string)old('training_goal_catalog_id', (string)($training->training_goal_catalog_id ?? '')) === (string)$goal->id)>
                                         {{ $goal->name }}
                                     </option>
                                 @endforeach
@@ -86,10 +127,10 @@
 
                     </div>
 
-                   <div>
-                  <label class="block text-xs text-gray-600 mb-1">Tipo</label>
+                   <div class="lg:col-span-3">
+                  <label class="block text-sm font-semibold text-gray-900 mb-2">Tipo</label>
 
-                  <select name="training_type_catalog_id" class="w-full h-10 rounded-lg border-gray-300">
+                  <select name="training_type_catalog_id" class="w-full h-12 rounded-lg border-slate-300 text-lg">
                       <option value="">Selecciona un tipo</option>
 
                       @foreach($types as $t)
@@ -106,6 +147,22 @@
                       <div class="text-xs text-red-600 mt-1">{{ $message }}</div>
                   @enderror
               </div>
+
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Color etiqueta</label>
+                        <div class="flex items-center gap-2">
+                            <input id="tagColorInput"
+                                   type="color"
+                                   name="tag_color"
+                                   value="{{ old('tag_color', $training->tag_color ?? '#000000') }}"
+                                   class="h-10 w-14 rounded border border-gray-300">
+                            <label class="flex items-center gap-2 text-sm text-gray-600">
+                                <input id="noColorCheck" type="checkbox" class="rounded border-gray-300" @checked(old('tag_color', $training->tag_color) === null || old('tag_color', $training->tag_color) === '')>
+                                Sin color
+                            </label>
+                        </div>
+                        @error('tag_color') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
 
 {{-- Cover image --}}
 @php
@@ -168,7 +225,7 @@
                     </div>
                 </div>
             </div>
-<div class="bg-white border rounded-xl p-5">
+<div id="assignBlock" class="bg-white border rounded-xl p-5 {{ old('visibility', $training->visibility) === 'assigned' ? '' : 'hidden' }}">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
     {{-- IZQUIERDA: Asignación individual --}}
@@ -285,6 +342,9 @@
 
 
   </div>
+</div>
+<div id="assignError" class="hidden rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+    Para entrenamientos asignados selecciona al menos 1 atleta o 1 grupo.
 </div>
 {{-- SECCIONES --}}
 <div class="bg-white border rounded-xl p-5">
@@ -1338,6 +1398,93 @@
     img.src = URL.createObjectURL(file);
   }
   
+</script>
+<script>
+(function () {
+  const scheduledInput = document.getElementById('scheduledAtInput');
+  const dayButtons = document.querySelectorAll('.date-nav-day');
+
+  function syncSelectedDate() {
+    if (!scheduledInput) return;
+    dayButtons.forEach((button) => {
+      const active = button.dataset.date === scheduledInput.value;
+      button.classList.toggle('bg-blue-700', active);
+      button.classList.toggle('text-white', active);
+      button.classList.toggle('shadow-sm', active);
+      button.classList.toggle('bg-white', !active);
+      button.classList.toggle('text-gray-700', !active);
+      button.querySelectorAll('span').forEach((span) => {
+        span.classList.toggle('text-white', active);
+      });
+    });
+  }
+
+  dayButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!scheduledInput) return;
+      scheduledInput.value = button.dataset.date;
+      scheduledInput.dispatchEvent(new Event('change', { bubbles: true }));
+      syncSelectedDate();
+    });
+  });
+
+  scheduledInput?.addEventListener('change', syncSelectedDate);
+  syncSelectedDate();
+
+  const visibilitySelect = document.getElementById('visibilitySelect');
+  const assignBlock = document.getElementById('assignBlock');
+  const assignError = document.getElementById('assignError');
+  const form = document.getElementById('editTrainingForm');
+
+  function anyAssignments() {
+    return !!(
+      document.querySelector('#assignedClientsPills input[name="assigned_clients[]"]') ||
+      document.querySelector('#assignedGroupsPills input[name="assigned_groups[]"]')
+    );
+  }
+
+  function syncVisibilityUI() {
+    const isAssigned = visibilitySelect?.value === 'assigned';
+    assignBlock?.classList.toggle('hidden', !isAssigned);
+    assignError?.classList.add('hidden');
+  }
+
+  visibilitySelect?.addEventListener('change', syncVisibilityUI);
+  form?.addEventListener('submit', (event) => {
+    if (visibilitySelect?.value === 'assigned' && !anyAssignments()) {
+      event.preventDefault();
+      assignError?.classList.remove('hidden');
+      assignBlock?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+  syncVisibilityUI();
+
+  const noColorCheck = document.getElementById('noColorCheck');
+  const tagColorInput = document.getElementById('tagColorInput');
+
+  function syncTagColor() {
+    if (!tagColorInput || !noColorCheck || !form) return;
+
+    if (noColorCheck.checked) {
+      tagColorInput.setAttribute('disabled', 'disabled');
+      let hidden = document.getElementById('tagColorHidden');
+      if (!hidden) {
+        hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'tag_color';
+        hidden.id = 'tagColorHidden';
+        form.appendChild(hidden);
+      }
+      hidden.value = '';
+    } else {
+      tagColorInput.removeAttribute('disabled');
+      document.getElementById('tagColorHidden')?.remove();
+    }
+  }
+
+  noColorCheck?.addEventListener('change', syncTagColor);
+  syncTagColor();
+})();
 </script>
 <script>
 (function () {

@@ -357,7 +357,7 @@ foreach (($data['sections'] ?? []) as $idx => $s) {
             'scheduled_at'             => $data['scheduled_at'],
             'duration_minutes'         => $data['duration_minutes'] ?? null,
             'level'                    => $data['level'],
-            // 'training_goal_catalog_id' => $data['training_goal_catalog_id'],
+            'training_goal_catalog_id' => $data['training_goal_catalog_id'],
             'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
             'visibility'               => $data['visibility'],
             'notes'                    => $data['notes'] ?? null,
@@ -647,6 +647,7 @@ public function update(Request $request, TrainingSession $training)
 
         'visibility' => ['required','in:free,assigned'],
         'notes'      => ['nullable','string'],
+        'tag_color'  => ['nullable','regex:/^#[0-9A-Fa-f]{6}$/'],
         'cover_image' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:5120'],
         // --- SECCIONES ---
         'sections'                   => ['required','array','min:1'],
@@ -727,11 +728,12 @@ public function update(Request $request, TrainingSession $training)
             'scheduled_at'             => $data['scheduled_at'],
             'duration_minutes'         => $data['duration_minutes'] ?? null,
             'level'                    => $data['level'],
-            // 'goal'                     => $data['goal'],
+            'training_goal_catalog_id' => $data['training_goal_catalog_id'],
             'training_type_catalog_id' => $data['training_type_catalog_id'] ?? null,
             // 'type' legacy: no lo tocamos si no viene en el request
             'visibility'               => $data['visibility'],
             'notes'                    => $data['notes'] ?? null,
+            'tag_color'                => $data['tag_color'] ?? null,
             ...(isset($data['cover_image']) ? ['cover_image' => $data['cover_image']] : []),
         ]);
 

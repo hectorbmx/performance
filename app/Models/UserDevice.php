@@ -15,6 +15,7 @@ class UserDevice extends Model
         'user_id',
         'platform',
         'token',
+        'token_hash',
         'is_enabled',
         'last_seen_at',
         'device_name',

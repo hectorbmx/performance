@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TrainingAssignment;
 use App\Models\TrainingSection;
 use App\Models\TrainingSectionResult;
+use App\Services\TrainingAssignmentProgressService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -103,11 +104,8 @@ class TrainingAssignmentsController extends Controller
             ];
         })->values();
 
-        // 3. Cálculos de progreso
-        $sectionsTotal = $sections->count();
-        $sectionsCompleted = $resultsBySection->count() + $completionsBySection->count();
-        if ($sectionsCompleted > $sectionsTotal) $sectionsCompleted = $sectionsTotal;
-        $pct = $sectionsTotal > 0 ? (int) round(($sectionsCompleted / $sectionsTotal) * 100) : 0;
+        // 3. Calculos de progreso
+        $progress = app(TrainingAssignmentProgressService::class)->snapshot($assignment);
 
         $coverUrl = $session?->cover_image ? url(Storage::disk('public')->url($session->cover_image)) : null;
 
@@ -127,9 +125,10 @@ class TrainingAssignmentsController extends Controller
                 ] : null,
                 'sections' => $sectionsPayload,
                 'progress' => [
-                    'sections_total' => $sectionsTotal,
-                    'sections_completed' => $sectionsCompleted,
-                    'pct' => $pct,
+                    'sections_total' => $progress['sections_total'],
+                    'sections_completed' => $progress['sections_completed'],
+                    'sections_with_results' => $progress['sections_with_results'],
+                    'pct' => $progress['pct'],
                 ],
             ],
         ]);
@@ -217,13 +216,15 @@ class TrainingAssignmentsController extends Controller
         ]
     );
 
-    // opcional: mover a in_progress al primer avance
-    if ($assignment->status === 'scheduled') {
-        $assignment->update(['status' => 'in_progress']);
-    }
+    // Sincroniza el status de la asignacion con el avance real.
+    $progress = app(TrainingAssignmentProgressService::class)->syncStatus($assignment);
 
     return response()->json([
         'ok' => true,
+        'data' => [
+            'status' => $assignment->status,
+            'progress' => $progress,
+        ],
         'message' => 'Sección completada.',
     ]);
 }

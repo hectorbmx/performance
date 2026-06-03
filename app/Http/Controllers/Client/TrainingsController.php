@@ -199,6 +199,15 @@ class TrainingsController extends Controller
             ->groupBy('training_assignment_id')
             ->pluck('completed', 'training_assignment_id');
 
+        $sectionsCompletedByAssignment = DB::table('training_section_completions')
+            ->whereIn('training_assignment_id', $assignmentIds)
+            ->select(
+                'training_assignment_id',
+                DB::raw('COUNT(DISTINCT training_section_id) as completed')
+            )
+            ->groupBy('training_assignment_id')
+            ->pluck('completed', 'training_assignment_id');
+
         $sessionIds = $rows->pluck('training_session_id')->unique()->values();
 
         $sectionsTotalBySession = DB::table('training_sections')
@@ -207,9 +216,11 @@ class TrainingsController extends Controller
             ->groupBy('training_session_id')
             ->pluck('total', 'training_session_id');
 
-        $data = $rows->map(function ($r) use ($sectionsTotalBySession, $sectionsWithResultsByAssignment) {
+        $data = $rows->map(function ($r) use ($sectionsTotalBySession, $sectionsWithResultsByAssignment, $sectionsCompletedByAssignment) {
             $sectionsTotal = (int)($sectionsTotalBySession[$r->training_session_id] ?? 0);
-            $completed = (int)($sectionsWithResultsByAssignment[$r->assignment_id] ?? 0);
+            $completed = (int)($sectionsWithResultsByAssignment[$r->assignment_id] ?? 0)
+                + (int)($sectionsCompletedByAssignment[$r->assignment_id] ?? 0);
+            $completed = min($completed, $sectionsTotal);
             $pct = $sectionsTotal > 0 ? (int)round(($completed / $sectionsTotal) * 100) : 0;
             
             $coverUrl = $r->cover_image ? url(Storage::disk('public')->url($r->cover_image)) : null;
