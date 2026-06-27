@@ -73,7 +73,7 @@
                 
                 <!-- Card: Por vencer pronto -->
                 <div class="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden hover:shadow-md/50 transition-shadow duration-300">
-                    <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4.5">
+                    <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                             Por vencer pronto
@@ -138,7 +138,7 @@
 
                 <!-- Card: Últimos clientes -->
                 <div class="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden hover:shadow-md/50 transition-shadow duration-300">
-                    <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4.5">
+                    <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
                             Últimos clientes
@@ -154,7 +154,7 @@
                         @else
                             <div class="space-y-3">
                                 @foreach($latestClients as $client)
-                                    <div class="group/item flex items-center justify-between gap-4 rounded-xl border border-slate-100 p-3.5 bg-white shadow-2xs hover:border-slate-200 hover:bg-slate-50/30 transition-all duration-200">
+                                    <div class="group/item flex items-center justify-between gap-4 rounded-xl border border-slate-100 p-3.5 bg-white shadow-sm hover:border-slate-200 hover:bg-slate-50/30 transition-all duration-200">
                                         <div class="min-w-0">
                                             <div class="flex items-center gap-2">
                                                 <p class="truncate font-semibold text-slate-900 group-hover/item:text-indigo-600 transition-colors">{{ $client->full_name ?: 'Cliente #' . $client->id }}</p>
@@ -172,7 +172,7 @@
                                         </div>
 
                                         <a href="{{ route('coach.clients.edit', $client) }}"
-                                           class="shrink-0 inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-3xs hover:bg-slate-50 hover:text-slate-900 transition-all group-hover/item:border-slate-300">
+                                           class="shrink-0 inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 transition-all group-hover/item:border-slate-300">
                                             Abrir
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1 text-slate-400 group-hover/item:text-slate-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
