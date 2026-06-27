@@ -62,6 +62,40 @@
   letter-spacing: -0.5px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.streak-chip {
+  min-width: 44px;
+  height: 44px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1;
+
+  ion-icon {
+    font-size: 21px;
+    color: #ff9f1c;
+  }
+
+  span {
+    min-width: 10px;
+    font-size: 14px;
+    text-align: center;
+  }
+}
+
 .notification-icon {
   position: relative;
   width: 44px;

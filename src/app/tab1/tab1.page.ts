@@ -64,6 +64,15 @@ export class Tab1Page {
   isNotifOpen = false;
   notifCount = computed(() => this.auth.notifications().length);
   notifications = computed(() => this.auth.notifications());
+  streak = {
+    current: 0,
+    best: 0,
+    today: {
+      assigned: 0,
+      completed: 0,
+      is_complete: false,
+    },
+  };
 
   loading = false;
   errorMsg: string | null = null;
@@ -143,7 +152,22 @@ notifEvent: any;
       // aquí puedes decidir: ignorar o forzar logout/redirect
     }
 
-    await this.load();
+    await Promise.all([this.load(), this.loadStreak()]);
+  }
+
+  private async loadStreak() {
+    try {
+      const res = await this.trainingApi.streak();
+      if (res?.ok && res.data) {
+        this.streak = {
+          current: res.data.current ?? 0,
+          best: res.data.best ?? 0,
+          today: res.data.today ?? this.streak.today,
+        };
+      }
+    } catch (err) {
+      console.warn('No se pudo cargar la racha', err);
+    }
   }
   private async loadHealthToday() {
     this.healthLoading = true;
@@ -345,6 +369,7 @@ async startWorkout(item: TrainingFeedItemDTO) {
   try {
     const res = await this.trainingApi.index();
     this.items = res.data ?? [];
+    await this.loadStreak();
 
     this.computeTodayUpcoming();
 

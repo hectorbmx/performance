@@ -1,0 +1,95 @@
+@use '../secondary-page';
+
+.plan-actions {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+  gap: 10px;
+  padding: 16px 18px 0;
+}
+
+.primary-action,
+.ghost-action,
+.submit-btn {
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.primary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.ghost-action {
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.empty-card {
+  padding: 18px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  h2 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 17px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+.modal-content {
+  --background: #f6f8fb;
+}
+
+.plan-form {
+  padding: 16px;
+
+  ion-item {
+    --background: #ffffff;
+    --border-radius: 8px;
+    --padding-start: 12px;
+    margin-bottom: 10px;
+  }
+
+  ion-segment {
+    margin-bottom: 10px;
+    --background: #e5e7eb;
+    border-radius: 8px;
+  }
+}
+
+.provider-item {
+  margin-bottom: 4px !important;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 8px;
+  background: #111827;
+  color: #ffffff;
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}

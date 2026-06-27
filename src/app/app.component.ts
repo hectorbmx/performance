@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import { PushNotifications, PermissionStatus, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
+import { ApiService } from './services/api.service';
 
 @Component({
   selector: 'app-root',
@@ -9,7 +11,7 @@ import { PushNotifications, PermissionStatus, Token, PushNotificationSchema, Act
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent implements OnInit { // Añade implements OnInit por buena práctica
-  constructor() {}
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
     this.initPush();
@@ -38,6 +40,7 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
 
       // 3) Listener: Registro exitoso (Obtener token)
       PushNotifications.addListener('registration', (token: Token) => {
+        this.registerPushToken(token.value);
         console.log('🔥 FCM TOKEN >>>', token.value);
         // TIP: Aquí es donde deberías enviar el token a tu API de Laravel
       });
@@ -62,6 +65,23 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
 
     } catch (err) {
       console.error('❌ Push init error:', err);
+    }
+  }
+
+  private async registerPushToken(token: string) {
+    await Preferences.set({ key: 'pending_push_token', value: token });
+
+    const authToken = await this.api.getToken();
+    if (!authToken) return;
+
+    try {
+      await this.api.post('app/register-device', {
+        token,
+        platform: Capacitor.getPlatform(),
+      });
+      await Preferences.remove({ key: 'pending_push_token' });
+    } catch (err) {
+      console.warn('No se pudo registrar el token push', err);
     }
   }
 }

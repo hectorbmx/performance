@@ -17,6 +17,12 @@
           
         </div>
       </div>
+      <div class="header-actions">
+        <div class="streak-chip" title="Racha de entrenamientos">
+          <ion-icon name="flame-outline"></ion-icon>
+          <span>{{ streak.current }}</span>
+        </div>
+
       <div class="notification-icon" (click)="openNotifications()">
   <ion-icon name="notifications-outline"></ion-icon>
 
@@ -67,6 +73,7 @@
       </ng-template>
     </ion-content>
   </ion-modal>
+</div>
 </div>
 
       <!-- <div class="notification-icon">

@@ -17,6 +17,11 @@ export const routes: Routes = [
     loadChildren: () => import('./tabs/tabs.routes').then(m => m.routes),
   },
   {
+    path: 'coach',
+    canMatch: [authGuard],
+    loadChildren: () => import('./coach/coach.routes').then(m => m.routes),
+  },
+  {
     path: 'user-profile',
     canMatch: [authGuard],
     loadComponent: () => import('./pages/user-profile/user-profile.page').then( m => m.UserProfilePage)

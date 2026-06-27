@@ -1,154 +1,9 @@
-// import { Injectable } from '@angular/core';
-// import { ApiService } from './api.service';
-// import { Preferences } from '@capacitor/preferences';
-
-// export interface LoginContext {
-//   user_app_id: number;
-//   client_id: number;
-//   coach_id: number;
-// }
-
-// export interface LoginUser {
-//   id: number;
-//   email: string;
-// }
-
-// export interface LoginClient {
-//   id: number;
-//   first_name: string;
-//   last_name: string;
-// }
-
-// export interface LoginResponse {
-//   ok: boolean;
-//   token: string;
-//   context: LoginContext;
-//   user: LoginUser;
-//   client: LoginClient;
-// }
-// export interface MeUser {
-//   id: number;
-//   email: string;
-//   client_id: number;
-//   is_active: boolean;
-// }
-
-// export interface MeClient {
-//   id: number;
-//   first_name: string;
-//   last_name: string;
-//   coach_id: number;
-//   is_active: boolean;
-// }
-
-// export interface MeResponse {
-//   ok: boolean;
-//   user: MeUser;
-//   client: MeClient;
-// }
-
-// @Injectable({ providedIn: 'root' })
-// export class AuthService {
-//   private readonly CONTEXT_KEY = 'auth_context';
-//   private readonly USER_KEY = 'auth_user';
-//   private readonly CLIENT_KEY = 'auth_client';
-
-//   constructor(private api: ApiService) {}
-
-//   // ==========================
-//   // AUTH
-//   // ==========================
-//   async login(email: string, password: string): Promise<LoginResponse> {
-//     const res = await this.api.post<LoginResponse>('app/login', { email, password });
-
-//     if (!res?.ok || !res?.token) {
-//       throw new Error('Respuesta inválida del servidor (token no recibido).');
-//     }
-
-//     // Token para Authorization: Bearer ...
-//     await this.api.setToken(res.token);
-
-//     // Guardar contexto y datos básicos para uso offline/rápido
-//     await Preferences.set({ key: this.CONTEXT_KEY, value: JSON.stringify(res.context || {}) });
-//     await Preferences.set({ key: this.USER_KEY, value: JSON.stringify(res.user || {}) });
-//     await Preferences.set({ key: this.CLIENT_KEY, value: JSON.stringify(res.client || {}) });
-
-//     return res;
-//   }
-
-// async me(): Promise<MeResponse> {
-//   const res = await this.api.get<MeResponse>('app/me');
-
-//   // refrescar cache local
-//   await Preferences.set({ key: this.USER_KEY, value: JSON.stringify(res.user || {}) });
-//   await Preferences.set({ key: this.CLIENT_KEY, value: JSON.stringify(res.client || {}) });
-
-//   // contexto derivado (por si lo quieres uniforme con login)
-//   const context = {
-//     user_app_id: res.user?.id,
-//     client_id: res.user?.client_id,
-//     coach_id: res.client?.coach_id,
-//   };
-//   await Preferences.set({ key: this.CONTEXT_KEY, value: JSON.stringify(context) });
-
-//   return res;
-// }
-
-
-//   async logout(): Promise<void> {
-//     try {
-//       await this.api.post<any>('app/logout', {});
-//     } finally {
-//       await this.api.clearToken();
-//       await Preferences.remove({ key: this.CONTEXT_KEY });
-//       await Preferences.remove({ key: this.USER_KEY });
-//       await Preferences.remove({ key: this.CLIENT_KEY });
-//     }
-//   }
-
-//   async isLoggedIn(): Promise<boolean> {
-//     const token = await this.api.getToken();
-//     return !!token;
-//   }
-
-//   // ==========================
-//   // CONTEXTO LOCAL (para app)
-//   // ==========================
-//   async getContext(): Promise<LoginContext | null> {
-//     const { value } = await Preferences.get({ key: this.CONTEXT_KEY });
-//     if (!value) return null;
-//     try {
-//       return JSON.parse(value) as LoginContext;
-//     } catch {
-//       return null;
-//     }
-//   }
-
-//   async getStoredUser(): Promise<LoginUser | null> {
-//     const { value } = await Preferences.get({ key: this.USER_KEY });
-//     if (!value) return null;
-//     try {
-//       return JSON.parse(value) as LoginUser;
-//     } catch {
-//       return null;
-//     }
-//   }
-
-//   async getStoredClient(): Promise<LoginClient | null> {
-//     const { value } = await Preferences.get({ key: this.CLIENT_KEY });
-//     if (!value) return null;
-//     try {
-//       return JSON.parse(value) as LoginClient;
-//     } catch {
-//       return null;
-//     }
-//   }
-// }
 import { Injectable, signal } from '@angular/core';
-import { ApiService } from './api.service';
 import { Preferences } from '@capacitor/preferences';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Capacitor } from '@capacitor/core';
+import { ApiService } from './api.service';
 
+export type ActorType = 'client' | 'coach';
 
 export interface AuthContext {
   user_app_id: number;
@@ -157,7 +12,7 @@ export interface AuthContext {
 }
 
 export interface AppUserDTO {
-  id: number;         // user_apps.id
+  id: number;
   email: string;
   client_id: number;
   is_active: boolean;
@@ -169,22 +24,21 @@ export interface ClientDTO {
   last_name: string;
   coach_id: number;
   is_active: boolean;
-  avatar_url:string;
+  avatar_url: string;
 }
 
 export interface LoginResponse {
   ok: boolean;
   token: string;
-  context: AuthContext;
-  user: AppUserDTO;
-  client: ClientDTO;
+  actor_type?: ActorType;
+  redirect_to?: 'client' | 'coach';
+  context?: AuthContext;
+  user: any;
+  client?: ClientDTO;
+  coach?: any;
+  subscription?: any;
 }
 
-export interface MeResponse {
-  ok: boolean;
-  user: AppUserDTO;
-  client: ClientDTO;
-}
 export interface AppNotificationDTO {
   id: string;
   type: 'info' | 'warning' | 'danger';
@@ -207,121 +61,128 @@ export class AuthService {
   private readonly CONTEXT_KEY = 'auth_context';
   private readonly USER_KEY = 'auth_user';
   private readonly CLIENT_KEY = 'auth_client';
+  private readonly COACH_KEY = 'auth_coach';
+  private readonly ACTOR_TYPE_KEY = 'auth_actor_type';
   private readonly NOTIFICATIONS_KEY = 'auth_notifications';
 
-  // Estado en memoria (para UI)
-  user = signal<AppUserDTO | null>(null);
+  user = signal<any | null>(null);
   client = signal<ClientDTO | null>(null);
+  coach = signal<any | null>(null);
   context = signal<AuthContext | null>(null);
+  actorType = signal<ActorType | null>(null);
   notifications = signal<AppNotificationDTO[]>([]);
 
   constructor(private api: ApiService) {}
 
-  // Carga rápida desde Preferences (útil al iniciar app / entrar a Home)
   async hydrateFromStorage(): Promise<void> {
-    const [ctx, usr, cli] = await Promise.all([
+    const [ctx, usr, cli, coach, actor, notifications] = await Promise.all([
       Preferences.get({ key: this.CONTEXT_KEY }),
       Preferences.get({ key: this.USER_KEY }),
       Preferences.get({ key: this.CLIENT_KEY }),
+      Preferences.get({ key: this.COACH_KEY }),
+      Preferences.get({ key: this.ACTOR_TYPE_KEY }),
+      Preferences.get({ key: this.NOTIFICATIONS_KEY }),
     ]);
 
     this.context.set(this.safeParse<AuthContext>(ctx.value));
-    this.user.set(this.safeParse<AppUserDTO>(usr.value));
+    this.user.set(this.safeParse<any>(usr.value));
     this.client.set(this.safeParse<ClientDTO>(cli.value));
+    this.coach.set(this.safeParse<any>(coach.value));
+    this.actorType.set(actor.value === 'coach' ? 'coach' : actor.value === 'client' ? 'client' : null);
+    this.notifications.set(this.safeParse<AppNotificationDTO[]>(notifications.value) ?? []);
   }
 
-  private safeParse<T>(value: string | null): T | null {
-    if (!value) return null;
-    try { return JSON.parse(value) as T; } catch { return null; }
-  }
+  async login(email: string, password: string): Promise<LoginResponse> {
+    try {
+      const res = await this.loginClientOrCoach(email, password);
 
+      if (!res?.ok || !res?.token) {
+        throw new Error('Respuesta invalida del servidor (token no recibido).');
+      }
 
-async login(email: string, password: string): Promise<LoginResponse> {
-  try {
-    const res = await this.api.post<LoginResponse>('app/login', { email, password });
+      await this.api.setToken(res.token);
 
-    if (!res?.ok || !res?.token) {
-      throw new Error('Respuesta inválida del servidor (token no recibido).');
+      if ((res.actor_type ?? (res.coach ? 'coach' : 'client')) === 'coach') {
+        await this.persistCoachSession(res.user, res.coach, res.subscription);
+      } else {
+        await this.persistClientSession(res.context as AuthContext, res.user, res.client as ClientDTO);
+        await this.registerPendingPushToken();
+      }
+
+      return res;
+    } catch (err: any) {
+      const message = err?.message || 'No se pudo iniciar sesion.';
+
+      if (message === 'Cuenta pendiente de activación.' || message === 'Cuenta pendiente de activaciÃ³n.') {
+        throw { needsActivation: true, message };
+      }
+
+      throw { message };
     }
-
-    await this.api.setToken(res.token);
-    await this.persistSession(res.context, res.user, res.client);
-
-    this.context.set(res.context ?? null);
-    this.user.set(res.user ?? null);
-    this.client.set(res.client ?? null);
-
-    return res;
-
-  } catch (err: any) {
-    // Tu ApiService está lanzando Error("Cuenta pendiente de activación.")
-    const message = err?.message || 'No se pudo iniciar sesión.';
-
-    if (message === 'Cuenta pendiente de activación.') {
-      throw { needsActivation: true, message };
-    }
-
-    throw { message };
   }
-}
 
+  private async loginClientOrCoach(email: string, password: string): Promise<LoginResponse> {
+    try {
+      const res = await this.api.post<LoginResponse>('app/login', { email, password });
+      return { ...res, actor_type: 'client', redirect_to: 'client' };
+    } catch (clientErr: any) {
+      const message = clientErr?.message || '';
+
+      if (message === 'Cuenta pendiente de activación.' || message === 'Cuenta pendiente de activaciÃ³n.') {
+        throw clientErr;
+      }
+
+      const res = await this.api.post<LoginResponse>('coach/login', { email, password });
+      return { ...res, actor_type: 'coach', redirect_to: 'coach' };
+    }
+  }
 
   async me(): Promise<MeResponse> {
+    if ((await this.getActorType()) === 'coach') {
+      const res = await this.api.get<any>('coach/me');
+      await this.persistCoachSession(res.user, res.coach, res.subscription);
+      return res;
+    }
+
     const res = await this.api.get<MeResponse>('app/me');
 
     if (!res?.ok) {
-      throw new Error('Respuesta inválida del servidor (me).');
+      throw new Error('Respuesta invalida del servidor (me).');
     }
 
-    // Construir contexto consistente
     const ctx: AuthContext = {
-      user_app_id: res.user.id,      // user_apps.id
-      client_id: res.user.client_id, // clients.id
-      coach_id: res.client.coach_id, // users.id (coach)
+      user_app_id: res.user.id,
+      client_id: res.user.client_id,
+      coach_id: res.client.coach_id,
     };
 
-    // await this.persistSession(ctx, res.user, res.client);
-    await this.persistSession(ctx, res.user, res.client, res.notifications ?? []);
-
-
-    // memoria (UI)
-    this.context.set(ctx);
-    this.user.set(res.user);
-    this.client.set(res.client);
-    this.notifications.set(res.notifications ?? []);
+    await this.persistClientSession(ctx, res.user, res.client, res.notifications ?? []);
 
     return res;
   }
 
-  private async persistSession(
-    ctx: AuthContext, 
-    user: AppUserDTO, 
-    client: ClientDTO,
-    notifications: AppNotificationDTO[] = []
-  ) {
-    await Promise.all([
-      Preferences.set({ key: this.CONTEXT_KEY, value: JSON.stringify(ctx || {}) }),
-      Preferences.set({ key: this.USER_KEY, value: JSON.stringify(user || {}) }),
-      Preferences.set({ key: this.CLIENT_KEY, value: JSON.stringify(client || {}) }),
-      Preferences.set({ key: this.NOTIFICATIONS_KEY, value: JSON.stringify(notifications || []),
-      }),
-    ]);
-  }
-
   async logout(): Promise<void> {
+    const actorType = await this.getActorType();
+
     try {
-      await this.api.post<any>('app/logout', {});
+      await this.api.post<any>(actorType === 'coach' ? 'coach/logout' : 'app/logout', {});
     } finally {
       await this.api.clearToken();
       await Promise.all([
+        Preferences.remove({ key: this.ACTOR_TYPE_KEY }),
         Preferences.remove({ key: this.CONTEXT_KEY }),
         Preferences.remove({ key: this.USER_KEY }),
         Preferences.remove({ key: this.CLIENT_KEY }),
+        Preferences.remove({ key: this.COACH_KEY }),
+        Preferences.remove({ key: this.NOTIFICATIONS_KEY }),
       ]);
 
+      this.actorType.set(null);
       this.context.set(null);
       this.user.set(null);
       this.client.set(null);
+      this.coach.set(null);
+      this.notifications.set([]);
     }
   }
 
@@ -330,16 +191,94 @@ async login(email: string, password: string): Promise<LoginResponse> {
     return !!token;
   }
 
-  // Helpers para UI
+  async getActorType(): Promise<ActorType | null> {
+    const current = this.actorType();
+    if (current) return current;
+
+    const { value } = await Preferences.get({ key: this.ACTOR_TYPE_KEY });
+    return value === 'coach' ? 'coach' : value === 'client' ? 'client' : null;
+  }
+
+  async getDefaultRoute(): Promise<string> {
+    return (await this.getActorType()) === 'coach' ? '/coach/athletes' : '/tabs';
+  }
+
   getClientDisplayName(): string {
     const c = this.client();
     if (!c) return '';
     return `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim();
   }
 
-   getClientAvatarUrl(): string {
+  getClientAvatarUrl(): string {
     const c = this.client();
     if (!c) return '';
     return `${c.avatar_url ?? ''}`.trim();
+  }
+
+  private async persistClientSession(
+    ctx: AuthContext,
+    user: AppUserDTO,
+    client: ClientDTO,
+    notifications: AppNotificationDTO[] = [],
+  ): Promise<void> {
+    await Promise.all([
+      Preferences.set({ key: this.ACTOR_TYPE_KEY, value: 'client' }),
+      Preferences.set({ key: this.CONTEXT_KEY, value: JSON.stringify(ctx || {}) }),
+      Preferences.set({ key: this.USER_KEY, value: JSON.stringify(user || {}) }),
+      Preferences.set({ key: this.CLIENT_KEY, value: JSON.stringify(client || {}) }),
+      Preferences.set({ key: this.NOTIFICATIONS_KEY, value: JSON.stringify(notifications || []) }),
+      Preferences.remove({ key: this.COACH_KEY }),
+    ]);
+
+    this.actorType.set('client');
+    this.context.set(ctx ?? null);
+    this.user.set(user ?? null);
+    this.client.set(client ?? null);
+    this.coach.set(null);
+    this.notifications.set(notifications ?? []);
+  }
+
+  private async persistCoachSession(user: any, coach: any, subscription?: any): Promise<void> {
+    const coachWithSubscription = { ...(coach || {}), subscription: subscription ?? null };
+
+    await Promise.all([
+      Preferences.set({ key: this.ACTOR_TYPE_KEY, value: 'coach' }),
+      Preferences.set({ key: this.USER_KEY, value: JSON.stringify(user || {}) }),
+      Preferences.set({ key: this.COACH_KEY, value: JSON.stringify(coachWithSubscription) }),
+      Preferences.remove({ key: this.CONTEXT_KEY }),
+      Preferences.remove({ key: this.CLIENT_KEY }),
+      Preferences.remove({ key: this.NOTIFICATIONS_KEY }),
+    ]);
+
+    this.actorType.set('coach');
+    this.user.set(user ?? null);
+    this.coach.set(coachWithSubscription);
+    this.client.set(null);
+    this.context.set(null);
+    this.notifications.set([]);
+  }
+
+  private safeParse<T>(value: string | null): T | null {
+    if (!value) return null;
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  private async registerPendingPushToken(): Promise<void> {
+    const { value } = await Preferences.get({ key: 'pending_push_token' });
+    if (!value) return;
+
+    try {
+      await this.api.post('app/register-device', {
+        token: value,
+        platform: Capacitor.getPlatform(),
+      });
+      await Preferences.remove({ key: 'pending_push_token' });
+    } catch (err) {
+      console.warn('No se pudo registrar el token push pendiente', err);
+    }
   }
 }

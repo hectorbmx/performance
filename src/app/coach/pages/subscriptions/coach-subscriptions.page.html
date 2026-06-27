@@ -1,0 +1,53 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="coach-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Subscripciones</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="coach-content">
+  <section class="hero">
+    <p class="eyebrow">Estado financiero</p>
+    <h1>Subscripciones</h1>
+    <p>Revisa acceso, vencimientos y pagos pendientes de atletas.</p>
+  </section>
+
+  <section class="cards">
+    <article class="card state-card" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <div>
+        <h2>Cargando subscripciones</h2>
+        <p>Consultando membresias reales del coach.</p>
+      </div>
+    </article>
+
+    <article class="card state-card" *ngIf="!loading && subscriptions.length === 0">
+      <div class="icon-box">
+        <ion-icon name="reader-outline"></ion-icon>
+      </div>
+      <div>
+        <h2>Sin subscripciones</h2>
+        <p>Cuando asignes planes a tus atletas apareceran aqui.</p>
+      </div>
+    </article>
+
+    <article class="card subscription-card" *ngFor="let item of subscriptions">
+      <div class="icon-box">
+        <ion-icon name="reader-outline"></ion-icon>
+      </div>
+      <div class="subscription-info">
+        <h2>{{ athleteName(item) }}</h2>
+        <p>{{ planLine(item) }}</p>
+        <p>{{ dateLine(item) }}</p>
+      </div>
+      <span class="status-pill" [ngClass]="statusClass(item)">{{ item.status_label }}</span>
+    </article>
+  </section>
+</ion-content>

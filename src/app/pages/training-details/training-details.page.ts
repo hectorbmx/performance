@@ -344,10 +344,9 @@ async saveSectionResult(section: TrainingSectionDTO) {
     await this.loadDetails();
 
     // 2. Verificamos progreso usando la estructura de tu JSON
-    const progress = this.data?.progress;
-    const assignment = this.data?.assignment;
+    const progress = this.detail?.progress;
 
-    if (progress?.pct === 100 && assignment?.status !== 'completed') {
+    if (progress?.pct === 100 && this.detail?.status !== 'completed') {
       await this.completeTraining();
     }
 
@@ -364,10 +363,10 @@ async completeTraining() {
 
   try {
     console.log('¡Entrenamiento completado! Actualizando estado...');
-    const res = await this.trainingApi.updateAssignmentStatus(this.assignmentId as number, 'completed');
+    const res = await this.trainingApi.complete(this.assignmentId as number);
     
-    if (res.ok && this.data?.assignment) {
-      this.data.assignment.status = 'completed'; 
+    if (res.ok && this.detail) {
+      this.detail.status = 'completed'; 
       console.log('Estado actualizado a completed en la UI');
     }
   } catch (e) {

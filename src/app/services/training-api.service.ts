@@ -129,6 +129,26 @@ type TrainingsIndexResponse = {
   data: TrainingFeedItemDTO[];
 };
 
+export type TrainingStreakResponse = {
+  ok: boolean;
+  data: {
+    current: number;
+    best: number;
+    last_completed_date: string | null;
+    today: {
+      assigned: number;
+      completed: number;
+      is_complete: boolean;
+    };
+    recent_days: Array<{
+      date: string;
+      assigned: number;
+      completed: number;
+      is_complete: boolean;
+    }>;
+  };
+};
+
 // ===============================
 // Contrato REAL del backend show()
 // ===============================
@@ -164,6 +184,7 @@ type TrainingAssignmentShowResponse = {
     sections: TrainingSectionShowDTO[];
     progress: {
       sections_total: number;
+      sections_completed?: number;
       sections_with_results: number;
       pct: number;
     };
@@ -220,6 +241,10 @@ export class TrainingApiService {
    */
   index(params?: { from?: string; to?: string; status?: string; include?: 'free' }) {
     return this.api.get<TrainingsIndexResponse>('app/trainings', params);
+  }
+
+  streak() {
+    return this.api.get<TrainingStreakResponse>('app/streak');
   }
 
   /**
@@ -297,6 +322,9 @@ result: r
 });
 
 
+    const sectionsCompleted =
+      resp.data.progress.sections_completed ?? resp.data.progress.sections_with_results ?? 0;
+
     const detail: TrainingDetailDTO = {
       assignment_id: a.id,
       source: 'personal',
@@ -324,7 +352,7 @@ result: r
 
       progress: {
         sections_total: resp.data.progress.sections_total,
-        sections_completed: resp.data.progress.sections_with_results,
+        sections_completed: sectionsCompleted,
         pct: resp.data.progress.pct,
       },
 

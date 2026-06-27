@@ -1,0 +1,251 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="coach-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Entrenamientos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" (click)="openCreate()">
+        <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="coach-content" [fullscreen]="true">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Programacion</p>
+      <h1>Entrenamientos</h1>
+      <p>Crea sesiones, organiza secciones y asigna atletas.</p>
+    </div>
+  </section>
+
+  <div class="segment-wrap">
+    <ion-segment [value]="filter" (ionChange)="changeFilter($event)">
+      <ion-segment-button value="week">Todos</ion-segment-button>
+      <ion-segment-button value="assigned">Asignados</ion-segment-button>
+      <ion-segment-button value="free">Libres</ion-segment-button>
+    </ion-segment>
+  </div>
+
+  <section class="create-training-strip">
+    <button type="button" class="create-training-btn" (click)="openCreate()">
+      <ion-icon name="add-circle-outline"></ion-icon>
+      <span>Agregar entrenamiento</span>
+    </button>
+  </section>
+
+  <section class="list-section">
+    <article class="training-card state-card" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <div class="main">
+        <h2>Cargando entrenamientos</h2>
+        <p>Consultando sesiones registradas.</p>
+      </div>
+    </article>
+
+    <article class="training-card state-card" *ngIf="!loading && trainings.length === 0">
+      <div class="icon-box">
+        <ion-icon name="barbell-outline"></ion-icon>
+      </div>
+      <div class="main">
+        <h2>Sin entrenamientos</h2>
+        <p>Crea una sesion para empezar a asignar trabajo.</p>
+      </div>
+    </article>
+
+    <article class="training-card" *ngFor="let training of trainings">
+      <div class="icon-box">
+        <ion-icon name="barbell-outline"></ion-icon>
+      </div>
+      <div class="main">
+        <div class="row">
+          <h2>{{ training.title }}</h2>
+          <span class="date">{{ trainingDate(training) }}</span>
+        </div>
+        <p>{{ visibilityLabel(training) }} · {{ training.sections_count }} secciones</p>
+        <div class="meta">
+          <span><ion-icon name="people-outline"></ion-icon>{{ assignmentsLabel(training) }}</span>
+          <span><ion-icon name="calendar-outline"></ion-icon>{{ training.level }}</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <ion-modal [isOpen]="isCreateOpen" (didDismiss)="isCreateOpen = false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Nuevo entrenamiento</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="isCreateOpen = false">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content">
+        <section class="form-panel">
+          <div class="panel-title">
+            <h2>Datos generales</h2>
+            <ion-icon name="barbell-outline"></ion-icon>
+          </div>
+
+          <ion-item>
+            <ion-label position="stacked">Titulo</ion-label>
+            <ion-input [(ngModel)]="form.title" autocomplete="off"></ion-input>
+          </ion-item>
+
+          <div class="two-col">
+            <ion-item>
+              <ion-label position="stacked">Fecha</ion-label>
+              <ion-input type="date" [(ngModel)]="form.scheduled_at"></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Minutos</ion-label>
+              <ion-input type="number" min="1" [(ngModel)]="form.duration_minutes"></ion-input>
+            </ion-item>
+          </div>
+
+          <div class="two-col">
+            <ion-item>
+              <ion-label position="stacked">Nivel</ion-label>
+              <ion-select [(ngModel)]="form.level" interface="popover">
+                <ion-select-option value="beginner">Beginner</ion-select-option>
+                <ion-select-option value="intermediate">Intermediate</ion-select-option>
+                <ion-select-option value="advanced">Advanced</ion-select-option>
+              </ion-select>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Visibilidad</ion-label>
+              <ion-select [(ngModel)]="form.visibility" interface="popover">
+                <ion-select-option value="assigned">Asignado</ion-select-option>
+                <ion-select-option value="free">Libre</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
+          <div class="two-col">
+            <ion-item>
+              <ion-label position="stacked">Objetivo</ion-label>
+              <ion-select [(ngModel)]="form.training_goal_catalog_id" interface="popover" placeholder="Opcional">
+                <ion-select-option [value]="null">Sin objetivo</ion-select-option>
+                <ion-select-option *ngFor="let goal of meta?.goals" [value]="goal.id">
+                  {{ goal.name }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Tipo</ion-label>
+              <ion-select [(ngModel)]="form.training_type_catalog_id" interface="popover" placeholder="Opcional">
+                <ion-select-option [value]="null">Sin tipo</ion-select-option>
+                <ion-select-option *ngFor="let type of meta?.types" [value]="type.id">
+                  {{ type.name }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
+          <ion-item>
+            <ion-label position="stacked">Notas</ion-label>
+            <ion-textarea rows="3" [(ngModel)]="form.notes"></ion-textarea>
+          </ion-item>
+        </section>
+
+        <section class="form-panel" *ngIf="form.visibility === 'assigned'">
+          <div class="panel-title">
+            <h2>Asignacion</h2>
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+
+          <ion-item>
+            <ion-label position="stacked">Atletas</ion-label>
+            <ion-select multiple="true" [(ngModel)]="form.assigned_client_ids" interface="popover" placeholder="Seleccionar atletas">
+              <ion-select-option *ngFor="let client of meta?.clients" [value]="client.id">
+                {{ client.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Grupos</ion-label>
+            <ion-select multiple="true" [(ngModel)]="form.assigned_group_ids" interface="popover" placeholder="Seleccionar grupos">
+              <ion-select-option *ngFor="let group of meta?.groups" [value]="group.id">
+                {{ group.label }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </section>
+
+        <section class="form-panel">
+          <div class="panel-title">
+            <h2>Secciones</h2>
+            <ion-button fill="clear" size="small" (click)="addSection()">
+              <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+              Agregar
+            </ion-button>
+          </div>
+
+          <article class="section-card" *ngFor="let section of form.sections; let i = index">
+            <div class="section-card-head">
+              <h3>Seccion {{ i + 1 }}</h3>
+              <ion-button fill="clear" color="danger" size="small" (click)="removeSection(i)" [disabled]="form.sections.length <= 1">
+                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+              </ion-button>
+            </div>
+
+            <ion-item>
+              <ion-label position="stacked">Nombre</ion-label>
+              <ion-input [(ngModel)]="section.name" autocomplete="off"></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Descripcion</ion-label>
+              <ion-textarea rows="2" [(ngModel)]="section.description"></ion-textarea>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Video URL</ion-label>
+              <ion-input [(ngModel)]="section.video_url" placeholder="https://..."></ion-input>
+            </ion-item>
+
+            <div class="two-col">
+              <ion-item>
+                <ion-label position="stacked">Resultado</ion-label>
+                <ion-select [(ngModel)]="section.result_type" interface="popover">
+                  <ion-select-option value="none">Sin resultados</ion-select-option>
+                  <ion-select-option *ngFor="let resultType of meta?.result_types" [value]="resultType">
+                    {{ resultTypeLabel(resultType) }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+
+              <ion-item *ngIf="section.result_type && section.result_type !== 'none'">
+                <ion-label position="stacked">Unidad</ion-label>
+                <ion-select [(ngModel)]="section.unit_id" interface="popover" placeholder="Opcional">
+                  <ion-select-option [value]="null">Sin unidad</ion-select-option>
+                  <ion-select-option *ngFor="let unit of unitOptions(section)" [value]="unit.id">
+                    {{ unit.name }} {{ unit.symbol || '' }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+            </div>
+          </article>
+
+          <ion-button expand="block" (click)="createTraining()" [disabled]="saving">
+            <ion-icon slot="start" name="save-outline"></ion-icon>
+            {{ saving ? 'Guardando...' : 'Guardar entrenamiento' }}
+          </ion-button>
+        </section>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

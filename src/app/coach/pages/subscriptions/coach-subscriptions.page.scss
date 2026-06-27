@@ -1,0 +1,48 @@
+@use '../secondary-page';
+
+.subscription-card {
+  align-items: flex-start;
+}
+
+.subscription-info {
+  min-width: 0;
+  flex: 1;
+
+  p {
+    overflow-wrap: anywhere;
+  }
+}
+
+.status-pill {
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px !important;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.status-pill.paid {
+  background: #dcfce7;
+  color: #15803d !important;
+}
+
+.status-pill.pending {
+  background: #fef3c7;
+  color: #a16207 !important;
+}
+
+.status-pill.grace {
+  background: #dbeafe;
+  color: #1d4ed8 !important;
+}
+
+.status-pill.expired {
+  background: #fee2e2;
+  color: #b91c1c !important;
+}
+
+.state-card {
+  ion-spinner {
+    color: #2563eb;
+  }
+}

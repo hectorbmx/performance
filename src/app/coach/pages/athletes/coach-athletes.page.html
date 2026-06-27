@@ -1,0 +1,134 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="coach-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Atletas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" (click)="openCreate()">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="coach-content" [fullscreen]="true">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Panel Coach</p>
+      <h1>Tus atletas</h1>
+      <p>Gestiona altas, estado de acceso y siguiente entrenamiento.</p>
+    </div>
+    <div class="hero-stat">
+      <strong>{{ activeCount() }}</strong>
+      <span>activos</span>
+    </div>
+  </section>
+
+  <ion-searchbar
+    placeholder="Buscar atleta"
+    animated="true"
+    debounce="450"
+    [value]="searchTerm"
+    (ionInput)="search($event)">
+  </ion-searchbar>
+
+  <section class="quick-grid">
+    <button class="quick-action" type="button" (click)="openCreate()">
+      <ion-icon name="people-outline"></ion-icon>
+      <span>Nuevo atleta</span>
+    </button>
+    <button class="quick-action muted" type="button">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span>Asignar rutina</span>
+    </button>
+  </section>
+
+  <section class="list-section">
+    <div class="section-title">
+      <h2>Lista de atletas</h2>
+      <span>{{ athletes.length }} registrados</span>
+    </div>
+
+    <article class="athlete-card state-card" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <div class="athlete-main">
+        <h3>Cargando atletas</h3>
+        <p>Consultando atletas registrados.</p>
+      </div>
+    </article>
+
+    <article class="athlete-card state-card" *ngIf="!loading && athletes.length === 0">
+      <div class="avatar">A</div>
+      <div class="athlete-main">
+        <h3>Sin atletas</h3>
+        <p>Crea tu primer atleta para empezar a probar el flujo.</p>
+      </div>
+    </article>
+
+    <article class="athlete-card compact" *ngFor="let athlete of athletes" (click)="openEdit(athlete)">
+      <div class="avatar">{{ initials(athlete) }}</div>
+      <div class="athlete-main">
+        <div class="row">
+          <h3>{{ athlete.full_name }}</h3>
+          <ion-chip [class.warn]="statusClass(athlete) === 'warn'" [class.inactive]="statusClass(athlete) === 'inactive'">
+            {{ statusLabel(athlete) }}
+          </ion-chip>
+        </div>
+        <p>{{ summaryLabel(athlete) }}</p>
+      </div>
+    </article>
+  </section>
+
+  <ion-modal [isOpen]="isFormOpen" (didDismiss)="isFormOpen = false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ editingAthlete ? 'Editar atleta' : 'Nuevo atleta' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="isFormOpen = false">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content">
+        <section class="form-panel">
+          <ion-item>
+            <ion-label position="stacked">Nombre</ion-label>
+            <ion-input [(ngModel)]="form.first_name" autocomplete="given-name"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Apellido</ion-label>
+            <ion-input [(ngModel)]="form.last_name" autocomplete="family-name"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Correo</ion-label>
+            <ion-input type="email" [(ngModel)]="form.email" autocomplete="email"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Telefono</ion-label>
+            <ion-input type="tel" [(ngModel)]="form.phone" autocomplete="tel"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>Activo</ion-label>
+            <ion-toggle slot="end" [(ngModel)]="form.is_active"></ion-toggle>
+          </ion-item>
+
+          <ion-button expand="block" (click)="saveAthlete()" [disabled]="saving">
+            <ion-icon slot="start" name="save-outline"></ion-icon>
+            {{ saving ? 'Guardando...' : 'Guardar atleta' }}
+          </ion-button>
+        </section>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

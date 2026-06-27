@@ -1,0 +1,34 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="coach-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Biblioteca</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear">
+        <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="coach-content">
+  <section class="hero">
+    <p class="eyebrow">Contenido reusable</p>
+    <h1>Biblioteca</h1>
+    <p>Guarda videos y recursos para reutilizarlos en secciones.</p>
+  </section>
+
+  <section class="cards">
+    <article class="card" *ngFor="let video of videos">
+      <div class="icon-box">
+        <ion-icon name="book-outline"></ion-icon>
+      </div>
+      <div>
+        <h2>{{ video.name }}</h2>
+        <p>{{ video.tag }} · {{ video.source }}</p>
+      </div>
+      <span>Ver</span>
+    </article>
+  </section>
+</ion-content>

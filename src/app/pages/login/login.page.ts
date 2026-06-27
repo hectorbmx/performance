@@ -72,7 +72,7 @@ export class LoginPage {
   async ionViewWillEnter() {
     const loggedIn = await this.auth.isLoggedIn();
     if (loggedIn) {
-      await this.router.navigateByUrl(this.getRedirectUrl(), { replaceUrl: true });
+      await this.router.navigateByUrl(await this.getRedirectUrl(), { replaceUrl: true });
     }
   }
 
@@ -120,8 +120,9 @@ export class LoginPage {
 
 
       // Login exitoso → área privada
-      console.log('Navegando a /tabs...');
-      const navigated = await this.router.navigateByUrl(this.getRedirectUrl(), { replaceUrl: true });
+      const redirectUrl = await this.getRedirectUrl();
+      console.log('Navegando a:', redirectUrl);
+      const navigated = await this.router.navigateByUrl(redirectUrl, { replaceUrl: true });
       console.log('Navegación exitosa:', navigated);
 
       if (!navigated) {
@@ -194,7 +195,7 @@ async goToActivacion() {
     .catch(err => console.error('[goToActivacion] navigate error', err));
 }
 
-private getRedirectUrl(): string {
+private async getRedirectUrl(): Promise<string> {
   const currentNavigation = this.router.getCurrentNavigation();
   const redirectUrl =
     currentNavigation?.extras?.state?.['redirectUrl'] ||
@@ -202,7 +203,7 @@ private getRedirectUrl(): string {
 
   return typeof redirectUrl === 'string' && redirectUrl.startsWith('/')
     ? redirectUrl
-    : '/tabs';
+    : await this.auth.getDefaultRoute();
 }
 
 

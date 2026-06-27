@@ -1,0 +1,125 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="coach-menu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Planes</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear">
+        <ion-icon slot="icon-only" name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="coach-content">
+  <section class="hero">
+    <p class="eyebrow">Cobro a atletas</p>
+    <h1>Planes</h1>
+    <p>Crea precios, ciclos y reglas de gracia para tus atletas.</p>
+  </section>
+
+  <section class="plan-actions">
+    <button type="button" class="primary-action" (click)="openCreate()">
+      <ion-icon name="add-outline"></ion-icon>
+      <span>Crear plan</span>
+    </button>
+    <button type="button" class="ghost-action" (click)="load()">
+      <ion-icon name="refresh-outline"></ion-icon>
+    </button>
+  </section>
+
+  <section class="cards">
+    <article class="card" *ngFor="let plan of plans">
+      <div class="icon-box">
+        <ion-icon name="card-outline"></ion-icon>
+      </div>
+      <div>
+        <h2>{{ plan.name }}</h2>
+        <p>{{ priceLabel(plan) }} · {{ plan.billing_cycle_days }} dias · {{ plan.payment_provider | uppercase }}</p>
+      </div>
+      <span>{{ plan.status === 'active' ? 'Activo' : 'Inactivo' }}</span>
+    </article>
+
+    <article class="empty-card" *ngIf="!loading && plans.length === 0">
+      <h2>Sin planes aun</h2>
+      <p>Crea tu primer plan manual o con Stripe.</p>
+    </article>
+  </section>
+
+  <ion-modal [isOpen]="isCreateOpen" (didDismiss)="isCreateOpen = false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Nuevo plan</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="isCreateOpen = false">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content">
+        <form class="plan-form" (ngSubmit)="createPlan()">
+          <ion-item>
+            <ion-label position="stacked">Nombre</ion-label>
+            <ion-input [(ngModel)]="form.name" name="name" required></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Descripcion</ion-label>
+            <ion-textarea [(ngModel)]="form.description" name="description" rows="3"></ion-textarea>
+          </ion-item>
+
+          <div class="form-grid">
+            <ion-item>
+              <ion-label position="stacked">Precio</ion-label>
+              <ion-input type="number" [(ngModel)]="form.price" name="price" min="0" step="0.01"></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Moneda</ion-label>
+              <ion-input [(ngModel)]="form.currency" name="currency" maxlength="3"></ion-input>
+            </ion-item>
+          </div>
+
+          <ion-item lines="none" class="provider-item">
+            <ion-label>Forma de cobro</ion-label>
+          </ion-item>
+          <ion-segment [(ngModel)]="form.payment_provider" name="payment_provider">
+            <ion-segment-button value="manual">Manual</ion-segment-button>
+            <ion-segment-button value="stripe">Stripe</ion-segment-button>
+          </ion-segment>
+
+          <div class="form-grid">
+            <ion-item>
+              <ion-label position="stacked">Duracion dias</ion-label>
+              <ion-input type="number" [(ngModel)]="form.billing_cycle_days" name="billing_cycle_days" min="1"></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label position="stacked">Dias gracia</ion-label>
+              <ion-input type="number" [(ngModel)]="form.grace_days" name="grace_days" min="0"></ion-input>
+            </ion-item>
+          </div>
+
+          <ion-item>
+            <ion-label position="stacked">Recordatorio antes de vencer</ion-label>
+            <ion-input type="number" [(ngModel)]="form.reminder_days_before" name="reminder_days_before" min="1"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Estatus</ion-label>
+            <ion-select [(ngModel)]="form.status" name="status">
+              <ion-select-option value="active">Activo</ion-select-option>
+              <ion-select-option value="inactive">Inactivo</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <button class="submit-btn" type="submit" [disabled]="saving">
+            {{ saving ? 'Guardando...' : 'Guardar plan' }}
+          </button>
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

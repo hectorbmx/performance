@@ -1,0 +1,91 @@
+.coach-menu {
+  --width: min(84vw, 320px);
+
+  ion-content {
+    --background: #111827;
+    color: #ffffff;
+  }
+}
+
+.menu-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 28px 20px 18px;
+}
+
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  color: #9ca3af;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.menu-list {
+  padding: 10px;
+  background: transparent;
+
+  ion-item {
+    --background: transparent;
+    --color: #e5e7eb;
+    --border-radius: 8px;
+    --padding-start: 12px;
+    --inner-padding-end: 10px;
+    margin-bottom: 6px;
+  }
+
+  ion-item.active-menu-item {
+    --background: rgba(37, 99, 235, 0.16);
+    --color: #ffffff;
+  }
+
+  ion-item.active-menu-item ion-icon {
+    color: #bfdbfe;
+  }
+
+  ion-icon {
+    color: #93c5fd;
+  }
+}
+
+.menu-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.coach-tabs {
+  ion-tab-bar {
+    --background: #0f172a;
+    --border: 1px solid rgba(148, 163, 184, 0.16);
+  }
+
+  ion-tab-button {
+    --color: #94a3b8;
+    --color-selected: #60a5fa;
+  }
+}

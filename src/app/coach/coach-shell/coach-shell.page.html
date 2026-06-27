@@ -1,0 +1,59 @@
+<ion-menu contentId="coach-main" side="start" menuId="coach-menu" class="coach-menu">
+  <ion-content>
+    <div class="menu-header">
+      <div class="brand-mark">AC</div>
+      <div>
+        <p class="eyebrow">Coach Console</p>
+        <h2>Performance Hub</h2>
+      </div>
+    </div>
+
+    <ion-list lines="none" class="menu-list">
+      <ion-menu-toggle auto-hide="true">
+        <ion-item routerLink="/coach/plans" routerLinkActive="active-menu-item" routerDirection="root" detail="false">
+          <ion-icon name="card-outline" slot="start"></ion-icon>
+          <ion-label>Planes</ion-label>
+          <ion-badge color="primary" slot="end">3</ion-badge>
+        </ion-item>
+      </ion-menu-toggle>
+
+      <ion-menu-toggle auto-hide="true">
+        <ion-item routerLink="/coach/subscriptions" routerLinkActive="active-menu-item" routerDirection="root" detail="false">
+          <ion-icon name="reader-outline" slot="start"></ion-icon>
+          <ion-label>Subscripciones</ion-label>
+        </ion-item>
+      </ion-menu-toggle>
+
+      <ion-menu-toggle auto-hide="true">
+        <ion-item routerLink="/coach/library" routerLinkActive="active-menu-item" routerDirection="root" detail="false">
+          <ion-icon name="book-outline" slot="start"></ion-icon>
+          <ion-label>Biblioteca</ion-label>
+        </ion-item>
+      </ion-menu-toggle>
+    </ion-list>
+
+    <div class="menu-footer">
+      <ion-icon name="settings-outline"></ion-icon>
+      <span>Configuracion avanzada despues</span>
+    </div>
+  </ion-content>
+</ion-menu>
+
+<ion-tabs id="coach-main" class="coach-tabs">
+  <ion-tab-bar slot="bottom">
+    <ion-tab-button tab="athletes" href="/coach/athletes">
+      <ion-icon name="people-outline"></ion-icon>
+      <ion-label>Atletas</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="groups" href="/coach/groups">
+      <ion-icon name="grid-outline"></ion-icon>
+      <ion-label>Grupos</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="trainings" href="/coach/trainings">
+      <ion-icon name="barbell-outline"></ion-icon>
+      <ion-label>Entrenamientos</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-tabs>
