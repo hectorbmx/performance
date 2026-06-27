@@ -25,7 +25,8 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Display</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estatus</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estatus operativo</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acceso SaaS</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                         </tr>
                     </thead>
@@ -34,6 +35,8 @@
                         @forelse ($coaches as $coach)
                             @php
                                 $status = $coach->coachProfile?->status;
+                                $sub = $coach->latestSubscription;
+                                $access = \App\Support\CoachAccessStatus::for($sub);
                                 $statusClass = match ($status) {
                                     'active' => 'bg-green-100 text-green-800',
                                     'inactive' => 'bg-gray-100 text-gray-800',
@@ -47,21 +50,20 @@
                                 <td class="px-6 py-4">{{ $coach->email }}</td>
                                 <td class="px-6 py-4">{{ $coach->coachProfile?->display_name }}</td>
                                 <td class="px-6 py-4">
-                                    @php
-                                            $sub = $coach->latestSubscription;
-                                        @endphp
-
-                                        @if($sub)
-                                            <div class="font-medium">{{ $sub->plan_name_snapshot }}</div>
-                                            <div class="text-sm text-gray-500">
-                                                Vence: {{ $sub->ends_at?->format('Y-m-d') }}
-                                            </div>
-                                        @else
-                                            <a href="{{ route('admin.subscriptions.create', ['coach_id' => $coach->id]) }}"
-                                            class="inline-flex items-center px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">
-                                                Asignar plan
-                                            </a>
-                                        @endif
+                                    @if($sub)
+                                        <div class="font-medium">{{ $sub->plan_name_snapshot }}</div>
+                                        <div class="text-sm text-gray-500">
+                                            Vence: {{ $sub->ends_at?->format('Y-m-d') }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-gray-500">
+                                            Cobro: <span class="font-semibold">{{ strtoupper($sub->billing_status ?? 'N/A') }}</span>
+                                        </div>
+                                    @else
+                                        <a href="{{ route('admin.subscriptions.create', ['coach_id' => $coach->id]) }}"
+                                        class="inline-flex items-center px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">
+                                            Asignar plan
+                                        </a>
+                                    @endif
 
                                 </td>
 
@@ -70,15 +72,36 @@
                                         {{ $status ?? 'N/A' }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right space-x-3">
-                                    <a href="{{ route('admin.coaches.edit', $coach) }}"
-                                       class="text-indigo-600 hover:text-indigo-900">
-                                        Editar
-                                    </a>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $access['badge'] }}">
+                                        {{ $access['label'] }}
+                                    </span>
+                                    <div class="mt-1 text-xs text-gray-500 max-w-xs">
+                                        {{ $access['reason'] }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-end gap-2">
+                                        <a href="{{ route('admin.coaches.edit', $coach) }}"
+                                           class="inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700">
+                                            Editar coach
+                                        </a>
 
-                                     <form action="{{ route('admin.coaches.toggleStatus', $coach) }}"
+                                        @if($sub && !$access['can_access'])
+                                            <a href="{{ route('admin.payments.create', ['subscription_id' => $sub->id]) }}"
+                                               class="text-sm font-semibold text-emerald-600 hover:text-emerald-900">
+                                                Registrar pago
+                                            </a>
+                                        @elseif(!$sub)
+                                            <a href="{{ route('admin.subscriptions.create', ['coach_id' => $coach->id]) }}"
+                                               class="text-sm font-semibold text-emerald-600 hover:text-emerald-900">
+                                                Crear suscripcion
+                                            </a>
+                                        @endif
+
+                                    <form action="{{ route('admin.coaches.toggleStatus', $coach) }}"
                                         method="POST"
-                                        class="inline">
+                                        class="inline-flex items-center gap-2">
                                         @csrf
 
                                         @php
@@ -87,19 +110,24 @@
 
                                         <button type="submit"
                                             class="relative inline-flex h-6 w-11 items-center rounded-full transition
+                                                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
                                                 {{ $isActive ? 'bg-green-500' : 'bg-red-500' }}">
                                             <span
                                                 class="inline-block h-4 w-4 transform rounded-full bg-white transition
                                                 {{ $isActive ? 'translate-x-6' : 'translate-x-1' }}">
                                             </span>
                                         </button>
+                                        <span class="text-xs text-gray-500">
+                                            {{ $isActive ? 'Desactivar' : 'Activar' }}
+                                        </span>
                                     </form>
+                                    </div>
 
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-10 text-center text-gray-500">
                                     No hay coaches registrados.
                                 </td>
                             </tr>

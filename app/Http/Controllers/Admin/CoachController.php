@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CoachProfile;
+use App\Models\Payment;
 use App\Models\User;
+use App\Support\CoachAccessStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -71,9 +73,19 @@ class CoachController extends Controller
     {
         abort_unless($coach->hasRole('coach'), 404);
 
-        $coach->load('coachProfile');
+        $coach->load(['coachProfile', 'latestSubscription']);
 
-        return view('admin.coaches.edit', compact('coach'));
+        $subscription = $coach->latestSubscription;
+        $access = CoachAccessStatus::for($subscription);
+        $payments = Payment::query()
+            ->with('subscription')
+            ->where('coach_id', $coach->id)
+            ->latest('paid_at')
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        return view('admin.coaches.edit', compact('coach', 'subscription', 'access', 'payments'));
     }
 
     public function update(Request $request, User $coach)
