@@ -127,8 +127,13 @@ export class AuthService {
       return { ...res, actor_type: 'client', redirect_to: 'client' };
     } catch (clientErr: any) {
       const message = clientErr?.message || '';
+      const status = clientErr?.status;
 
       if (message === 'Cuenta pendiente de activación.' || message === 'Cuenta pendiente de activaciÃ³n.') {
+        throw clientErr;
+      }
+
+      if (status && status !== 422) {
         throw clientErr;
       }
 
