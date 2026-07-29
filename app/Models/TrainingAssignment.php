@@ -31,6 +31,12 @@ class TrainingAssignment extends Model
     {
         return $this->hasMany(TrainingSectionResult::class, 'training_assignment_id');
     }
+
+    public function liftingSetLogs(): HasMany
+    {
+        return $this->hasMany(TrainingLiftingSetLog::class, 'training_assignment_id');
+    }
+
     public function trainingSession()
     {
             return $this->belongsTo(TrainingSession::class);

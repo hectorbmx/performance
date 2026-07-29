@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\TrainingAssignment;
+use App\Models\TrainingLiftingSetLog;
 use App\Models\TrainingSection;
+use App\Models\TrainingSectionLiftingRow;
 use App\Models\TrainingSectionResult;
+use App\Models\TrainingSectionExerciseBlock;
 use App\Services\TrainingAssignmentProgressService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -31,7 +34,7 @@ class TrainingAssignmentsController extends Controller
         // 1. Cargamos secciones con libraryVideos (usamos get() sin filtros para asegurar que traiga los IDs de relación)
         $sections = TrainingSection::query()
             ->where('training_session_id', $assignment->training_session_id)
-            ->with(['libraryVideos']) 
+            ->with(['libraryVideos', 'liftingBlocks.rows'])
             ->orderBy('order')
             ->get();
 
@@ -45,8 +48,12 @@ class TrainingAssignmentsController extends Controller
             ->get()
             ->keyBy('training_section_id');
 
+        $liftingLogsByRow = $assignment->liftingSetLogs()
+            ->get()
+            ->groupBy('lifting_row_id');
+
         // 2. Construcción del Payload Unificado
-        $sectionsPayload = $sections->map(function ($s) use ($resultsBySection, $completionsBySection) {
+        $sectionsPayload = $sections->map(function ($s) use ($resultsBySection, $completionsBySection, $liftingLogsByRow) {
             $r = $resultsBySection->get($s->id);
 
             // --- Lógica de Unificación de Videos ---
@@ -94,6 +101,7 @@ class TrainingAssignmentsController extends Controller
 
                 'accepts_results' => (bool)$s->accepts_results,
                 'result_type' => $s->result_type,
+                'lifting_blocks' => $this->liftingBlocksPayload($s->liftingBlocks, $liftingLogsByRow),
                 'is_completed' => $isCompleted,
                 'result' => $r ? [
                     'id' => $r->id,
@@ -133,6 +141,46 @@ class TrainingAssignmentsController extends Controller
             ],
         ]);
     }
+
+    private function liftingBlocksPayload($blocks, $logsByRow = null)
+    {
+        return $blocks->map(function (TrainingSectionExerciseBlock $block) use ($logsByRow) {
+            return [
+                'id' => $block->id,
+                'exercise_catalog_id' => $block->exercise_catalog_id,
+                'exercise_name' => $block->exercise_name,
+                'notes' => $block->notes,
+                'order' => $block->order,
+                'rows' => $block->rows->map(function ($row) use ($logsByRow) {
+                    $logs = $logsByRow?->get($row->id, collect()) ?? collect();
+                    $logsBySet = $logs->keyBy('set_number');
+
+                    return [
+                        'id' => $row->id,
+                        'percentage' => $row->percentage !== null ? (float)$row->percentage : null,
+                        'reps' => $row->reps,
+                        'sets' => $row->sets,
+                        'rest_seconds' => $row->rest_seconds,
+                        'notes' => $row->notes,
+                        'order' => $row->order,
+                        'set_statuses' => collect(range(1, max(1, (int)$row->sets)))->map(function ($setNumber) use ($logsBySet) {
+                            $log = $logsBySet->get($setNumber);
+
+                            return [
+                                'set_number' => $setNumber,
+                                'status' => $log?->status,
+                                'actual_reps' => $log?->actual_reps,
+                                'failure_reason' => $log?->failure_reason,
+                                'notes' => $log?->notes,
+                                'logged_at' => $log?->logged_at?->toIso8601String(),
+                            ];
+                        })->values(),
+                    ];
+                })->values(),
+            ];
+        })->values();
+    }
+
         public function start(Request $request, TrainingAssignment $assignment)
     {
         $user = $request->user();
@@ -175,6 +223,90 @@ class TrainingAssignmentsController extends Controller
         $assignment->update(['status' => 'completed']);
 
         return response()->json(['ok' => true, 'data' => ['status' => $assignment->status]]);
+    }
+
+    public function saveLiftingSet(Request $request, TrainingAssignment $assignment)
+    {
+        $user = $request->user();
+        $clientId = $user->client_id ?? null;
+
+        if (!$clientId) {
+            return response()->json(['ok' => false, 'message' => 'Cliente no identificado.'], 422);
+        }
+
+        if ((int)$assignment->client_id !== (int)$clientId) {
+            return response()->json(['ok' => false, 'message' => 'No autorizado.'], 403);
+        }
+
+        if (in_array($assignment->status, ['cancelled', 'skipped'], true)) {
+            return response()->json(['ok' => false, 'message' => 'No se puede modificar este entrenamiento.'], 422);
+        }
+
+        $data = $request->validate([
+            'lifting_row_id' => ['required', 'integer', 'exists:training_section_lifting_rows,id'],
+            'set_number' => ['required', 'integer', 'min:1'],
+            'status' => ['required', 'string', 'in:completed,failed,skipped'],
+            'actual_reps' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'failure_reason' => ['nullable', 'string', 'max:60'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $row = TrainingSectionLiftingRow::query()
+            ->with('exerciseBlock.section')
+            ->findOrFail($data['lifting_row_id']);
+
+        $section = $row->exerciseBlock?->section;
+
+        if (!$section || (int)$section->training_session_id !== (int)$assignment->training_session_id) {
+            return response()->json(['ok' => false, 'message' => 'Serie invalida para este entrenamiento.'], 422);
+        }
+
+        if ((int)$data['set_number'] > (int)$row->sets) {
+            return response()->json(['ok' => false, 'message' => 'El numero de serie excede la prescripcion.'], 422);
+        }
+
+        if ($data['status'] === TrainingLiftingSetLog::STATUS_COMPLETED && ($data['actual_reps'] ?? null) === null) {
+            $data['actual_reps'] = $row->reps;
+        }
+
+        $log = TrainingLiftingSetLog::updateOrCreate(
+            [
+                'training_assignment_id' => $assignment->id,
+                'lifting_row_id' => $row->id,
+                'set_number' => $data['set_number'],
+            ],
+            [
+                'status' => $data['status'],
+                'actual_reps' => $data['actual_reps'] ?? null,
+                'failure_reason' => $data['failure_reason'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'logged_at' => now(),
+            ]
+        );
+
+        $progress = app(TrainingAssignmentProgressService::class)->syncStatus($assignment);
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'log' => [
+                    'id' => $log->id,
+                    'lifting_row_id' => $log->lifting_row_id,
+                    'set_number' => $log->set_number,
+                    'status' => $log->status,
+                    'actual_reps' => $log->actual_reps,
+                    'failure_reason' => $log->failure_reason,
+                    'notes' => $log->notes,
+                    'logged_at' => $log->logged_at?->toIso8601String(),
+                ],
+                'assignment' => [
+                    'id' => $assignment->id,
+                    'status' => $assignment->status,
+                ],
+                'progress' => $progress,
+            ],
+            'message' => 'Serie registrada.',
+        ]);
     }
 
    public function completeSection(Request $request, TrainingAssignment $assignment, TrainingSection $section)

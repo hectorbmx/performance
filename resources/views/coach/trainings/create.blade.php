@@ -364,6 +364,11 @@
                 <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
             </div>
 
+            <label class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <input type="checkbox" class="sec-lifting-toggle rounded border-slate-300">
+                Usar esquema lifting en esta seccion
+            </label>
+
             <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
                     <label class="block text-sm font-semibold text-gray-900 mb-2">Nombre de sección</label>
@@ -456,6 +461,21 @@
                 </div>
             </div>
 
+
+
+            <div class="liftingBuilder mt-6 hidden rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Series lifting</h3>
+                        <p class="text-xs text-slate-600 mt-1">Agrega ejercicios y rows tipo Excel: %, reps, series, descanso y notas.</p>
+                    </div>
+                    <button type="button" class="addLiftBlock rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">
+                        + Ejercicio
+                    </button>
+                </div>
+                <div class="liftBlocks mt-4 space-y-4"></div>
+            </div>
+
             <div class="mt-6 flex justify-end border-t border-slate-200 pt-4">
                 <button type="button"
                         class="addSecInline inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">
@@ -465,6 +485,56 @@
         </div>
     </template>
 </div>
+
+    <template id="liftingBlockTpl">
+        <div class="liftBlock rounded-xl border border-slate-200 bg-white p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div class="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Ejercicio</label>
+                        <input class="liftExerciseName h-10 w-full rounded-lg border-slate-300" placeholder="Front squat" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Notas del ejercicio</label>
+                        <input class="liftBlockNotes h-10 w-full rounded-lg border-slate-300" placeholder="Indicacion tecnica" />
+                    </div>
+                </div>
+                <button type="button" class="removeLiftBlock text-sm font-semibold text-red-600">Eliminar</button>
+            </div>
+
+            <div class="mt-4 overflow-x-auto">
+                <table class="min-w-full border-separate border-spacing-0 text-sm">
+                    <thead>
+                        <tr class="text-left text-xs uppercase text-slate-500">
+                            <th class="px-2 py-2">%</th>
+                            <th class="px-2 py-2">Reps</th>
+                            <th class="px-2 py-2">Series</th>
+                            <th class="px-2 py-2">Descanso</th>
+                            <th class="px-2 py-2">Notas</th>
+                            <th class="px-2 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="liftRows"></tbody>
+                </table>
+            </div>
+
+            <button type="button" class="addLiftRow mt-3 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
+                + Row
+            </button>
+        </div>
+    </template>
+
+    <template id="liftingRowTpl">
+        <tr class="liftRow">
+            <td class="px-2 py-2"><input type="number" min="0" max="100" step="0.01" class="liftPct h-9 w-20 rounded-lg border-slate-300" placeholder="70" /></td>
+            <td class="px-2 py-2"><input type="number" min="1" class="liftReps h-9 w-20 rounded-lg border-slate-300" placeholder="3" /></td>
+            <td class="px-2 py-2"><input type="number" min="1" class="liftSets h-9 w-20 rounded-lg border-slate-300" placeholder="3" /></td>
+            <td class="px-2 py-2"><input type="text" class="liftRest h-9 w-24 rounded-lg border-slate-300" placeholder="2:00" /></td>
+            <td class="px-2 py-2"><input type="text" class="liftRowNotes h-9 w-56 rounded-lg border-slate-300" placeholder="Notas" /></td>
+            <td class="px-2 py-2"><button type="button" class="removeLiftRow text-xs font-semibold text-red-600">Quitar</button></td>
+        </tr>
+    </template>
+
 
             @if(($libraryVideos ?? collect())->isNotEmpty())
                 <section>
@@ -577,6 +647,8 @@
 (() => {
   const sectionsEl = document.getElementById('sections');
   const tpl = document.getElementById('sectionTpl');
+  const liftingBlockTpl = document.getElementById('liftingBlockTpl');
+  const liftingRowTpl = document.getElementById('liftingRowTpl');
   const addBtn = document.getElementById('addSection');
   const sectionTabs = document.getElementById('sectionTabs');
   if (!sectionsEl || !tpl || !addBtn) return;
@@ -626,10 +698,37 @@
       card.querySelectorAll('input.sec-library-video-id').forEach(inp => {
         inp.name = `sections[${idx}][library_video_ids][]`; // ✅ idx correcto
       });
+
+      card.querySelectorAll('.liftBlock').forEach((block, blockIdx) => {
+        const exerciseName = block.querySelector('.liftExerciseName');
+        if (exerciseName) exerciseName.name = `sections[${idx}][lifting_blocks][${blockIdx}][exercise_name]`;
+
+        const blockNotes = block.querySelector('.liftBlockNotes');
+        if (blockNotes) blockNotes.name = `sections[${idx}][lifting_blocks][${blockIdx}][notes]`;
+
+        block.querySelectorAll('.liftRow').forEach((row, rowIdx) => {
+          const pct = row.querySelector('.liftPct');
+          if (pct) pct.name = `sections[${idx}][lifting_blocks][${blockIdx}][rows][${rowIdx}][percentage]`;
+
+          const reps = row.querySelector('.liftReps');
+          if (reps) reps.name = `sections[${idx}][lifting_blocks][${blockIdx}][rows][${rowIdx}][reps]`;
+
+          const sets = row.querySelector('.liftSets');
+          if (sets) sets.name = `sections[${idx}][lifting_blocks][${blockIdx}][rows][${rowIdx}][sets]`;
+
+          const rest = row.querySelector('.liftRest');
+          if (rest) rest.name = `sections[${idx}][lifting_blocks][${blockIdx}][rows][${rowIdx}][rest_seconds]`;
+
+          const notes = row.querySelector('.liftRowNotes');
+          if (notes) notes.name = `sections[${idx}][lifting_blocks][${blockIdx}][rows][${rowIdx}][notes]`;
+        });
+      });
+
       const inlineAdd = card.querySelector('.addSecInline');
       inlineAdd?.classList.toggle('hidden', idx !== cards.length - 1);
       card.classList.toggle('hidden', idx !== activeSectionIndex);
     });
+    toggleLiftingBuilders();
     renderSectionTabs(cards);
   }
   window.rebuildNames = rebuildNames;
@@ -720,6 +819,73 @@
     rebuildNames();
   }
 
+  function parseRestSeconds(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^\d+$/.test(raw)) return raw;
+    const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return raw;
+    return String((parseInt(match[1], 10) * 60) + parseInt(match[2], 10));
+  }
+
+  function addLiftingRow(block, initial = {}) {
+    if (!liftingRowTpl) return;
+    const row = liftingRowTpl.content.firstElementChild.cloneNode(true);
+    row.querySelector('.liftPct').value = initial.percentage ?? '';
+    row.querySelector('.liftReps').value = initial.reps ?? '';
+    row.querySelector('.liftSets').value = initial.sets ?? '';
+    row.querySelector('.liftRest').value = initial.rest_seconds ?? '';
+    row.querySelector('.liftRowNotes').value = initial.notes ?? '';
+    row.querySelector('.removeLiftRow')?.addEventListener('click', () => {
+      row.remove();
+      rebuildNames();
+    });
+    row.querySelector('.liftRest')?.addEventListener('change', (event) => {
+      event.target.value = parseRestSeconds(event.target.value);
+    });
+    block.querySelector('.liftRows')?.appendChild(row);
+    rebuildNames();
+  }
+
+  function addLiftingBlock(card, initial = {}) {
+    if (!liftingBlockTpl) return;
+    const block = liftingBlockTpl.content.firstElementChild.cloneNode(true);
+    block.querySelector('.liftExerciseName').value = initial.exercise_name || '';
+    block.querySelector('.liftBlockNotes').value = initial.notes || '';
+    block.querySelector('.removeLiftBlock')?.addEventListener('click', () => {
+      block.remove();
+      rebuildNames();
+    });
+    block.querySelector('.addLiftRow')?.addEventListener('click', () => addLiftingRow(block, {}));
+    card.querySelector('.liftBlocks')?.appendChild(block);
+    const rows = Array.isArray(initial.rows) && initial.rows.length ? initial.rows : [{}];
+    rows.forEach(row => addLiftingRow(block, row));
+    rebuildNames();
+  }
+
+  function wireLiftingBuilder(card) {
+    const toggle = card.querySelector('.sec-lifting-toggle');
+    card.querySelector('.addLiftBlock')?.addEventListener('click', () => addLiftingBlock(card, {}));
+    toggle?.addEventListener('change', () => {
+      if (toggle.checked && !card.querySelector('.liftBlock')) {
+        addLiftingBlock(card, {});
+      }
+      toggleLiftingBuilders();
+      rebuildNames();
+    });
+  }
+
+  function toggleLiftingBuilders() {
+    sectionsEl.querySelectorAll('[data-sec]').forEach(card => {
+      const enabled = !!card.querySelector('.sec-lifting-toggle')?.checked;
+      const builder = card.querySelector('.liftingBuilder');
+      builder?.classList.toggle('hidden', !enabled);
+      builder?.querySelectorAll('input, textarea, select, button').forEach(input => {
+        input.disabled = !enabled;
+      });
+    });
+  }
+
   // =========================
   // Add/remove section
   // =========================
@@ -737,6 +903,7 @@
     }
 
     wrapper.querySelector('.addSecInline')?.addEventListener('click', () => addSection({}, true));
+    wireLiftingBuilder(wrapper);
 
     const nameInput = wrapper.querySelector('.sec-name');
     if (nameInput) nameInput.value = initial.name || '';
@@ -748,6 +915,9 @@
     if (videoUrl) videoUrl.value = initial.video_url || '';
 
     if (resultType) resultType.value = initial.result_type || 'none';
+    (initial.lifting_blocks || []).forEach(block => addLiftingBlock(wrapper, block));
+    const liftToggle = wrapper.querySelector('.sec-lifting-toggle');
+    if (liftToggle) liftToggle.checked = Array.isArray(initial.lifting_blocks) && initial.lifting_blocks.length > 0;
 
     const unitSel = wrapper.querySelector('.sec-unit-id');
     if (unitSel) unitSel.dataset.initialUnitId = initial.unit_id || '';
@@ -1458,6 +1628,25 @@ function makePill(id, name) {
   return pill;
 }
 
+</script>
+
+<div id="trainingSavingOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+        <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-700"></div>
+        <h3 class="mt-4 text-lg font-bold text-slate-950">Guardando entrenamiento</h3>
+        <p class="mt-2 text-sm text-slate-600">Espera un momento mientras se procesa la informacion.</p>
+    </div>
+</div>
+
+<script>
+(() => {
+    const form = document.getElementById('newTrainingForm');
+    const overlay = document.getElementById('trainingSavingOverlay');
+    form?.addEventListener('submit', () => {
+        overlay?.classList.remove('hidden');
+        overlay?.classList.add('flex');
+    });
+})();
 </script>
 
 </x-app-layout>

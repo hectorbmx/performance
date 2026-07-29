@@ -7,8 +7,8 @@
         $dayLabels = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
     @endphp
 
-    <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+        <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div class="text-sm font-semibold text-gray-950">Dashboard &gt; Editar entrenamiento</div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -27,8 +27,8 @@
 
         <div class="flex items-start justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-950">Editar entrenamiento</h1>
-                <p class="mt-1 text-lg text-gray-700">Actualiza los detalles y programa las secciones.</p>
+                <h1 class="text-2xl font-bold text-gray-950">Editar entrenamiento</h1>
+                <p class="mt-1 text-base text-gray-700">Actualiza los detalles y programa las secciones.</p>
             </div>
 
             <div class="flex items-center gap-3">
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <form method="POST" id="editTrainingForm" action="{{ route('coach.trainings.update', $training) }}" class="mt-8 space-y-8" enctype="multipart/form-data">
+        <form method="POST" id="editTrainingForm" action="{{ route('coach.trainings.update', $training) }}" class="mt-5 space-y-6" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -60,15 +60,15 @@
             @endif
 
             {{-- CABECERA --}}
-            <div class="rounded-xl border border-slate-300 bg-white p-6 shadow-sm">
-                <div class="mb-6 flex items-center gap-3 border-b border-slate-300 pb-5">
+            <div class="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+                <div class="mb-3 flex items-center gap-3 border-b border-slate-300 pb-3">
                     <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-blue-700 text-blue-700">
                         <i class="fa-solid fa-info text-sm"></i>
                     </span>
-                    <h2 class="text-2xl font-bold text-gray-950">Detalles del entrenamiento</h2>
+                    <h2 class="text-xl font-bold text-gray-950">Detalles del entrenamiento</h2>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 lg:grid-cols-12">
+                <div class="grid grid-cols-1 gap-3 lg:grid-cols-12">
                     <div class="lg:col-span-5">
                         <label class="block text-sm font-semibold text-gray-900 mb-2">Nombre</label>
                         <input name="title" required
@@ -171,57 +171,29 @@
         : null;
 @endphp
 
+                    <div class="lg:col-span-3">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Imagen de portada</label>
+                        <input
+                            type="file"
+                            name="cover_image"
+                            accept="image/*"
+                            class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                            onchange="previewCover(event)"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">JPG / PNG / WEBP 1200x600</p>
 
-<div class="space-y-2">
-    <label class="block text-sm font-medium text-gray-700">
-        Cover image
-    </label>
+                        @if($existingCoverUrl)
+                            <div id="coverPreview" class="mt-2 h-20 rounded-xl border border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden text-sm text-gray-400">
+                                <img id="coverPreviewImg" src="{{ $existingCoverUrl }}" alt="Cover" class="w-full h-full object-cover">
+                            </div>
+                        @else
+                            <div id="coverPreview" class="hidden"></div>
+                        @endif
+                    </div>
 
-    {{-- Preview --}}
-    <div
-        id="coverPreview"
-        class="w-full h-40 rounded-xl border border-dashed border-gray-300
-               flex items-center justify-center bg-gray-50 overflow-hidden"
-    >
-        @if($existingCoverUrl)
-            <img
-                id="coverPreviewImg"
-                src="{{ $existingCoverUrl }}"
-                alt="Cover"
-                class="w-full h-full object-cover"
-            >
-        @else
-            <span id="coverPreviewPlaceholder" class="text-sm text-gray-400">
-                No image selected
-            </span>
-        @endif
-    </div>
-
-    {{-- File input (siempre visible) --}}
-    <input
-        type="file"
-        name="cover_image"
-        accept="image/*"
-        class="block w-full text-sm text-gray-600
-               file:mr-4 file:py-2 file:px-4
-               file:rounded-lg file:border-0
-               file:text-sm file:font-semibold
-               file:bg-gray-100 file:text-gray-700
-               hover:file:bg-gray-200"
-        onchange="previewCover(event)"
-    />
-
-    <p class="text-xs text-gray-500">
-        Recommended: JPG / PNG / WEBP · 1200×600
-    </p>
-</div>
-{{-- Cover image --}}
-
-{{-- Cover image --}}
-                    <div class="md:col-span-2">
-                        <label class="block text-xs text-gray-600 mb-1">Notas</label>
-                        <textarea name="notes" rows="3"
-                                  class="w-full rounded-lg border-gray-300">{{ old('notes',$training->notes) }}</textarea>
+                    <div class="lg:col-span-9">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Notas</label>
+                        <textarea name="notes" rows="3" class="w-full rounded-lg border-slate-300 text-lg">{{ old('notes',$training->notes) }}</textarea>
                     </div>
                 </div>
             </div>
@@ -342,6 +314,7 @@
 
 
   </div>
+</div>
 </div>
 <div id="assignError" class="hidden rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
     Para entrenamientos asignados selecciona al menos 1 atleta o 1 grupo.
@@ -508,6 +481,90 @@
                             <p class="text-xs text-gray-500 mt-1">Video cargado actualmente.</p>
                         @endif
                     </div>
+
+
+                    @if($s->liftingBlocks->isNotEmpty())
+                        <div class="md:col-span-2 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                            <div class="mb-4">
+                                <h3 class="text-sm font-bold text-slate-900">Series lifting</h3>
+                                <p class="mt-1 text-xs text-slate-600">Bloques capturados para esta seccion.</p>
+                            </div>
+
+                            <div class="space-y-4">
+                                @foreach($s->liftingBlocks as $blockIndex => $block)
+                                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                                        <input type="hidden" name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][id]" value="{{ $block->id }}">
+
+                                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                            <div>
+                                                <label class="block text-xs font-semibold text-slate-700 mb-1">Ejercicio</label>
+                                                <input name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][exercise_name]"
+                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.exercise_name", $block->exercise_name) }}"
+                                                       class="h-10 w-full rounded-lg border-slate-300">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-semibold text-slate-700 mb-1">Notas del ejercicio</label>
+                                                <input name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][notes]"
+                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.notes", $block->notes) }}"
+                                                       class="h-10 w-full rounded-lg border-slate-300">
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 overflow-x-auto">
+                                            <table class="min-w-full border-separate border-spacing-0 text-sm">
+                                                <thead>
+                                                    <tr class="text-left text-xs uppercase text-slate-500">
+                                                        <th class="px-2 py-2">%</th>
+                                                        <th class="px-2 py-2">Reps</th>
+                                                        <th class="px-2 py-2">Series</th>
+                                                        <th class="px-2 py-2">Descanso</th>
+                                                        <th class="px-2 py-2">Notas</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($block->rows as $rowIndex => $row)
+                                                        <tr>
+                                                            <td class="px-2 py-2">
+                                                                <input type="hidden" name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][rows][{{ $rowIndex }}][id]" value="{{ $row->id }}">
+                                                                <input type="number" min="0" max="100" step="0.01"
+                                                                       name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][rows][{{ $rowIndex }}][percentage]"
+                                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.rows.$rowIndex.percentage", $row->percentage) }}"
+                                                                       class="h-9 w-20 rounded-lg border-slate-300">
+                                                            </td>
+                                                            <td class="px-2 py-2">
+                                                                <input type="number" min="1"
+                                                                       name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][rows][{{ $rowIndex }}][reps]"
+                                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.rows.$rowIndex.reps", $row->reps) }}"
+                                                                       class="h-9 w-20 rounded-lg border-slate-300">
+                                                            </td>
+                                                            <td class="px-2 py-2">
+                                                                <input type="number" min="1"
+                                                                       name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][rows][{{ $rowIndex }}][sets]"
+                                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.rows.$rowIndex.sets", $row->sets) }}"
+                                                                       class="h-9 w-20 rounded-lg border-slate-300">
+                                                            </td>
+                                                            <td class="px-2 py-2">
+                                                                <input type="number" min="0"
+                                                                       name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][rows][{{ $rowIndex }}][rest_seconds]"
+                                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.rows.$rowIndex.rest_seconds", $row->rest_seconds) }}"
+                                                                       class="h-9 w-24 rounded-lg border-slate-300">
+                                                            </td>
+                                                            <td class="px-2 py-2">
+                                                                <input type="text"
+                                                                       name="sections[{{ $i }}][lifting_blocks][{{ $blockIndex }}][rows][{{ $rowIndex }}][notes]"
+                                                                       value="{{ old("sections.$i.lifting_blocks.$blockIndex.rows.$rowIndex.notes", $row->notes) }}"
+                                                                       class="h-9 w-56 rounded-lg border-slate-300">
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="md:col-span-2">
                         <label class="block text-xs mb-2">Videos desde biblioteca</label>
@@ -738,98 +795,25 @@
             </div>
         </form>
     </div>
-    <template id="sectionTpl">
-  <div class="rounded-xl border p-4" data-sec>
-    <input type="hidden" class="secId" />
 
-    <div class="flex items-center justify-between">
-      <div class="font-semibold">Sección <span class="secNum"></span></div>
-      <button type="button" class="removeSec text-sm text-red-600">Eliminar</button>
-    </div>
-
-    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-xs mb-1">Nombre</label>
-        <input class="secName w-full h-10 rounded-lg border-gray-300" />
-      </div>
-
-      <div class="flex items-end gap-3">
-        {{-- <label class="inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" class="secAccepts rounded border-gray-300" />
-          Acepta resultados
-        </label> --}}
-
-        <div class="flex-1">
-          <label class="block text-xs mb-1">Tipo de resultado</label>
-        <select class="secResultType w-full h-10 rounded-lg border-gray-300" >
-          <option value="none" selected>Sin resultados</option>
-          <option value="reps">Repeticiones</option>
-          <option value="time">Tiempo</option>
-          <option value="weight">Peso</option>
-          <option value="distance">Distancia</option>
-          <option value="rounds">Rondas</option>
-          <option value="sets">Series</option>
-          <option value="calories">Calorías</option>
-          <option value="points">Puntos</option>
-          <option value="note">Notas</option>
-          <option value="boolean">Sí / No</option>
-      </select>
-
-        </div>
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-xs mb-1">Descripción</label>
-        <textarea class="secDesc w-full rounded-lg border-gray-300" rows="3"></textarea>
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-xs text-gray-600 mb-1">Video URL (YouTube/Vimeo)</label>
-        <input type="url" class="secVideo w-full h-10 rounded-lg border-gray-300"
-               placeholder="https://www.youtube.com/watch?v=..." />
-      </div>
-
-      <div class="md:col-span-2">
-        <label class="block text-xs text-gray-600 mb-1">Video MP4 (máx 10MB)</label>
-        <input type="file" class="secVideoFile w-full h-10 rounded-lg border-gray-300"
-               accept="video/mp4" />
-      </div>
-    </div>
-  </div>
-  <!-- Confirm modal -->
-<div id="confirmModal"
-     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
-  <div class="w-full max-w-md rounded-2xl bg-white shadow-xl p-6">
-    <h3 class="text-lg font-semibold text-gray-900">
-      Cambiar visibilidad a “Libre”
-    </h3>
-
-    <p class="mt-3 text-sm text-gray-600">
-      Vas a cambiar este entrenamiento a <b>Libre</b>.
-    </p>
-
-    <ul class="mt-3 text-sm text-gray-600 list-disc pl-5 space-y-1">
-      <li>Todos podrán ver este entrenamiento después del cambio.</li>
-      <li>Se eliminarán las asignaciones actuales (atletas y grupos).</li>
-    </ul>
-
-    <div class="mt-6 flex justify-end gap-3">
-      <button type="button"
-              id="confirmCancel"
-              class="px-4 py-2 rounded-lg border text-sm text-gray-700 hover:bg-gray-50">
-        Cancelar
-      </button>
-
-      <button type="button"
-              id="confirmAccept"
-              class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">
-        Sí, cambiar a Libre
-      </button>
-    </div>
+<div id="trainingSavingOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60">
+  <div class="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+    <div class="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-700"></div>
+    <h3 class="mt-4 text-lg font-bold text-slate-950">Guardando entrenamiento</h3>
+    <p class="mt-2 text-sm text-slate-600">Espera un momento mientras se procesa la informacion.</p>
   </div>
 </div>
-</template>
 
+<script>
+(() => {
+  const form = document.getElementById('editTrainingForm');
+  const overlay = document.getElementById('trainingSavingOverlay');
+  form?.addEventListener('submit', () => {
+    overlay?.classList.remove('hidden');
+    overlay?.classList.add('flex');
+  });
+})();
+</script>
 
 </x-app-layout>
 

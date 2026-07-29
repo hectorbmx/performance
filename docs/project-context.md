@@ -72,3 +72,9 @@ Problema de producto:
   - Historial de pagos.
   - Acciones: registrar pago manual, crear nueva suscripcion, generar link de pago Stripe cuando aplique.
 - La fuente de verdad para bloqueo debe quedar centralizada para evitar reglas duplicadas entre login, middleware y UI.
+
+
+# agregar configuracion bancaria para el coach (tareas para la proxima sesion cuando se renueve el plan 30 jun)
+- Metodos de pago, 
+- Revisa stripe en tenant para los cobros
+- 

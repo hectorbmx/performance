@@ -26,7 +26,7 @@ class TrainingSessionController extends Controller
   public function index(Request $request)
 {
     $coachId = auth()->id();
-    $view = $request->get('view', 'list');
+    $view = $request->get('view', 'calendar');
 
     if ($view === 'calendar') {
         
@@ -99,18 +99,11 @@ public function create(Request $request)
         ->whereIn('id', collect(old('assigned_groups', []))->map(fn ($id) => (int) $id)->all())
         ->orderBy('name')
         ->get(['id','name']);
-        $types = TrainingTypeCatalog::query()
-        ->where('coach_id', $coachId)
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get(['id','name']);
-
-
     $types = TrainingTypeCatalog::query()
         ->where('coach_id', $coachId)
         ->where('is_active', true)
         ->orderBy('name')
-        ->get(['id','name']);
+        ->get(['id','name','behavior']);
          // ✅ NUEVO: Goals (catálogo) por coach
     $goals = TrainingGoalCatalog::query()
         ->where('coach_id', $coachId)
@@ -258,6 +251,11 @@ public function store(Request $request)
         'level'            => ['required','in:beginner,intermediate,advanced'],
         // 'goal'             => ['required','in:strength,cardio,technique,mobility,mixed'],
         'training_goal_catalog_id' => ['required','integer','exists:training_goal_catalogs,id'],
+        'training_type_catalog_id' => [
+            'nullable',
+            'integer',
+            Rule::exists('training_type_catalogs', 'id')->where(fn ($q) => $q->where('coach_id', $coachId)),
+        ],
 
 
         'visibility'       => ['required','in:free,assigned'],
@@ -294,6 +292,18 @@ public function store(Request $request)
             Rule::in(array_merge(['none'], TrainingSectionResultType::values())),
             ],
         'sections.*.unit_id' => ['nullable','integer','exists:units,id'],
+        'sections.*.lifting_blocks' => ['nullable','array'],
+        'sections.*.lifting_blocks.*.id' => ['nullable','integer','exists:training_section_exercise_blocks,id'],
+        'sections.*.lifting_blocks.*.exercise_catalog_id' => ['nullable','integer'],
+        'sections.*.lifting_blocks.*.exercise_name' => ['required_with:sections.*.lifting_blocks','string','max:160'],
+        'sections.*.lifting_blocks.*.notes' => ['nullable','string'],
+        'sections.*.lifting_blocks.*.rows' => ['nullable','array'],
+        'sections.*.lifting_blocks.*.rows.*.id' => ['nullable','integer','exists:training_section_lifting_rows,id'],
+        'sections.*.lifting_blocks.*.rows.*.percentage' => ['nullable','numeric','min:0','max:100'],
+        'sections.*.lifting_blocks.*.rows.*.reps' => ['required_with:sections.*.lifting_blocks.*.rows','integer','min:1','max:1000'],
+        'sections.*.lifting_blocks.*.rows.*.sets' => ['required_with:sections.*.lifting_blocks.*.rows','integer','min:1','max:1000'],
+        'sections.*.lifting_blocks.*.rows.*.rest_seconds' => ['nullable','integer','min:0','max:86400'],
+        'sections.*.lifting_blocks.*.rows.*.notes' => ['nullable','string'],
 
     ]);
     foreach ($data['sections'] as &$s) {
@@ -426,6 +436,8 @@ if (!empty($ids)) {
     $section->libraryVideos()->syncWithoutDetaching($pivot);
 }
 
+$this->syncLiftingBlocks($section, $s['lifting_blocks'] ?? null);
+
 }
 
 
@@ -545,7 +557,7 @@ public function edit(TrainingSession $training)
                       'library_videos.is_active',
                   ]);
                   // el orderBy del pivot ya lo tienes en la relación ->orderBy(...)
-              }]);
+              }, 'liftingBlocks.rows']);
         },
     ]);
 
@@ -569,7 +581,7 @@ public function edit(TrainingSession $training)
         ->where('coach_id', $coachId)
         ->where('is_active', true)
         ->orderBy('name')
-        ->get(['id','name']);
+        ->get(['id','name','behavior']);
 
     $goals = TrainingGoalCatalog::query()
         ->where('coach_id', $coachId)
@@ -665,6 +677,18 @@ public function update(Request $request, TrainingSession $training)
             Rule::in(array_merge(['none'], TrainingSectionResultType::values())),
         ],
         'sections.*.unit_id' => ['nullable','integer','exists:units,id'],
+        'sections.*.lifting_blocks' => ['nullable','array'],
+        'sections.*.lifting_blocks.*.id' => ['nullable','integer','exists:training_section_exercise_blocks,id'],
+        'sections.*.lifting_blocks.*.exercise_catalog_id' => ['nullable','integer'],
+        'sections.*.lifting_blocks.*.exercise_name' => ['required_with:sections.*.lifting_blocks','string','max:160'],
+        'sections.*.lifting_blocks.*.notes' => ['nullable','string'],
+        'sections.*.lifting_blocks.*.rows' => ['nullable','array'],
+        'sections.*.lifting_blocks.*.rows.*.id' => ['nullable','integer','exists:training_section_lifting_rows,id'],
+        'sections.*.lifting_blocks.*.rows.*.percentage' => ['nullable','numeric','min:0','max:100'],
+        'sections.*.lifting_blocks.*.rows.*.reps' => ['required_with:sections.*.lifting_blocks.*.rows','integer','min:1','max:1000'],
+        'sections.*.lifting_blocks.*.rows.*.sets' => ['required_with:sections.*.lifting_blocks.*.rows','integer','min:1','max:1000'],
+        'sections.*.lifting_blocks.*.rows.*.rest_seconds' => ['nullable','integer','min:0','max:86400'],
+        'sections.*.lifting_blocks.*.rows.*.notes' => ['nullable','string'],
                 
         'video_url' => ['nullable','url','max:255'],
         // --- ASIGNACIONES ---
@@ -883,6 +907,8 @@ public function update(Request $request, TrainingSession $training)
                 ->all();
 
             $section->libraryVideos()->sync($syncPayload);
+
+            $this->syncLiftingBlocks($section, $s['lifting_blocks'] ?? null);
         }
     });
 
@@ -896,6 +922,83 @@ public function update(Request $request, TrainingSession $training)
         ->with('success', $msg);
 }
 
+
+
+private function syncLiftingBlocks(TrainingSection $section, ?array $blocks): void
+{
+    if ($blocks === null) {
+        return;
+    }
+
+    $existingBlockIds = $section->liftingBlocks()->pluck('id')->all();
+    $sentBlockIds = collect($blocks)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
+    $blockIdsToDelete = array_diff($existingBlockIds, $sentBlockIds);
+
+    if (!empty($blockIdsToDelete)) {
+        $section->liftingBlocks()->whereIn('id', $blockIdsToDelete)->delete();
+    }
+
+    foreach (array_values($blocks) as $blockIndex => $blockData) {
+        $block = null;
+
+        if (!empty($blockData['id'])) {
+            $block = $section->liftingBlocks()
+                ->where('id', (int) $blockData['id'])
+                ->first();
+        }
+
+        $payload = [
+            'exercise_catalog_id' => $blockData['exercise_catalog_id'] ?? null,
+            'exercise_name' => $blockData['exercise_name'],
+            'notes' => $blockData['notes'] ?? null,
+            'order' => $blockIndex + 1,
+        ];
+
+        if ($block) {
+            $block->update($payload);
+        } else {
+            $block = $section->liftingBlocks()->create($payload);
+        }
+
+        $this->syncLiftingRows($block, $blockData['rows'] ?? []);
+    }
+}
+
+private function syncLiftingRows(\App\Models\TrainingSectionExerciseBlock $block, array $rows): void
+{
+    $existingRowIds = $block->rows()->pluck('id')->all();
+    $sentRowIds = collect($rows)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
+    $rowIdsToDelete = array_diff($existingRowIds, $sentRowIds);
+
+    if (!empty($rowIdsToDelete)) {
+        $block->rows()->whereIn('id', $rowIdsToDelete)->delete();
+    }
+
+    foreach (array_values($rows) as $rowIndex => $rowData) {
+        $row = null;
+
+        if (!empty($rowData['id'])) {
+            $row = $block->rows()
+                ->where('id', (int) $rowData['id'])
+                ->first();
+        }
+
+        $payload = [
+            'percentage' => $rowData['percentage'] ?? null,
+            'reps' => $rowData['reps'],
+            'sets' => $rowData['sets'],
+            'rest_seconds' => $rowData['rest_seconds'] ?? null,
+            'notes' => $rowData['notes'] ?? null,
+            'order' => $rowIndex + 1,
+        ];
+
+        if ($row) {
+            $row->update($payload);
+        } else {
+            $block->rows()->create($payload);
+        }
+    }
+}
 
    public function destroy(TrainingSession $training)
         {

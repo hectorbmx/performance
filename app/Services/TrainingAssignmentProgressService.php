@@ -34,8 +34,37 @@ class TrainingAssignmentProgressService
             ->whereIn('training_section_id', $sectionIds)
             ->pluck('training_section_id');
 
+        $liftingSectionIds = DB::table('training_section_exercise_blocks as blocks')
+            ->join('training_sections as sections', 'sections.id', '=', 'blocks.training_section_id')
+            ->where('sections.training_session_id', $assignment->training_session_id)
+            ->distinct()
+            ->pluck('blocks.training_section_id');
+
+        $completedLiftingSectionIds = $liftingSectionIds->filter(function ($sectionId) use ($assignment) {
+            $requiredSets = (int) DB::table('training_section_lifting_rows as rows')
+                ->join('training_section_exercise_blocks as blocks', 'blocks.id', '=', 'rows.exercise_block_id')
+                ->where('blocks.training_section_id', $sectionId)
+                ->sum('rows.sets');
+
+            if ($requiredSets <= 0) {
+                return false;
+            }
+
+            $loggedSets = DB::table('training_lifting_set_logs as logs')
+                ->join('training_section_lifting_rows as rows', 'rows.id', '=', 'logs.lifting_row_id')
+                ->join('training_section_exercise_blocks as blocks', 'blocks.id', '=', 'rows.exercise_block_id')
+                ->where('logs.training_assignment_id', $assignment->id)
+                ->where('blocks.training_section_id', $sectionId)
+                ->whereIn('logs.status', ['completed', 'failed', 'skipped'])
+                ->distinct()
+                ->count(DB::raw("CONCAT(logs.lifting_row_id, ':', logs.set_number)"));
+
+            return $loggedSets >= $requiredSets;
+        })->values();
+
         $completed = $resultSectionIds
             ->merge($completionSectionIds)
+            ->merge($completedLiftingSectionIds)
             ->unique()
             ->count();
 

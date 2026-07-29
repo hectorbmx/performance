@@ -16,12 +16,18 @@ class TrainingTypeCatalog extends Model
         'coach_id',
         'name',
         'description',
+        'behavior',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function usesLiftingBuilder(): bool
+    {
+        return $this->behavior === 'lifting';
+    }
 
     public function coach(): BelongsTo
     {

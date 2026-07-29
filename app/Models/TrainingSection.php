@@ -46,4 +46,10 @@ class TrainingSection extends Model
             ->orderBy('training_section_library_videos.order');
     }
 
+    public function liftingBlocks(): HasMany
+    {
+        return $this->hasMany(TrainingSectionExerciseBlock::class, 'training_section_id')
+            ->orderBy('order');
+    }
+
 }

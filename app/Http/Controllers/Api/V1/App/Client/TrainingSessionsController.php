@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\App\Client;
 use App\Http\Controllers\Controller;
 use App\Models\TrainingSession;
 use App\Models\TrainingAssignment;
+use App\Models\TrainingSectionExerciseBlock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,7 +27,7 @@ class TrainingSessionsController extends Controller
         // Cargar secciones ordenadas
         $session->load([
             // 'sections' => fn ($q) => $q->orderBy('order'),
-            'sections' => fn ($q) => $q->orderBy('order')->with('unit'),
+            'sections' => fn ($q) => $q->orderBy('order')->with(['unit', 'liftingBlocks.rows']),
 
         ]);
 
@@ -73,6 +74,7 @@ class TrainingSessionsController extends Controller
                         'accepts_results' => (bool)$s->accepts_results,
                         'result_type' => $s->result_type,
                         'unit' => $s->unit?->symbol,
+                        'lifting_blocks' => $this->liftingBlocksPayload($s->liftingBlocks),
                     ];
                 }),
 
@@ -85,6 +87,39 @@ class TrainingSessionsController extends Controller
             ],
         ]);
     }
+
+    private function liftingBlocksPayload($blocks)
+    {
+        return $blocks->map(function (TrainingSectionExerciseBlock $block) {
+            return [
+                'id' => $block->id,
+                'exercise_catalog_id' => $block->exercise_catalog_id,
+                'exercise_name' => $block->exercise_name,
+                'notes' => $block->notes,
+                'order' => $block->order,
+                'rows' => $block->rows->map(function ($row) {
+                    return [
+                        'id' => $row->id,
+                        'percentage' => $row->percentage !== null ? (float)$row->percentage : null,
+                        'reps' => $row->reps,
+                        'sets' => $row->sets,
+                        'rest_seconds' => $row->rest_seconds,
+                        'notes' => $row->notes,
+                        'order' => $row->order,
+                        'set_statuses' => collect(range(1, max(1, (int)$row->sets)))->map(fn ($setNumber) => [
+                            'set_number' => $setNumber,
+                            'status' => null,
+                            'actual_reps' => null,
+                            'failure_reason' => null,
+                            'notes' => null,
+                            'logged_at' => null,
+                        ])->values(),
+                    ];
+                })->values(),
+            ];
+        })->values();
+    }
+
     public function start(Request $request, TrainingSession $trainingSession)
         {
             $user = $request->user();
