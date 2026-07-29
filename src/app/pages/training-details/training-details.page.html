@@ -123,6 +123,69 @@
               {{ section.description }}
             </p>
 
+            <div class="td-lifting" *ngIf="hasLifting(section)">
+              <article class="td-lift-block" *ngFor="let block of section.lifting_blocks">
+                <div class="td-lift-block-head">
+                  <div>
+                    <h3>{{ block.exercise_name }}</h3>
+                    <p *ngIf="block.notes">{{ block.notes }}</p>
+                  </div>
+                  <ion-icon name="barbell-outline"></ion-icon>
+                </div>
+
+                <div class="td-lift-row" *ngFor="let row of block.rows; trackBy: trackByLiftingRowId">
+                  <div class="td-lift-row-meta">
+                    <span class="td-lift-intensity">{{ liftingPrescription(row) }}</span>
+                    <span>{{ restLabel(row.rest_seconds) }}</span>
+                  </div>
+                  <p class="td-lift-row-notes" *ngIf="row.notes">{{ row.notes }}</p>
+
+                  <div class="td-lift-sets">
+                    <div
+                      class="td-lift-set"
+                      *ngFor="let set of row.set_statuses; trackBy: trackBySetNumber"
+                      [class.is-completed]="set.status === 'completed'"
+                      [class.is-failed]="set.status === 'failed'"
+                      [class.is-saving]="savingLiftingKey === liftingSetKey(row.id, set.set_number)"
+                    >
+                      <div class="td-lift-set-label">
+                        <span>Set {{ set.set_number }}</span>
+                        <strong>{{ row.reps }} reps</strong>
+                      </div>
+
+                      <div class="td-lift-set-actions">
+                        <ion-spinner
+                          *ngIf="savingLiftingKey === liftingSetKey(row.id, set.set_number)"
+                          class="td-set-spinner"
+                          name="crescent"
+                        ></ion-spinner>
+                        <button
+                          *ngIf="set.status !== 'completed'"
+                          type="button"
+                          class="td-set-btn td-set-ok"
+                          [disabled]="savingLiftingKey === liftingSetKey(row.id, set.set_number)"
+                          (click)="saveLiftingSetStatus(row, set, 'completed')"
+                          aria-label="Marcar set completado"
+                        >
+                          <ion-icon name="checkmark-outline"></ion-icon>
+                        </button>
+                        <button
+                          *ngIf="set.status !== 'failed'"
+                          type="button"
+                          class="td-set-btn td-set-fail"
+                          [disabled]="savingLiftingKey === liftingSetKey(row.id, set.set_number)"
+                          (click)="saveLiftingSetStatus(row, set, 'failed')"
+                          aria-label="Marcar set fallado"
+                        >
+                          <ion-icon name="close-outline"></ion-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+
             <!-- Video (solo si existe) -->
             <div class="td-video" *ngIf="section.video_url">
               <iframe

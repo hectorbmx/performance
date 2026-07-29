@@ -17,6 +17,46 @@ export interface SaveSectionResultPayload {
   notes?: string | null;
 }
 
+export type LiftingSetStatus = 'completed' | 'failed' | 'skipped' | null;
+
+export interface TrainingLiftingSetStatusDTO {
+  set_number: number;
+  status: LiftingSetStatus;
+  actual_reps: number | null;
+  failure_reason: string | null;
+  notes: string | null;
+  logged_at: string | null;
+}
+
+export interface TrainingLiftingRowDTO {
+  id: number;
+  percentage: number | null;
+  reps: number;
+  sets: number;
+  rest_seconds: number | null;
+  notes: string | null;
+  order: number;
+  set_statuses: TrainingLiftingSetStatusDTO[];
+}
+
+export interface TrainingLiftingBlockDTO {
+  id: number;
+  exercise_catalog_id: number | null;
+  exercise_name: string;
+  notes: string | null;
+  order: number;
+  rows: TrainingLiftingRowDTO[];
+}
+
+export interface SaveLiftingSetPayload {
+  lifting_row_id: number;
+  set_number: number;
+  status: Exclude<LiftingSetStatus, null>;
+  actual_reps?: number | null;
+  failure_reason?: string | null;
+  notes?: string | null;
+}
+
 export type TrainingSessionDTO = {
   id: number;
   coach_id: number;
@@ -60,6 +100,7 @@ export interface TrainingSectionDTO {
   videos: LibraryVideoDTO[];
   // ✅ Tipo real: lo que el coach eligió
   result_type: 'number' | 'time' | 'text' | 'bool' | 'json' | null;
+  lifting_blocks: TrainingLiftingBlockDTO[];
   
 
   completed: boolean;
@@ -235,6 +276,37 @@ export type TrainingAssignmentStatusResponse = {
 export class TrainingApiService {
   constructor(private api: ApiService) {}
 
+saveLiftingSet(assignmentId: number, payload: SaveLiftingSetPayload): Promise<any> {
+  return this.api.post(`app/training-assignments/${assignmentId}/lifting-sets`, payload);
+}
+
+private mapLiftingBlocks(blocks: any[] | null | undefined): TrainingLiftingBlockDTO[] {
+  return (blocks ?? []).map((block: any) => ({
+    id: Number(block.id),
+    exercise_catalog_id: block.exercise_catalog_id ?? null,
+    exercise_name: block.exercise_name ?? 'Ejercicio',
+    notes: block.notes ?? null,
+    order: Number(block.order ?? 0),
+    rows: (block.rows ?? []).map((row: any) => ({
+      id: Number(row.id),
+      percentage: row.percentage === null || row.percentage === undefined ? null : Number(row.percentage),
+      reps: Number(row.reps ?? 0),
+      sets: Number(row.sets ?? 0),
+      rest_seconds: row.rest_seconds === null || row.rest_seconds === undefined ? null : Number(row.rest_seconds),
+      notes: row.notes ?? null,
+      order: Number(row.order ?? 0),
+      set_statuses: (row.set_statuses ?? []).map((set: any) => ({
+        set_number: Number(set.set_number),
+        status: set.status ?? null,
+        actual_reps: set.actual_reps === null || set.actual_reps === undefined ? null : Number(set.actual_reps),
+        failure_reason: set.failure_reason ?? null,
+        notes: set.notes ?? null,
+        logged_at: set.logged_at ?? null,
+      })),
+    })),
+  }));
+}
+
   /**
    * GET /api/v1/app/trainings
    * params opcionales: from, to, status, include=free
@@ -293,6 +365,7 @@ export class TrainingApiService {
     // ✅ Nuevo: result_type real (number|time|text|bool|json|null)
     result_type: sec.result_type ?? null,
     videos: sec.videos ?? [],
+    lifting_blocks: this.mapLiftingBlocks(sec.lifting_blocks),
     is_completed: !!sec.is_completed, // Fuerza valor booleano
     // ✅ Nuevo: completado viene del backend (results o completions)
     completed: !!(sec.is_completed ?? sec.completed ?? r),
@@ -389,6 +462,7 @@ const allowedTypes: ResultType[] = ['number', 'time', 'text', 'bool', 'json'];
     accepts_results: !!sec.accepts_results,
     result_type: rt,
     videos: sec.videos ?? [],
+    lifting_blocks: this.mapLiftingBlocks(sec.lifting_blocks),
 is_completed: !!sec.is_completed, // Fuerza valor booleano
     // free no tiene results todavía
     completed: false,

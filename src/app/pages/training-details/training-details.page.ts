@@ -23,11 +23,15 @@ import {
   barbellOutline,
   playCircle,
   flashOutline,
+  checkmarkOutline,
+  closeOutline,
   fitnessOutline, logoYoutube } from 'ionicons/icons';
 
 import {
   TrainingApiService,
   TrainingDetailDTO,
+  TrainingLiftingRowDTO,
+  TrainingLiftingSetStatusDTO,
   TrainingSectionDTO,
 } from '../../services/training-api.service';
 
@@ -67,6 +71,7 @@ export class TrainingDetailsPage implements OnInit {
 
 
   savingResult = false;
+  savingLiftingKey: string | null = null;
   data: any;
   savingSectionId: number | null = null;
 
@@ -82,7 +87,7 @@ export class TrainingDetailsPage implements OnInit {
     private sanitizer: DomSanitizer,
     
   ) {
-    addIcons({timeOutline,barbellOutline,flashOutline,fitnessOutline,logoYoutube,arrowBack,playCircle,});
+    addIcons({timeOutline,barbellOutline,flashOutline,fitnessOutline,logoYoutube,arrowBack,playCircle,checkmarkOutline,closeOutline,});
   }
 
 async ngOnInit() {
@@ -194,6 +199,78 @@ async loadFreeDetails() {
   // =========================
   trackBySectionId(_: number, s: TrainingSectionDTO) {
     return s.id;
+  }
+
+  trackByLiftingRowId(_: number, row: TrainingLiftingRowDTO) {
+    return row.id;
+  }
+
+  trackBySetNumber(_: number, set: TrainingLiftingSetStatusDTO) {
+    return set.set_number;
+  }
+
+  hasLifting(section: TrainingSectionDTO): boolean {
+    return (section.lifting_blocks ?? []).some((block) => (block.rows ?? []).length > 0);
+  }
+
+  liftingPrescription(row: TrainingLiftingRowDTO): string {
+    const intensity = row.percentage === null ? 'Sin %' : `${row.percentage}%`;
+    return `${intensity} · ${row.sets} x ${row.reps}`;
+  }
+
+  restLabel(seconds: number | null): string {
+    if (!seconds && seconds !== 0) return 'Sin descanso';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+  }
+
+  liftingSetKey(rowId: number, setNumber: number): string {
+    return `${rowId}:${setNumber}`;
+  }
+
+  async saveLiftingSetStatus(row: TrainingLiftingRowDTO, set: TrainingLiftingSetStatusDTO, status: 'completed' | 'failed') {
+    if (!this.assignmentId) return;
+
+    const key = this.liftingSetKey(row.id, set.set_number);
+    if (this.savingLiftingKey) return;
+
+    const previousStatus = set.status;
+    const previousActualReps = set.actual_reps;
+    const previousFailureReason = set.failure_reason;
+
+    this.savingLiftingKey = key;
+    this.errorMsg = null;
+    set.status = status;
+    set.actual_reps = status === 'completed' ? row.reps : Math.max(0, row.reps - 1);
+    set.failure_reason = status === 'failed' ? 'athlete_marked_failed' : null;
+
+    try {
+      const res = await this.trainingApi.saveLiftingSet(this.assignmentId, {
+        lifting_row_id: row.id,
+        set_number: set.set_number,
+        status,
+        actual_reps: set.actual_reps,
+        failure_reason: set.failure_reason,
+      });
+
+      if (!res?.ok) {
+        set.status = previousStatus;
+        set.actual_reps = previousActualReps;
+        set.failure_reason = previousFailureReason;
+        this.errorMsg = res?.message ?? 'No se pudo registrar la serie';
+        return;
+      }
+
+      await this.loadDetails();
+    } catch (e: any) {
+      set.status = previousStatus;
+      set.actual_reps = previousActualReps;
+      set.failure_reason = previousFailureReason;
+      this.errorMsg = e?.message ?? 'Error registrando la serie';
+    } finally {
+      this.savingLiftingKey = null;
+    }
   }
 
   goBack() {

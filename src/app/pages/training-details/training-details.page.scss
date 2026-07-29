@@ -1,16 +1,9 @@
-// ============================================================
-// TRAINING DETAIL - MODERN DESIGN
-// ============================================================
-
 .td-shell {
   min-height: 100vh;
   background: #10151B;
   padding-bottom: 2rem;
 }
 
-// ============================================================
-// LOADING
-// ============================================================
 .td-loading {
   display: flex;
   flex-direction: column;
@@ -30,9 +23,6 @@
   }
 }
 
-// ============================================================
-// HERO CARD
-// ============================================================
 .td-hero {
   position: relative;
   margin: 0;
@@ -76,9 +66,6 @@
   z-index: 2;
 }
 
-// ============================================================
-// BADGES
-// ============================================================
 .td-badges {
   display: flex;
   gap: 0.5rem;
@@ -119,9 +106,6 @@
   50% { opacity: 0.7; }
 }
 
-// ============================================================
-// TITLE & META
-// ============================================================
 .td-title {
   font-size: 1.75rem;
   font-weight: 800;
@@ -162,9 +146,6 @@
   border-left: 3px solid #5B8DEF;
 }
 
-// ============================================================
-// PROGRESS
-// ============================================================
 .td-progress {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
@@ -215,61 +196,6 @@
   text-align: center;
 }
 
-// ============================================================
-// ACTIONS
-// ============================================================
-.td-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.td-btn {
-  flex: 1;
-  padding: 0.95rem;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.td-btn-primary {
-  background: linear-gradient(135deg, #5B8DEF 0%, #4A7FDE 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(91, 141, 239, 0.3);
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(91, 141, 239, 0.4);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-}
-
-.td-btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e0e0e8;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.25);
-  }
-}
-
-// ============================================================
-// SECTIONS
-// ============================================================
 .td-section {
   padding: 0 1.25rem;
   margin-top: 2rem;
@@ -297,9 +223,6 @@
   border-radius: 12px;
 }
 
-// ============================================================
-// CARDS & ITEMS
-// ============================================================
 .td-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
@@ -385,9 +308,6 @@
   white-space: pre-line;
 }
 
-// ============================================================
-// VIDEO
-// ============================================================
 .td-video {
   margin: 1rem 0;
   border-radius: 12px;
@@ -402,9 +322,24 @@
   }
 }
 
-// ============================================================
-// RESULTS
-// ============================================================
+.td-lift-block{border:1px solid rgba(148,163,184,.22);border-radius:8px;padding:12px;margin:14px 0;background:rgba(15,23,42,.58)}
+.td-lift-block-head,.td-lift-row-meta,.td-lift-set{display:flex;justify-content:space-between;gap:10px}
+.td-lift-block-head h3{margin:0;color:#e5efff;font-size:1.05rem}
+.td-lift-block-head p,.td-lift-row-notes{margin:4px 0;color:rgba(226,232,240,.7);font-size:.84rem}
+.td-lift-row{padding:10px;margin-top:10px;background:rgba(255,255,255,.04);border-radius:8px}
+.td-lift-row-meta{color:#bfdbfe;font-size:.8rem;font-weight:700}
+.td-lift-set{align-items:center;padding:10px;border-left:4px solid rgba(148,163,184,.3)}
+.td-lift-set.is-completed{border-left-color:#9fc5ff}
+.td-lift-set.is-failed{border-left-color:#fca5a5}
+.td-lift-set.is-saving{opacity:.72;pointer-events:none}
+.td-lift-set-label{display:flex;flex-direction:column;color:#f8fafc}
+.td-lift-set-label span{color:#bfdbfe;font-size:.72rem;font-weight:800;text-transform:uppercase}
+.td-lift-set-actions{display:flex;gap:10px}
+.td-set-btn{width:44px;height:44px;border-radius:50%;background:transparent}
+.td-set-spinner{width:22px;height:22px;color:#9fc5ff;align-self:center}
+.td-set-ok{border:2px solid rgba(147,197,253,.34);color:#bfdbfe}
+.td-set-fail{border:2px solid rgba(252,165,165,.34);color:#fca5a5}
+
 .td-result {
   background: rgba(91, 141, 239, 0.1);
   border-radius: 12px;
@@ -457,21 +392,6 @@
     font-style: italic;
   }
 }
-.td-item-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.td-link {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .td-link-soft {
   opacity: 0.75;
   font-weight: 500;
@@ -482,9 +402,6 @@
   opacity: 1;
 }
 
-// ============================================================
-// ITEM ACTIONS
-// ============================================================
 .td-item-actions {
   margin-top: 1rem;
   padding-top: 1rem;
@@ -507,9 +424,6 @@
   }
 }
 
-// ============================================================
-// RESPONSIVE
-// ============================================================
 @media (min-width: 768px) {
   .td-shell {
     max-width: 800px;
@@ -524,10 +438,6 @@
     font-size: 2.25rem;
   }
 
-  .td-actions {
-    max-width: 400px;
-    margin: 0 auto;
-  }
 }
 
 /* =========================
