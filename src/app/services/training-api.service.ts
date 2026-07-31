@@ -537,8 +537,8 @@ async saveSectionResult(
       {}
     );
   }
-  completeSection(assignmentId: number, sectionId: number): Promise<{ ok: boolean; message?: string }> {
-  return this.api.post<{ ok: boolean; message?: string }>(
+  completeSection(assignmentId: number, sectionId: number): Promise<any> {
+  return this.api.post<any>(
     `app/training-assignments/${assignmentId}/sections/${sectionId}/complete`,
     {}
   );

@@ -229,6 +229,47 @@ async loadFreeDetails() {
     return `${rowId}:${setNumber}`;
   }
 
+  isSectionSaving(sectionId: number): boolean {
+    return this.savingSectionId === sectionId;
+  }
+
+  private applyProgress(progress: any) {
+    if (!this.detail || !progress) return;
+
+    const sectionsCompleted =
+      progress.sections_completed ?? progress.sections_with_results ?? this.detail.progress.sections_completed;
+
+    this.detail.progress = {
+      sections_total: progress.sections_total ?? this.detail.progress.sections_total,
+      sections_completed: sectionsCompleted,
+      pct: progress.pct ?? this.detail.progress.pct,
+    };
+  }
+
+  private applyAssignmentStatus(status: any) {
+    if (!this.detail || !status) return;
+    this.detail.status = status;
+  }
+
+  private refreshProgressFromSections() {
+    if (!this.detail) return;
+
+    const sectionsCompleted = this.detail.sections.filter((section) => section.completed || section.is_completed).length;
+    const sectionsTotal = this.detail.progress.sections_total || this.detail.sections.length;
+
+    this.detail.progress = {
+      sections_total: sectionsTotal,
+      sections_completed: sectionsCompleted,
+      pct: sectionsTotal > 0 ? Math.round((sectionsCompleted / sectionsTotal) * 100) : 0,
+    };
+  }
+
+  private syncSectionCompletion(section: TrainingSectionDTO, completed: boolean) {
+    section.completed = completed;
+    section.is_completed = completed;
+    this.refreshProgressFromSections();
+  }
+
   async saveLiftingSetStatus(row: TrainingLiftingRowDTO, set: TrainingLiftingSetStatusDTO, status: 'completed' | 'failed') {
     if (!this.assignmentId) return;
 
@@ -262,7 +303,18 @@ async loadFreeDetails() {
         return;
       }
 
-      await this.loadDetails();
+      const savedLog = res.data?.log;
+
+      if (savedLog) {
+        set.status = savedLog.status ?? status;
+        set.actual_reps = savedLog.actual_reps ?? set.actual_reps;
+        set.failure_reason = savedLog.failure_reason ?? set.failure_reason;
+        set.notes = savedLog.notes ?? set.notes;
+        set.logged_at = savedLog.logged_at ?? set.logged_at;
+      }
+
+      this.applyProgress(res.data?.progress);
+      this.applyAssignmentStatus(res.data?.assignment?.status);
     } catch (e: any) {
       set.status = previousStatus;
       set.actual_reps = previousActualReps;
@@ -362,19 +414,25 @@ private toYoutubeEmbed(url: string | null): string {
 
  async onMarkCompleted(section: TrainingSectionDTO) {
   if (!this.assignmentId) return;
+  if (this.isSectionSaving(section.id)) return;
 
+  this.savingSectionId = section.id;
+  this.errorMsg = null;
   try {
     const res = await this.trainingApi.completeSection(this.assignmentId, section.id);
 
     if (res?.ok) {
-      // refrescar para que cambie completed y progreso
-      await this.loadDetails();
+      this.syncSectionCompletion(section, true);
+      this.applyProgress(res.data?.progress);
+      this.applyAssignmentStatus(res.data?.status);
       return;
     }
 
     this.errorMsg = 'No se pudo completar la sección';
   } catch (e: any) {
     this.errorMsg = e?.message ?? 'Error completando sección';
+  } finally {
+    this.savingSectionId = null;
   }
 }
 cancelResultEdit() {
@@ -384,6 +442,7 @@ cancelResultEdit() {
 }
 async saveSectionResult(section: TrainingSectionDTO) {
   if (!this.assignmentId) return;
+  if (this.isSectionSaving(section.id)) return;
   
   // Forzamos a TS a tratarlo como número para la API
   const assignmentId = this.assignmentId as number;
@@ -401,6 +460,7 @@ async saveSectionResult(section: TrainingSectionDTO) {
   }
 
   this.savingResult = true;
+  this.savingSectionId = section.id;
   this.errorMsg = null;
 
   try {
@@ -412,13 +472,25 @@ async saveSectionResult(section: TrainingSectionDTO) {
     });
 
     if (!res?.ok) {
-      await this.loadDetails();
       this.errorMsg = res?.message ?? 'No se pudo guardar el resultado';
       return;
     }
 
-    // 1. Recargamos detalles (esto debería actualizar this.data internamente)
-    await this.loadDetails();
+    const saved = res.data ?? {};
+    const savedNotes = saved.notes ?? ((this.editingResultNotes ?? '').trim() || null);
+    const recordedAt = saved.recorded_at ?? saved.updated_at ?? new Date().toISOString();
+
+    section.result = {
+      value: saved.value ?? value,
+      unit: saved.unit ?? section.unit ?? null,
+      notes: savedNotes,
+      recorded_at: recordedAt,
+      completed_at: recordedAt,
+    };
+
+    this.syncSectionCompletion(section, true);
+    this.applyProgress(saved.progress);
+    this.applyAssignmentStatus(saved.status);
 
     // 2. Verificamos progreso usando la estructura de tu JSON
     const progress = this.detail?.progress;
@@ -433,6 +505,7 @@ async saveSectionResult(section: TrainingSectionDTO) {
     this.errorMsg = e?.message ?? 'Error guardando resultado';
   } finally {
     this.savingResult = false;
+    this.savingSectionId = null;
   }
 }
 async completeTraining() {

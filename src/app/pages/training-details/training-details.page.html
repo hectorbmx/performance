@@ -256,8 +256,14 @@
 
           <button class="td-link td-link-soft" type="button" 
                   *ngIf="!section.accepts_results && !section.is_completed" 
+                  [disabled]="isSectionSaving(section.id)"
                   (click)="onMarkCompleted(section)">
-            Marcar completado
+            <ion-spinner
+              *ngIf="isSectionSaving(section.id)"
+              class="td-link-spinner"
+              name="crescent"
+            ></ion-spinner>
+            <span>{{ isSectionSaving(section.id) ? 'Guardando...' : 'Marcar completado' }}</span>
           </button>
         </div>
       </div>
@@ -338,14 +344,14 @@
         class="td-btn-save"
         type="button"
         (click)="saveSectionResult(section)"
-        [disabled]="savingResult"
+        [disabled]="isSectionSaving(section.id)"
       >
-        <ng-container *ngIf="savingResult">
+        <ng-container *ngIf="isSectionSaving(section.id)">
           <span class="spinner"></span> 
           Enviando...
         </ng-container>
 
-        <ng-container *ngIf="!savingResult">
+        <ng-container *ngIf="!isSectionSaving(section.id)">
           Guardar
         </ng-container>
       </button>
