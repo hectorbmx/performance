@@ -20,6 +20,11 @@ class AuthController extends Controller
 {
     public function activate(Request $request)
     {
+        return response()->json([
+            'ok' => false,
+            'message' => 'La activacion por codigo ya no esta disponible. Revisa tu correo para crear tu contrasena.',
+        ], 410);
+
         $data = $request->validate([
             'email'           => ['required','email'],
             'activation_code' => ['required','digits:6'],
@@ -412,6 +417,10 @@ public function me(Request $request)
 //reenvio de condigo de activacion
 public function resendActivationCode(Request $request)
 {
+    return response()->json([
+        'ok' => false,
+        'message' => 'El reenvio de codigos ya no esta disponible. Solicita un enlace para crear contrasena.',
+    ], 410);
 
         // dd('HIT resendActivationCode', $client->id);
 

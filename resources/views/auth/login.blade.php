@@ -78,13 +78,13 @@
                         <!-- Email Address -->
                         <div class="mb-6">
                             <label for="email" class="block text-white text-sm font-medium mb-2">
-                                Email Address
+                                Correo electronico
                             </label>
                             <input 
                                 id="email" 
                                 type="email" 
                                 name="email" 
-                                value="{{ old('email') }}"
+                                value="{{ old('email', request('email')) }}"
                                 required 
                                 autofocus 
                                 autocomplete="username"
@@ -99,7 +99,7 @@
                         <!-- Password -->
                         <div class="mb-6">
                             <label for="password" class="block text-white text-sm font-medium mb-2">
-                                Password
+                                Contrasena
                             </label>
                             <div class="relative">
                                 <input 
@@ -136,12 +136,12 @@
                                     name="remember"
                                     class="w-4 h-4 rounded border-gray-600 bg-gray-900/50 text-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
                                 />
-                                <span class="ml-2 text-sm text-gray-400">Stay logged in</span>
+                                <span class="ml-2 text-sm text-gray-400">Mantener sesion iniciada</span>
                             </label>
 
                             @if (Route::has('password.request'))
                                 <a href="{{ route('password.request') }}" class="text-sm text-gray-400 hover:text-blue-400 transition-colors">
-                                    Forgot password?
+                                    Olvide mi contrasena
                                 </a>
                             @endif
                         </div>
@@ -151,7 +151,7 @@
                             type="submit"
                             class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            Sign In to Dashboard
+                            Iniciar sesion
                         </button>
                     </form>
                 </div>

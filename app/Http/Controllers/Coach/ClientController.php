@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class ClientController extends Controller
 {
@@ -66,10 +67,10 @@ class ClientController extends Controller
         $data['coach_id'] = $coachId;
         $data['is_active'] = $data['is_active'] ?? true;
 
-        $activationCode = null;
         $client = null;
+        $setupPasswordUrl = null;
 
-        DB::transaction(function () use ($data, $healthData, &$activationCode, &$client) {
+        DB::transaction(function () use ($data, $healthData, &$client, &$setupPasswordUrl) {
             $client = Client::create($data);
 
             if (!empty($healthData['state']) || !empty($healthData['city'])) {
@@ -81,24 +82,26 @@ class ClientController extends Controller
             }
 
             if (!empty($data['email'])) {
-                $activationCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-                UserApp::create([
+                $userApp = UserApp::create([
                     'client_id' => $client->id,
                     'email' => $client->email,
                     'password' => null,
                     'is_active' => (bool) $client->is_active,
-                    'activation_code' => Hash::make($activationCode),
-                    'activation_expires_at' => now()->addDays(7),
+                    'activation_code' => null,
+                    'activation_expires_at' => null,
                     'activated_at' => null,
                 ]);
+
+                $setupPasswordUrl = $this->createPasswordSetupUrl($userApp);
             }
         });
 
         return redirect()
             ->route('coach.clients.index')
-            ->with('success', 'Cliente creado correctamente.')
-            ->with('activation_code', $activationCode);
+            ->with('success', !empty($data['email'])
+                ? 'Atleta creado correctamente. Comparte el enlace para que configure su contrasena.'
+                : 'Atleta creado correctamente.')
+            ->with('setup_password_url', $setupPasswordUrl);
     }
 
     public function show(string $id)
@@ -170,19 +173,17 @@ class ClientController extends Controller
         }
 
         if (!is_null($userApp->password)) {
-            return back()->withErrors(['activation_code' => 'Este cliente ya activo su cuenta.']);
+            return back()->withErrors(['activation_code' => 'Este atleta ya configuro su contrasena.']);
         }
 
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
         $userApp->update([
-            'activation_code' => Hash::make($code),
-            'activation_expires_at' => now()->addDays(7),
+            'activation_code' => null,
+            'activation_expires_at' => null,
         ]);
 
         return back()
-            ->with('success', 'Codigo de activacion regenerado.')
-            ->with('activation_code', $code);
+            ->with('success', 'Enlace generado. Compartelo con el atleta para que configure su contrasena.')
+            ->with('setup_password_url', $this->createPasswordSetupUrl($userApp));
     }
 
     public function search(Request $request)
@@ -255,5 +256,23 @@ class ClientController extends Controller
             'phone.regex' => 'Ingresa un celular mexicano valido de 10 digitos.',
             'state.in' => 'Selecciona un estado valido.',
         ];
+    }
+
+    private function createPasswordSetupUrl(UserApp $userApp): string
+    {
+        $token = Str::random(64);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $userApp->email],
+            [
+                'token' => Hash::make($token),
+                'created_at' => now(),
+            ]
+        );
+
+        return route('app.password-setup.show', [
+            'token' => $token,
+            'email' => $userApp->email,
+        ]);
     }
 }

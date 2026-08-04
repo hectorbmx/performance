@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class ClientController extends Controller
 {
@@ -48,9 +49,9 @@ class ClientController extends Controller
             $this->validateClientEmailIsAvailable($coachId, $data['email']);
         }
 
-        $activationCode = null;
+        $setupPasswordUrl = null;
 
-        $client = DB::transaction(function () use ($coachId, $data, &$activationCode) {
+        $client = DB::transaction(function () use ($coachId, $data, &$setupPasswordUrl) {
             $client = Client::create([
                 'coach_id' => $coachId,
                 'first_name' => $data['first_name'],
@@ -61,17 +62,17 @@ class ClientController extends Controller
             ]);
 
             if (!empty($data['email'])) {
-                $activationCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-                UserApp::create([
+                $userApp = UserApp::create([
                     'client_id' => $client->id,
                     'email' => $client->email,
                     'password' => null,
                     'is_active' => (bool) $client->is_active,
-                    'activation_code' => Hash::make($activationCode),
-                    'activation_expires_at' => now()->addDays(7),
+                    'activation_code' => null,
+                    'activation_expires_at' => null,
                     'activated_at' => null,
                 ]);
+
+                $setupPasswordUrl = $this->createPasswordSetupUrl($userApp);
             }
 
             return $client;
@@ -81,9 +82,11 @@ class ClientController extends Controller
 
         return response()->json([
             'ok' => true,
-            'message' => 'Cliente creado correctamente.',
+            'message' => !empty($data['email'])
+                ? 'Atleta creado correctamente. Comparte el enlace para que configure su contrasena.'
+                : 'Atleta creado correctamente.',
             'data' => $this->clientPayload($client),
-            'activation_code' => $activationCode,
+            'setup_password_url' => $setupPasswordUrl,
         ], 201);
     }
 
@@ -262,5 +265,23 @@ class ClientController extends Controller
             'cancelled' => 'Cancelado',
             default => $status,
         };
+    }
+
+    private function createPasswordSetupUrl(UserApp $userApp): string
+    {
+        $token = Str::random(64);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $userApp->email],
+            [
+                'token' => Hash::make($token),
+                'created_at' => now(),
+            ]
+        );
+
+        return route('app.password-setup.show', [
+            'token' => $token,
+            'email' => $userApp->email,
+        ]);
     }
 }

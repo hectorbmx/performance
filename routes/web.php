@@ -34,6 +34,7 @@ use App\Http\Controllers\Coach\MetricsController;
 use App\Http\Controllers\Coach\ClientHealthProfileController;
 use App\Http\Controllers\Coach\ClientMetricRecordController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\AppPasswordSetupController;
 
 
 
@@ -68,6 +69,11 @@ Route::get('/marketing', [LegalController::class, 'marketing'])
 
 Route::get('/copyright', [LegalController::class, 'copyright'])
     ->name('legal.copyright');
+
+Route::get('/app/setup-password/{token}', [AppPasswordSetupController::class, 'show'])
+    ->name('app.password-setup.show');
+Route::post('/app/setup-password', [AppPasswordSetupController::class, 'store'])
+    ->name('app.password-setup.store');
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')

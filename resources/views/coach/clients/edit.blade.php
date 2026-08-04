@@ -16,7 +16,7 @@
         @csrf
         <button type="submit"
                 class="px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black">
-            Reenviar código de activación
+            Reenviar enlace para crear contrasena
         </button>
     </form>
 @endif
@@ -27,14 +27,14 @@
     </div>
 @endif
 
-@if (session('activation_code'))
+@if (session('setup_password_url'))
     <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <div class="font-semibold text-amber-900">Código de activación</div>
-        <div class="mt-1 text-sm text-amber-800">
-            Compártelo con el cliente:
-            <span class="ml-2 inline-flex items-center rounded bg-amber-100 px-2 py-1 font-mono text-base">
-                {{ session('activation_code') }}
-            </span>
+        <div class="font-semibold text-amber-900">Enlace para crear contrasena</div>
+        <div class="mt-2 rounded bg-white border border-amber-200 px-3 py-2 text-sm text-gray-800 break-all">
+            {{ session('setup_password_url') }}
+        </div>
+        <div class="mt-2 text-sm text-amber-800">
+            Copia este enlace y envialo al atleta por WhatsApp. El enlace expira en 24 horas.
         </div>
     </div>
 @endif

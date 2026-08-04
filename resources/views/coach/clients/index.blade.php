@@ -46,11 +46,15 @@
                 </div>
             @endif
 
-            @if(session('activation_code'))
-                <div class="rounded-lg border p-4 mb-4 bg-yellow-50">
-                    <div class="font-semibold">Codigo de activacion (App)</div>
-                    <div class="text-2xl tracking-widest">{{ session('activation_code') }}</div>
-                    <div class="text-sm text-gray-600">Compartelo al cliente para activar su cuenta.</div>
+            @if(session('setup_password_url'))
+                <div class="rounded-lg border border-amber-200 p-4 mb-4 bg-amber-50">
+                    <div class="font-semibold text-amber-900">Enlace para crear contrasena</div>
+                    <div class="mt-2 rounded bg-white border border-amber-200 px-3 py-2 text-sm text-gray-800 break-all">
+                        {{ session('setup_password_url') }}
+                    </div>
+                    <div class="mt-2 text-sm text-amber-800">
+                        Copia este enlace y envialo al atleta por WhatsApp. El enlace expira en 24 horas.
+                    </div>
                 </div>
             @endif
 

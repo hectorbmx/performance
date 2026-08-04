@@ -4,6 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use App\Models\CoachSubscription;
 use App\Models\User;
+use App\Models\UserApp;
 use App\Support\CoachAccessStatus;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
@@ -44,6 +45,14 @@ class LoginRequest extends FormRequest
             'password_input_length' => strlen($this->password),
             'hash_check_result' => $user ? Hash::check($this->password, $user->password) : 'no_user',
         ]);
+
+        if (!$user && UserApp::where('email', $this->email)->exists()) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Esta cuenta es de atleta y no tiene acceso al panel web. Abre la app Athlete Core para iniciar sesion.',
+            ]);
+        }
 
         if (!$user || !Hash::check($this->password, $user->password)) {
             RateLimiter::hit($this->throttleKey());
