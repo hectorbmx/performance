@@ -19,7 +19,7 @@
       <form class="login-form" (ngSubmit)="handleLogin()">
         <!-- Email -->
         <div class="input-group">
-          <label class="input-label">Email Address</label>
+          <label class="input-label">Correo electronico</label>
           <div class="input-wrapper">
             <input
               type="email"
@@ -34,7 +34,7 @@
 
         <!-- Password -->
         <div class="input-group">
-          <label class="input-label">Password</label>
+          <label class="input-label">Contrasena</label>
           <div class="input-wrapper password-wrapper">
             <input
               [type]="showPassword ? 'text' : 'password'"
@@ -55,23 +55,23 @@
         <!-- Stay logged in & Forgot password -->
         <div class="options-row">
           <label class="checkbox-label">
-            <input type="checkbox" class="custom-checkbox" />
-            <span>Stay logged in</span>
+            <input type="checkbox" class="custom-checkbox" [(ngModel)]="rememberSession" name="rememberSession" />
+            <span>Mantener sesion iniciada</span>
           </label>
-          <a href="#" class="forgot-link">Forgot password?</a>
+          <a href="#" class="forgot-link">Olvide mi contrasena</a>
         </div>
 
         <!-- Sign In Button -->
         <button type="submit" class="sign-in-btn">
-          Sign in to Dashboard
+          Iniciar sesion
         </button>
 
         <!-- Contact Administrator -->
 <p class="contact-text">
   ¿Nuevo en la plataforma?
   <a class="contact-link" role="button" tabindex="0"
-     (click)="goToActivacion(); $event.preventDefault(); $event.stopPropagation();">
-    Activa tu cuenta
+     href="mailto:soporte@athletecore.com">
+    Contacta a tu coach
   </a>
 </p>
 

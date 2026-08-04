@@ -92,7 +92,7 @@ export class AuthService {
     this.notifications.set(this.safeParse<AppNotificationDTO[]>(notifications.value) ?? []);
   }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(email: string, password: string, rememberSession: boolean = true): Promise<LoginResponse> {
     try {
       const res = await this.loginClientOrCoach(email, password);
 
@@ -100,7 +100,7 @@ export class AuthService {
         throw new Error('Respuesta invalida del servidor (token no recibido).');
       }
 
-      await this.api.setToken(res.token);
+      await this.api.setToken(res.token, rememberSession);
 
       if ((res.actor_type ?? (res.coach ? 'coach' : 'client')) === 'coach') {
         await this.persistCoachSession(res.user, res.coach, res.subscription);

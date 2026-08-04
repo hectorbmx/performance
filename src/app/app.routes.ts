@@ -60,7 +60,7 @@ export const routes: Routes = [
   },
   {
     path: 'activate',
-    loadComponent: () => import('./pages/activate/activate.page').then( m => m.ActivatePage)
+    redirectTo: 'login',
   },
   // ⚠️ IMPORTANTE: La ruta wildcard siempre debe ir AL FINAL
   {

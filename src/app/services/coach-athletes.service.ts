@@ -37,7 +37,8 @@ export interface CoachAthletePayload {
 
 export interface CoachAthleteStoreResult {
   athlete: CoachAthleteDTO;
-  activation_code: string | null;
+  message: string | null;
+  setup_password_url: string | null;
 }
 
 export interface CoachAthleteTrainingDTO {
@@ -79,7 +80,8 @@ export class CoachAthletesService {
     const res = await this.api.post<any>('coach/clients', this.cleanPayload(payload));
     return {
       athlete: res.data,
-      activation_code: res.activation_code ?? null,
+      message: res.message ?? null,
+      setup_password_url: res.setup_password_url ?? null,
     };
   }
 

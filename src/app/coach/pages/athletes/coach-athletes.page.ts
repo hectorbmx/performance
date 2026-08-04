@@ -134,8 +134,7 @@ export class CoachAthletesPage {
       } else {
         const result = await this.athletesApi.store(this.form);
         this.athletes = [result.athlete, ...this.athletes];
-        const code = result.activation_code ? ` Codigo: ${result.activation_code}` : '';
-        await this.toast(`Atleta creado.${code}`, 'success');
+        await this.toast(result.message || 'Atleta creado.', 'success');
       }
 
       this.isFormOpen = false;

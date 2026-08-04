@@ -26,6 +26,7 @@ import {
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { Preferences } from '@capacitor/preferences';
 
 @Component({
   selector: 'app-login',
@@ -49,6 +50,7 @@ import { AuthService } from '../../services/auth.service';
 export class LoginPage {
   email: string = '';
   password: string = '';
+  rememberSession: boolean = true;
   showPassword: boolean = false;
   
   constructor(
@@ -70,6 +72,17 @@ export class LoginPage {
   }
 
   async ionViewWillEnter() {
+    const [savedEmail, rememberSession] = await Promise.all([
+      Preferences.get({ key: 'login_email' }),
+      Preferences.get({ key: 'remember_session' }),
+    ]);
+
+    if (!this.email && savedEmail.value) {
+      this.email = savedEmail.value;
+    }
+
+    this.rememberSession = rememberSession.value !== '0';
+
     const loggedIn = await this.auth.isLoggedIn();
     if (loggedIn) {
       await this.router.navigateByUrl(await this.getRedirectUrl(), { replaceUrl: true });
@@ -98,7 +111,7 @@ export class LoginPage {
     await loading.present();
 
     try {
-      const res = await this.auth.login(email, password);
+      const res = await this.auth.login(email, password, this.rememberSession);
       console.log('Respuesta del login:', res);
 
       if (!res?.ok) {
@@ -112,6 +125,9 @@ export class LoginPage {
       if (!token) {
         throw new Error('No se pudo guardar el token de sesión.');
       }
+
+      await Preferences.set({ key: 'login_email', value: email });
+      await Preferences.set({ key: 'remember_session', value: this.rememberSession ? '1' : '0' });
 
       // Cerrar loading antes de navegar
       await loading.dismiss();
@@ -140,14 +156,7 @@ export class LoginPage {
 
   // ✅ Caso: cuenta pendiente de activación
   if (err?.needsActivation) {
-    await this.showToast(message, 'warning');
-
-    // Redirección automática (delay corto para que se lea el toast)
-    setTimeout(() => {
-      this.router.navigateByUrl('/activate', {
-        state: { email: (this.email || '').trim() }
-      });
-    }, 1000);
+    await this.showToast('Cuenta pendiente. Revisa tu correo para crear tu contrasena o contacta a tu coach.', 'warning');
 
     return;
   }
@@ -182,18 +191,6 @@ export class LoginPage {
     });
     await alert.present();
   }
-
-async goToActivacion() {
-  console.log('[goToActivacion] click recibido');
-
-  const email = (this.email || '').trim();
-  console.log('[goToActivacion] email:', email);
-
-  this.router.navigateByUrl('/activate', {
-    state: { email }
-  }).then(ok => console.log('[goToActivacion] navigate ok?', ok))
-    .catch(err => console.error('[goToActivacion] navigate error', err));
-}
 
 private async getRedirectUrl(): Promise<string> {
   const currentNavigation = this.router.getCurrentNavigation();

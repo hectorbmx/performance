@@ -112,16 +112,27 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-    async setToken(token: string): Promise<void> {
-    await Preferences.set({ key: 'auth_token', value: token });
+  async setToken(token: string, persistent: boolean = true): Promise<void> {
+    if (persistent) {
+      sessionStorage.removeItem('auth_token');
+      await Preferences.set({ key: 'auth_token', value: token });
+      return;
+    }
+
+    sessionStorage.setItem('auth_token', token);
+    await Preferences.remove({ key: 'auth_token' });
   }
 
   async getToken(): Promise<string | null> {
+    const sessionToken = sessionStorage.getItem('auth_token');
+    if (sessionToken) return sessionToken;
+
     const { value } = await Preferences.get({ key: 'auth_token' });
     return value ?? null;
   }
 
   async clearToken(): Promise<void> {
+    sessionStorage.removeItem('auth_token');
     await Preferences.remove({ key: 'auth_token' });
   }
 
