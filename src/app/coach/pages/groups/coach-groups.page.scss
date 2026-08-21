@@ -208,15 +208,30 @@ ion-chip {
 
   ion-item {
     --background: #ffffff;
+    --color: #111827;
     --border-radius: 8px;
+    --highlight-color-focused: #22c55e;
     --padding-start: 14px;
     --inner-padding-end: 14px;
     margin-bottom: 10px;
   }
 
+  ion-label {
+    color: #111827;
+  }
+
+  ion-input,
+  ion-select,
+  ion-textarea {
+    --color: #111827;
+    --placeholder-color: #64748b;
+  }
+
   ion-button {
     margin-top: 16px;
     --border-radius: 8px;
+    --color: #ffffff;
+    text-transform: none;
   }
 }
 
@@ -261,14 +276,27 @@ ion-chip {
 
   ion-item {
     --background: #ffffff;
+    --color: #111827;
     --border-radius: 8px;
+    --highlight-color-focused: #22c55e;
     --padding-start: 14px;
     --inner-padding-end: 14px;
     margin-bottom: 10px;
   }
 
+  ion-label {
+    color: #111827;
+  }
+
+  ion-select {
+    --color: #111827;
+    --placeholder-color: #64748b;
+  }
+
   ion-button {
     --border-radius: 8px;
+    --color: #2563eb;
+    text-transform: none;
   }
 }
 

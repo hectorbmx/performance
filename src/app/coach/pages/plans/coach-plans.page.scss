@@ -61,14 +61,29 @@
 
   ion-item {
     --background: #ffffff;
+    --color: #111827;
     --border-radius: 8px;
+    --highlight-color-focused: #22c55e;
     --padding-start: 12px;
     margin-bottom: 10px;
+  }
+
+  ion-label {
+    color: #111827;
+  }
+
+  ion-input,
+  ion-select,
+  ion-textarea {
+    --color: #111827;
+    --placeholder-color: #64748b;
   }
 
   ion-segment {
     margin-bottom: 10px;
     --background: #e5e7eb;
+    --color: #334155;
+    --color-checked: #111827;
     border-radius: 8px;
   }
 }
