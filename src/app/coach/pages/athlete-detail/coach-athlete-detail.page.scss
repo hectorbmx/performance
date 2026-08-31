@@ -80,6 +80,7 @@ ion-toolbar {
     --background: #f8fafc;
     --color: #111827;
     --border-radius: 8px;
+    --highlight-color-focused: #22c55e;
     --padding-start: 12px;
     --inner-padding-end: 12px;
     margin-bottom: 10px;
@@ -93,9 +94,20 @@ ion-toolbar {
     }
   }
 
+  ion-label {
+    color: #111827;
+  }
+
+  ion-input {
+    --color: #111827;
+    --placeholder-color: #64748b;
+  }
+
   ion-button {
     margin-top: 14px;
     --border-radius: 8px;
+    --color: #ffffff;
+    text-transform: none;
   }
 }
 
