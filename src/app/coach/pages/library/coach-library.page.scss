@@ -1,1 +1,166 @@
 @use '../secondary-page';
+
+ion-searchbar {
+  --background: #ffffff;
+  --box-shadow: none;
+  --border-radius: 8px;
+  --color: #111827;
+  --placeholder-color: #94a3b8;
+  padding: 14px 14px 6px;
+}
+
+.library-actions {
+  padding: 8px 18px 0;
+}
+
+.primary-action {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.cards {
+  padding-top: 12px;
+}
+
+.video-card {
+  align-items: stretch;
+  cursor: pointer;
+}
+
+.thumb {
+  width: 88px;
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #dbeafe;
+  color: #2563eb;
+  flex: 0 0 auto;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+.video-main {
+  min-width: 0;
+  flex: 1;
+
+  h2 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  ion-chip {
+    height: 22px;
+    margin: 8px 0 0;
+    --background: #dbeafe;
+    --color: #1d4ed8;
+    font-size: 11px;
+  }
+}
+
+.video-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.state-card {
+  cursor: default;
+}
+
+.modal-content {
+  --background: #f6f8fb;
+}
+
+.form-panel {
+  padding: 16px;
+
+  ion-segment {
+    margin-bottom: 12px;
+    --background: #e5e7eb;
+    border-radius: 8px;
+  }
+
+  ion-item {
+    --background: #ffffff;
+    --color: #111827;
+    --border-radius: 8px;
+    --padding-start: 14px;
+    --inner-padding-end: 14px;
+    margin-bottom: 10px;
+
+    ion-input,
+    ion-textarea,
+    ion-select {
+      --color: #111827;
+      --placeholder-color: #94a3b8;
+      color: #111827;
+    }
+  }
+
+  ion-button {
+    margin-top: 16px;
+    --border-radius: 8px;
+  }
+}
+
+.file-picker {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  font-weight: 700;
+
+  input {
+    display: none;
+  }
+
+  ion-icon {
+    color: #2563eb;
+    font-size: 22px;
+  }
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .thumb {
+    width: 72px;
+  }
+
+  .video-actions {
+    flex-direction: column;
+  }
+}

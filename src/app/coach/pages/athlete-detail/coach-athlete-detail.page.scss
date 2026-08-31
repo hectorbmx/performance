@@ -78,10 +78,19 @@ ion-toolbar {
 
   ion-item {
     --background: #f8fafc;
+    --color: #111827;
     --border-radius: 8px;
     --padding-start: 12px;
     --inner-padding-end: 12px;
     margin-bottom: 10px;
+
+    ion-input,
+    ion-textarea,
+    ion-select {
+      --color: #111827;
+      --placeholder-color: #94a3b8;
+      color: #111827;
+    }
   }
 
   ion-button {
@@ -250,4 +259,58 @@ ion-toolbar {
     height: 48px;
     font-size: 20px;
   }
+}
+
+
+.future-plan,
+.membership-context,
+.assignment-preview,
+.empty-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+}
+
+.future-plan {
+  display: grid;
+  gap: 4px;
+
+  strong {
+    color: #111827;
+    font-size: 12px;
+  }
+}
+
+.membership-context {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+
+  p {
+    margin: 0;
+  }
+
+  strong {
+    color: #111827;
+  }
+}
+
+.assignment-preview {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.empty-note {
+  background: #fff7ed;
+  color: #c2410c !important;
+}
+
+.assign-plan-panel ion-select {
+  --color: #111827;
+  --placeholder-color: #94a3b8;
 }

@@ -5,7 +5,10 @@
     </ion-buttons>
     <ion-title>Biblioteca</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+      <ion-button fill="clear" (click)="openCreate()">
         <ion-icon slot="icon-only" name="add-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -16,19 +19,124 @@
   <section class="hero">
     <p class="eyebrow">Contenido reusable</p>
     <h1>Biblioteca</h1>
-    <p>Guarda videos y recursos para reutilizarlos en secciones.</p>
+    <p>Guarda videos por URL o desde tu dispositivo para reutilizarlos en secciones.</p>
+  </section>
+
+  <ion-searchbar
+    placeholder="Buscar video"
+    animated="true"
+    debounce="450"
+    [value]="searchTerm"
+    (ionInput)="search($event)">
+  </ion-searchbar>
+
+  <section class="library-actions">
+    <button class="primary-action" type="button" (click)="openCreate()">
+      <ion-icon name="videocam-outline"></ion-icon>
+      <span>Agregar video</span>
+    </button>
   </section>
 
   <section class="cards">
-    <article class="card" *ngFor="let video of videos">
+    <article class="card state-card" *ngIf="loading">
       <div class="icon-box">
-        <ion-icon name="book-outline"></ion-icon>
+        <ion-spinner name="crescent"></ion-spinner>
       </div>
       <div>
-        <h2>{{ video.name }}</h2>
-        <p>{{ video.tag }} · {{ video.source }}</p>
+        <h2>Cargando biblioteca</h2>
+        <p>Consultando videos guardados.</p>
       </div>
-      <span>Ver</span>
+    </article>
+
+    <article class="card state-card" *ngIf="!loading && videos.length === 0">
+      <div class="icon-box">
+        <ion-icon name="videocam-outline"></ion-icon>
+      </div>
+      <div>
+        <h2>Sin videos</h2>
+        <p>Agrega un video de YouTube o sube uno desde tu dispositivo.</p>
+      </div>
+    </article>
+
+    <article class="card video-card" *ngFor="let video of videos" (click)="openVideo(video)">
+      <div class="thumb">
+        <img *ngIf="video.thumbnail_url" [src]="video.thumbnail_url" [alt]="video.name">
+        <ion-icon *ngIf="!video.thumbnail_url" name="videocam-outline"></ion-icon>
+      </div>
+      <div class="video-main">
+        <h2>{{ video.name }}</h2>
+        <p>{{ video.type?.name || 'Sin tipo' }} · {{ sourceLabel(video) }}</p>
+        <ion-chip>{{ sourceLabel(video) }}</ion-chip>
+      </div>
+      <div class="video-actions">
+        <ion-button fill="clear" (click)="openVideo(video, $event)" [disabled]="!video.playback_url && !video.youtube_url">
+          <ion-icon slot="icon-only" name="open-outline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="danger" (click)="deleteVideo(video, $event)" [disabled]="deletingId === video.id">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </div>
     </article>
   </section>
+
+  <ion-modal [isOpen]="isFormOpen" (didDismiss)="isFormOpen = false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Agregar video</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="isFormOpen = false">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content">
+        <section class="form-panel">
+          <ion-segment [ngModel]="form.source" (ngModelChange)="changeSource($event)">
+            <ion-segment-button value="youtube">
+              <ion-icon name="link-outline"></ion-icon>
+              <ion-label>URL</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="upload">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <ion-label>Subir</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <ion-item>
+            <ion-label position="stacked">Nombre</ion-label>
+            <ion-input [(ngModel)]="form.name" autocomplete="off" placeholder="Ej. Sentadilla tecnica"></ion-input>
+          </ion-item>
+
+          <ion-item *ngIf="form.source === 'youtube'">
+            <ion-label position="stacked">URL de YouTube</ion-label>
+            <ion-input [(ngModel)]="form.youtube_url" inputmode="url" placeholder="https://www.youtube.com/watch?v=..."></ion-input>
+          </ion-item>
+
+          <label class="file-picker" *ngIf="form.source === 'upload'">
+            <input type="file" accept="video/mp4,video/quicktime,video/x-m4v,video/webm" (change)="selectFile($event)">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            <span>{{ selectedFileName || 'Seleccionar video del dispositivo' }}</span>
+          </label>
+
+          <ion-item>
+            <ion-label position="stacked">Tipo</ion-label>
+            <ion-select [(ngModel)]="form.training_type_catalog_id" interface="popover" placeholder="Opcional">
+              <ion-select-option [value]="null">Sin tipo</ion-select-option>
+              <ion-select-option *ngFor="let type of types" [value]="type.id">
+                {{ type.name }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-button expand="block" (click)="saveVideo()" [disabled]="saving">
+            <ion-icon slot="start" name="save-outline"></ion-icon>
+            {{ saving ? 'Guardando...' : 'Guardar video' }}
+          </ion-button>
+        </section>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

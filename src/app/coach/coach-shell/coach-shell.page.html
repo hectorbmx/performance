@@ -36,6 +36,13 @@
       <ion-icon name="settings-outline"></ion-icon>
       <span>Configuracion avanzada despues</span>
     </div>
+
+    <ion-menu-toggle auto-hide="true">
+      <button class="logout-button" type="button" (click)="logout()" [disabled]="loggingOut">
+        <ion-icon name="log-out-outline"></ion-icon>
+        <span>{{ loggingOut ? 'Cerrando sesion...' : 'Cerrar sesion' }}</span>
+      </button>
+    </ion-menu-toggle>
   </ion-content>
 </ion-menu>
 
@@ -49,6 +56,11 @@
     <ion-tab-button tab="groups" href="/coach/groups">
       <ion-icon name="grid-outline"></ion-icon>
       <ion-label>Grupos</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="library" href="/coach/library">
+      <ion-icon name="book-outline"></ion-icon>
+      <ion-label>Biblioteca</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="trainings" href="/coach/trainings">

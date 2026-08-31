@@ -25,6 +25,7 @@ export interface CoachAthleteDTO {
     activated_at: string | null;
   };
   active_membership: CoachAthleteMembershipDTO | null;
+  future_membership: CoachAthleteMembershipDTO | null;
 }
 
 export interface CoachAthletePayload {
@@ -33,6 +34,12 @@ export interface CoachAthletePayload {
   email?: string | null;
   phone?: string | null;
   is_active: boolean;
+}
+
+export interface CoachAthletePlanAssignmentPayload {
+  coach_client_plan_id: number;
+  reminder_days_before?: number | null;
+  grace_days?: number | null;
 }
 
 export interface CoachAthleteStoreResult {
@@ -69,6 +76,18 @@ export class CoachAthletesService {
   async show(id: number): Promise<CoachAthleteDTO> {
     const res = await this.api.get<any>(`coach/clients/${id}`);
     return res.data;
+  }
+
+  async assignPlan(id: number, payload: CoachAthletePlanAssignmentPayload): Promise<CoachAthleteMembershipDTO> {
+    const res = await this.api.post<any>(`coach/clients/${id}/memberships`, payload);
+    return {
+      id: res.data.id,
+      plan_name: res.data.plan?.name ?? '',
+      status: res.data.status,
+      billing_status: res.data.billing_status,
+      starts_at: res.data.starts_at ?? null,
+      ends_at: res.data.ends_at ?? null,
+    };
   }
 
   async trainings(id: number): Promise<CoachAthleteTrainingDTO[]> {

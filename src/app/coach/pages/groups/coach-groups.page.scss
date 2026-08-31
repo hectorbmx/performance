@@ -208,10 +208,19 @@ ion-chip {
 
   ion-item {
     --background: #ffffff;
+    --color: #111827;
     --border-radius: 8px;
     --padding-start: 14px;
     --inner-padding-end: 14px;
     margin-bottom: 10px;
+
+    ion-input,
+    ion-textarea,
+    ion-select {
+      --color: #111827;
+      --placeholder-color: #94a3b8;
+      color: #111827;
+    }
   }
 
   ion-button {
@@ -261,10 +270,19 @@ ion-chip {
 
   ion-item {
     --background: #ffffff;
+    --color: #111827;
     --border-radius: 8px;
     --padding-start: 14px;
     --inner-padding-end: 14px;
     margin-bottom: 10px;
+
+    ion-input,
+    ion-textarea,
+    ion-select {
+      --color: #111827;
+      --placeholder-color: #94a3b8;
+      color: #111827;
+    }
   }
 
   ion-button {

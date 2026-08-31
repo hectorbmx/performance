@@ -224,6 +224,10 @@ private async buildHeaders(
     return this.request<T>('POST', path, { body, params, headers });
   }
 
+  postForm<T>(path: string, body: FormData, params?: Record<string, any>, headers?: Record<string, string>) {
+    return this.request<T>('POST', path, { body, params, headers, isFormData: true });
+  }
+
   put<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>) {
     return this.request<T>('PUT', path, { body, params, headers });
   }

@@ -78,6 +78,29 @@ h2 {
   font-size: 13px;
 }
 
+.logout-button {
+  width: calc(100% - 40px);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 20px 22px;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  border-radius: 8px;
+  background: rgba(127, 29, 29, 0.22);
+  color: #fecaca;
+  font-weight: 800;
+
+  ion-icon {
+    font-size: 20px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
 .coach-tabs {
   ion-tab-bar {
     --background: #0f172a;
