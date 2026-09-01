@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api\V1\Coach;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use App\Models\ClientMembership;
+use App\Models\CoachClientPlan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
 {
@@ -47,6 +51,73 @@ class SubscriptionController extends Controller
             'ok' => true,
             'data' => $memberships->through(fn (ClientMembership $membership) => $this->payload($membership)),
         ]);
+    }
+
+
+    public function storeForClient(Request $request, Client $client)
+    {
+        $coachId = $request->user()->id;
+        abort_unless((int) $client->coach_id === (int) $coachId, 403);
+
+        $data = $request->validate([
+            'coach_client_plan_id' => ['required', 'integer', Rule::exists('coach_client_plans', 'id')],
+            'reminder_days_before' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'grace_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+        ]);
+
+        $plan = CoachClientPlan::query()
+            ->where('coach_id', $coachId)
+            ->where('status', 'active')
+            ->findOrFail($data['coach_client_plan_id']);
+
+        $membership = DB::transaction(function () use ($client, $coachId, $plan, $data) {
+            $lastMembership = ClientMembership::query()
+                ->where('client_id', $client->id)
+                ->where('coach_id', $coachId)
+                ->where('status', 'active')
+                ->orderByDesc('ends_at')
+                ->orderByDesc('starts_at')
+                ->lockForUpdate()
+                ->first();
+
+            $startsAt = now()->startOfDay();
+            if ($lastMembership && $lastMembership->ends_at) {
+                $startsAt = $lastMembership->ends_at->copy()->addDay()->startOfDay();
+            }
+
+            $endsAt = $startsAt->copy()->addDays((int) $plan->billing_cycle_days);
+            $graceDays = array_key_exists('grace_days', $data)
+                ? (int) $data['grace_days']
+                : (int) ($plan->grace_days ?? 0);
+
+            return ClientMembership::create([
+                'coach_id' => $coachId,
+                'client_id' => $client->id,
+                'coach_client_plan_id' => $plan->id,
+                'plan_name_snapshot' => $plan->name,
+                'price_snapshot' => $plan->price,
+                'billing_cycle_days_snapshot' => $plan->billing_cycle_days,
+                'starts_at' => $startsAt,
+                'ends_at' => $endsAt,
+                'next_renewal_at' => $endsAt,
+                'reminder_days_before' => $data['reminder_days_before'] ?? $plan->reminder_days_before ?? 5,
+                'status' => 'active',
+                'billing_status' => 'unpaid',
+                'grace_until' => $graceDays > 0 ? $startsAt->copy()->addDays($graceDays) : null,
+                'paid_at' => null,
+            ]);
+        });
+
+        $membership->load([
+            'client:id,first_name,last_name,email,phone,is_active',
+            'coachClientPlan:id,name,currency,payment_provider',
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Plan asignado correctamente. Quedo pendiente de pago.',
+            'data' => $this->payload($membership),
+        ], 201);
     }
 
     private function payload(ClientMembership $membership): array

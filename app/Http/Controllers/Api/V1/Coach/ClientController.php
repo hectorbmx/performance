@@ -22,7 +22,7 @@ class ClientController extends Controller
 
         $clients = Client::query()
             ->where('coach_id', $coachId)
-            ->with(['activeMembership', 'userApp:id,client_id,email,activated_at,is_active'])
+            ->with(['activeMembership', 'futureMembership', 'userApp:id,client_id,email,activated_at,is_active'])
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('first_name', 'like', "%{$q}%")
@@ -78,7 +78,7 @@ class ClientController extends Controller
             return $client;
         });
 
-        $client->load(['activeMembership', 'userApp:id,client_id,email,activated_at,is_active']);
+        $client->load(['activeMembership', 'futureMembership', 'userApp:id,client_id,email,activated_at,is_active']);
 
         return response()->json([
             'ok' => true,
@@ -96,6 +96,7 @@ class ClientController extends Controller
 
         $client->load([
             'activeMembership',
+            'futureMembership',
             'latestMembership',
             'userApp:id,client_id,email,activated_at,is_active',
             'healthProfile',
@@ -135,7 +136,7 @@ class ClientController extends Controller
             }
         });
 
-        $client->refresh()->load(['activeMembership', 'userApp:id,client_id,email,activated_at,is_active']);
+        $client->refresh()->load(['activeMembership', 'futureMembership', 'userApp:id,client_id,email,activated_at,is_active']);
 
         return response()->json([
             'ok' => true,
@@ -238,14 +239,8 @@ class ClientController extends Controller
                 'is_active' => (bool) $client->userApp->is_active,
                 'activated_at' => optional($client->userApp->activated_at)->toISOString(),
             ] : null,
-            'active_membership' => $client->activeMembership ? [
-                'id' => $client->activeMembership->id,
-                'plan_name' => $client->activeMembership->plan_name_snapshot,
-                'status' => $client->activeMembership->status,
-                'billing_status' => $client->activeMembership->billing_status,
-                'starts_at' => optional($client->activeMembership->starts_at)->toDateString(),
-                'ends_at' => optional($client->activeMembership->ends_at)->toDateString(),
-            ] : null,
+            'active_membership' => $this->membershipSummary($client->activeMembership),
+            'future_membership' => $this->membershipSummary($client->futureMembership),
         ];
 
         if ($includeDetails) {
@@ -253,6 +248,22 @@ class ClientController extends Controller
         }
 
         return $payload;
+    }
+
+    private function membershipSummary($membership): ?array
+    {
+        if (!$membership) {
+            return null;
+        }
+
+        return [
+            'id' => $membership->id,
+            'plan_name' => $membership->plan_name_snapshot,
+            'status' => $membership->status,
+            'billing_status' => $membership->billing_status,
+            'starts_at' => optional($membership->starts_at)->toDateString(),
+            'ends_at' => optional($membership->ends_at)->toDateString(),
+        ];
     }
 
     private function trainingStatusLabel(string $status): string

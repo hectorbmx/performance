@@ -20,13 +20,6 @@
         </button>
     </form>
 @endif
-{{-- Alerts --}}
-@if (session('success'))
-    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 text-green-900">
-        {{ session('success') }}
-    </div>
-@endif
-
 @if (session('setup_password_url'))
     <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
         <div class="font-semibold text-amber-900">Enlace para crear contrasena</div>

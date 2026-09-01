@@ -113,7 +113,7 @@
 
                                 {{-- MVP: read-only, ocultamos el + --}}
                                 <div class="w-7 h-7">
-                                    <a href="{{ route('coach.trainings.create', ['date' => $key]) }}"
+                                    <a href="{{ route('coach.trainings.create', ['date' => $key, 'client_id' => $client->id]) }}"
                                        class="w-7 h-7 inline-flex items-center justify-center rounded-md border text-gray-700 hover:bg-gray-100">
                                         +
                                     </a>

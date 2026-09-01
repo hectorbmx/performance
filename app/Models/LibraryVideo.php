@@ -13,9 +13,11 @@ class LibraryVideo extends Model
     protected $fillable = [
         'coach_id',
         'training_type_catalog_id',
+        'source',
         'name',
         'youtube_url',
         'youtube_id',
+        'video_path',
         'thumbnail_url',
         'is_active',
     ];

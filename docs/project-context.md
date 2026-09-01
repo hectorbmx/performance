@@ -77,4 +77,46 @@ Problema de producto:
 # agregar configuracion bancaria para el coach (tareas para la proxima sesion cuando se renueve el plan 30 jun)
 - Metodos de pago, 
 - Revisa stripe en tenant para los cobros
-- 
+-
+
+## Regla De Feedback En Operaciones De Escritura
+
+Toda accion que ejecute una operacion contra base de datos debe dar feedback visible al usuario durante y despues de la operacion.
+
+Aplica como minimo a acciones `store`, `update`, `patch`, `delete`, copiado/clonado, asignaciones y cualquier submit que cree, modifique o elimine registros.
+
+Regla UI:
+
+- Al iniciar la operacion, mostrar un modal/overlay de carga que bloquee interaccion accidental.
+- El overlay debe aplicar blur o atenuacion sobre la pantalla y mostrar el icono/logo de la marca cuando la vista tenga acceso al asset.
+- Al terminar correctamente, mostrar toast o mensaje visible de exito.
+- Al fallar, ocultar el loading y mostrar error visible con el mensaje disponible.
+- Evitar submits dobles deshabilitando botones mientras la operacion esta en curso.
+- En pantallas de listado o calendario, refrescar el estado visible despues de una operacion exitosa cuando aplique.
+
+Esta regla aplica tanto en Laravel Blade como en Ionic/Angular. Si una pantalla todavia no tiene este patron, debe agregarse al tocar cualquier flujo de escritura de esa pantalla.
+
+## Regla De Arquitectura Y Reuso
+
+Todo cambio nuevo debe seguir principios SOLID y favorecer procesos eficientes, modulos existentes y contratos reutilizables antes de agregar logica duplicada en controllers, componentes o vistas.
+
+Reglas obligatorias:
+
+- Revisar si ya existe un servicio, helper, metodo compartido, modelo, DTO o componente que resuelva parte del flujo.
+- Reusar o extender el modulo existente cuando mantenga responsabilidades claras y reduzca duplicacion.
+- Evitar que controllers Laravel, componentes Ionic o vistas Blade concentren reglas de negocio que pertenecen a servicios o modulos compartidos.
+- Si no existe un modulo adecuado y la implementacion empieza a requerir una nueva responsabilidad transversal, hacer una pausa antes de codificar y avisar al usuario para decidir si conviene separarla como modulo independiente.
+- No crear abstracciones nuevas solo por forma; crearlas cuando reduzcan complejidad real, eviten contratos paralelos o permitan validar una regla en un solo punto.
+
+## Regla Critica De Proteccion De Datos
+
+Bajo ningun motivo se debe borrar, refrescar, truncar, resetear, recrear o migrar destructivamente la base de datos local/principal del proyecto sin autorizacion explicita del usuario y sin backup confirmado.
+
+Reglas obligatorias:
+
+- Antes de correr tests con `RefreshDatabase`, `DatabaseMigrations`, `migrate:fresh`, `migrate:refresh`, `db:wipe`, seeders destructivos o comandos equivalentes, verificar la conexion y el nombre exacto de la base de datos.
+- PHPUnit debe usar una base aislada de pruebas, por ejemplo `coach_testing`, nunca la base local/principal `coach`.
+- Si la base aislada no existe, crearla o detenerse antes de ejecutar la suite.
+- No asumir que `APP_ENV=testing` protege la base si `phpunit.xml` no define una conexion/base de testing separada.
+- Si un comando puede destruir datos, pedir confirmacion explicita antes de ejecutarlo.
+

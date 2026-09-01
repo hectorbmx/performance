@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use App\Models\UserApp;
 use App\Models\Client;
 use App\Models\TrainingTypeCatalog;
+use Illuminate\Support\Facades\Storage;
 
 class LibraryVideoController extends Controller
 {
@@ -94,11 +95,15 @@ class LibraryVideoController extends Controller
             ->paginate($perPage, [
                 'id',
                 'name',
+                'source',
                 'youtube_id',
                 'youtube_url',
+                'video_path',
                 'thumbnail_url',
                 'training_type_catalog_id',
             ]);
+
+        $videos->getCollection()->transform(fn (LibraryVideo $video) => $this->videoPayload($video));
 
         return response()->json([
             'ok' => true,
@@ -124,9 +129,14 @@ class LibraryVideoController extends Controller
             'data' => [
                 'id' => $video->id,
                 'name' => $video->name,
+                'source' => $video->source ?? 'youtube',
                 'youtube_id' => $video->youtube_id,
-                'youtube_url' => $video->youtube_url,
+                'youtube_url' => $video->youtube_url ?: null,
+                'video_path' => $video->video_path,
                 'thumbnail_url' => $video->thumbnail_url,
+                'playback_url' => $video->video_path
+                    ? url(Storage::disk('public')->url($video->video_path))
+                    : $video->youtube_url,
                 'training_type_catalog_id' => $video->training_type_catalog_id,
                 'is_active' => (bool)$video->is_active,
                 'created_at' => optional($video->created_at)->toISOString(),
@@ -155,6 +165,23 @@ private function resolveCoachId($user): ?int
     }
 
     return (int) $client->coach_id;
+}
+
+private function videoPayload(LibraryVideo $video): array
+{
+    return [
+        'id' => $video->id,
+        'name' => $video->name,
+        'source' => $video->source ?? 'youtube',
+        'youtube_id' => $video->youtube_id,
+        'youtube_url' => $video->youtube_url ?: null,
+        'video_path' => $video->video_path,
+        'thumbnail_url' => $video->thumbnail_url,
+        'playback_url' => $video->video_path
+            ? url(Storage::disk('public')->url($video->video_path))
+            : $video->youtube_url,
+        'training_type_catalog_id' => $video->training_type_catalog_id,
+    ];
 }
 /**
  * GET /api/v1/library/training/catalog

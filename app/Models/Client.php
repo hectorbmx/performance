@@ -41,17 +41,25 @@ class Client extends Model
     }
 
     public function activeMembership()
-        {
-            return $this->hasOne(ClientMembership::class)
-                ->where('status', 'active')
-                ->whereDate('ends_at', '>=', now()->toDateString())
-                ->latestOfMany('starts_at'); // por si hubiera más de una
-        }
+    {
+        return $this->hasOne(ClientMembership::class)
+            ->where('status', 'active')
+            ->whereDate('starts_at', '<=', now()->toDateString())
+            ->whereDate('ends_at', '>=', now()->toDateString())
+            ->latestOfMany('starts_at');
+    }
 
-        public function latestMembership()
+    public function futureMembership()
+    {
+        return $this->hasOne(ClientMembership::class)
+            ->where('status', 'active')
+            ->whereDate('starts_at', '>', now()->toDateString())
+            ->oldestOfMany('starts_at');
+    }
+
+    public function latestMembership()
     {
         return $this->hasOne(ClientMembership::class)->latestOfMany('starts_at');
-        // o ->latestOfMany('ends_at');
     }
 
     // Agregar esta relación al modelo Client

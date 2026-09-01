@@ -5,6 +5,11 @@
         $weekStart = $selectedCarbon->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
         $weekDays = collect(range(0, 6))->map(fn ($offset) => $weekStart->copy()->addDays($offset));
         $dayLabels = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+        $selectedVisibility = old('visibility', isset($presetClient) && $presetClient ? 'assigned' : 'free');
+        $selectedClientIds = collect(old('assigned_clients', isset($presetClient) && $presetClient ? [$presetClient->id] : []))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
     @endphp
 
     <div class="max-w-7xl mx-auto px-4 py-6">
@@ -58,6 +63,9 @@
               class="mt-8 space-y-8"
               enctype="multipart/form-data">
             @csrf
+            @if(isset($presetClient) && $presetClient)
+                <input type="hidden" name="return_client_id" value="{{ $presetClient->id }}">
+            @endif
 
             @if ($errors->any())
                 <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -122,8 +130,8 @@
                         <select id="visibilitySelect"
                                 name="visibility"
                                 class="w-full h-12 rounded-lg border-slate-300 text-lg">
-                            <option value="free" @selected(old('visibility','free')==='free')>Libre</option>
-                            <option value="assigned" @selected(old('visibility')==='assigned')>Asignado</option>
+                            <option value="free" @selected($selectedVisibility === 'free')>Libre</option>
+                            <option value="assigned" @selected($selectedVisibility === 'assigned')>Asignado</option>
                         </select>
                         @error('visibility') <div class="text-xs text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
@@ -232,7 +240,7 @@
                 </div>
 
                 {{-- Asignación (SOLO UNA, estilo edit, IDs compatibles con JS de búsqueda) --}}
-                <div id="assignBlock" class="mt-8 hidden">
+                <div id="assignBlock" class="mt-8 {{ $selectedVisibility === 'assigned' ? '' : 'hidden' }}">
                     <div class="bg-white border rounded-xl p-5">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -242,7 +250,7 @@
                                     <div>
                                         <h2 class="text-lg font-semibold text-gray-900">Asignación individual</h2>
                                         <p class="text-sm text-gray-600 mt-1">
-                                            Busca atletas y asígnalos al entrenamiento. Doble clic para agregar.
+                                            Busca atletas y asígnalos al entrenamiento.
                                         </p>
                                     </div>
                                 </div>
@@ -257,7 +265,7 @@
                                          class="absolute z-20 mt-2 w-full rounded-lg border bg-white shadow-lg overflow-hidden hidden">
                                         <div id="clientSearchResultsInner" class="max-h-72 overflow-auto"></div>
                                         <div id="clientSearchHint" class="px-3 py-2 text-xs text-gray-500 border-t bg-gray-50 hidden">
-                                            Tip: doble clic para asignar.
+                                            Usa el botón para agregar o quitar atletas.
                                         </div>
                                     </div>
                                 </div>
@@ -266,15 +274,18 @@
                                     <div class="text-xs text-gray-600 mb-2">Atletas asignados</div>
 
                                     <div id="assignedClientsPills" class="flex flex-wrap gap-2">
-                                        @foreach(old('assigned_clients', []) as $cid)
+                                        @foreach($selectedClientIds as $cid)
                                             @php $c = ($clients ?? collect())->firstWhere('id', (int)$cid); @endphp
                                             @if($c)
                                                 <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm border border-emerald-100"
                                                       data-client-pill="{{ $c->id }}">
-                                                    <span class="font-medium">{{ $c->first_name }} {{ $c->last_name }}</span>
+                                                    <span class="font-medium" data-client-pill-label>{{ $c->first_name }} {{ $c->last_name }}</span>
                                                     <button type="button"
-                                                            class="removeClientPill text-emerald-700/70 hover:text-emerald-900"
-                                                            title="Quitar">✕</button>
+                                                            class="removeClientPill inline-flex h-5 w-5 items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                            title="Quitar atleta"
+                                                            aria-label="Quitar {{ $c->first_name }} {{ $c->last_name }}">
+                                                        <i class="fa-solid fa-minus text-xs"></i>
+                                                    </button>
                                                     <input type="hidden" name="assigned_clients[]" value="{{ $c->id }}">
                                                 </span>
                                             @endif
@@ -282,7 +293,7 @@
                                     </div>
 
                                     <div id="assignedClientsEmpty"
-                                         class="text-sm text-gray-500 mt-2 {{ count(old('assigned_clients', [])) ? 'hidden' : '' }}">
+                                         class="text-sm text-gray-500 mt-2 {{ $selectedClientIds->count() ? 'hidden' : '' }}">
                                         No hay atletas asignados.
                                     </div>
                                 </div>
@@ -570,6 +581,16 @@
                 <button class="px-5 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Guardar</button>
             </div>
         </form>
+    </div>
+
+    <div id="assignmentToast"
+         class="fixed right-5 top-5 z-[70] hidden max-w-sm rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-800 shadow-lg">
+        <div class="flex items-center gap-3">
+            <span id="assignmentToastIcon" class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <i class="fa-solid fa-check text-xs"></i>
+            </span>
+            <span id="assignmentToastText" class="font-medium"></span>
+        </div>
     </div>
 
     <script>
@@ -1174,6 +1195,23 @@ function removeVideoFromSection(sectionEl, videoId) {
       if (selectedEmpty) selectedEmpty.classList.toggle('hidden', !!any);
     }
 
+    function showAssignmentToast(message, type = 'success') {
+      const toast = document.getElementById('assignmentToast');
+      const text = document.getElementById('assignmentToastText');
+      const icon = document.getElementById('assignmentToastIcon');
+      if (!toast || !text || !icon) return;
+
+      const isRemove = type === 'remove';
+      text.textContent = message;
+      toast.className = `fixed right-5 top-5 z-[70] max-w-sm rounded-lg border bg-white px-4 py-3 text-sm shadow-lg ${isRemove ? 'border-red-200 text-red-800' : 'border-emerald-200 text-emerald-800'}`;
+      icon.className = `flex h-6 w-6 items-center justify-center rounded-full ${isRemove ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`;
+      icon.innerHTML = `<i class="fa-solid ${isRemove ? 'fa-minus' : 'fa-check'} text-xs"></i>`;
+      toast.classList.remove('hidden');
+
+      clearTimeout(showAssignmentToast.timer);
+      showAssignmentToast.timer = setTimeout(() => toast.classList.add('hidden'), 2600);
+    }
+
     function isSelected(id) {
       return !!selected.querySelector(`span[data-client-pill="${id}"]`);
     }
@@ -1183,8 +1221,12 @@ function removeVideoFromSection(sectionEl, videoId) {
         if (btn.dataset.bound === '1') return;
         btn.dataset.bound = '1';
         btn.addEventListener('click', () => {
-          btn.closest('span[data-client-pill]')?.remove();
+          const pill = btn.closest('span[data-client-pill]');
+          const label = pill?.querySelector('[data-client-pill-label]')?.textContent || 'Atleta';
+          pill?.remove();
           setEmptyState();
+          syncClientResultActions();
+          showAssignmentToast(`${label} removido de la lista.`, 'remove');
         });
       });
     }
@@ -1200,10 +1242,13 @@ function removeVideoFromSection(sectionEl, videoId) {
       const label = item.label ?? item.name ?? (item.email ?? `Atleta #${item.id}`);
 
       pill.innerHTML = `
-        <span class="font-medium"></span>
+        <span class="font-medium" data-client-pill-label></span>
         <button type="button"
-                class="removeClientPill text-emerald-700/70 hover:text-emerald-900"
-                title="Quitar">✕</button>
+                class="removeClientPill inline-flex h-5 w-5 items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                title="Quitar atleta"
+                aria-label="Quitar atleta">
+          <i class="fa-solid fa-minus text-xs"></i>
+        </button>
         <input type="hidden" name="assigned_clients[]" value="${item.id}">
       `;
 
@@ -1212,6 +1257,35 @@ function removeVideoFromSection(sectionEl, videoId) {
       selected.appendChild(pill);
       bindRemoveButtonsWithin(pill);
       setEmptyState();
+      syncClientResultActions();
+      showAssignmentToast(`${label} agregado a la lista.`);
+    }
+
+    function removePill(id) {
+      const pill = selected.querySelector(`span[data-client-pill="${id}"]`);
+      if (!pill) return;
+
+      const label = pill.querySelector('[data-client-pill-label]')?.textContent || 'Atleta';
+      pill.remove();
+      setEmptyState();
+      syncClientResultActions();
+      showAssignmentToast(`${label} removido de la lista.`, 'remove');
+    }
+
+    function syncClientResultActions() {
+      inner.querySelectorAll('[data-client-result]').forEach(row => {
+        const id = row.dataset.clientResult;
+        const assigned = isSelected(id);
+        const button = row.querySelector('[data-client-action]');
+        if (!button) return;
+
+        button.title = assigned ? 'Quitar atleta' : 'Agregar atleta';
+        button.setAttribute('aria-label', assigned ? 'Quitar atleta' : 'Agregar atleta');
+        button.className = assigned
+          ? 'inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition'
+          : 'inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white transition';
+        button.innerHTML = `<i class="fa-solid ${assigned ? 'fa-trash' : 'fa-plus'} text-sm"></i>`;
+      });
     }
 
     function renderResults(items) {
@@ -1225,7 +1299,8 @@ function removeVideoFromSection(sectionEl, videoId) {
 
       items.forEach(item => {
         const row = document.createElement('div');
-        row.className = 'px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm flex items-center justify-between gap-3';
+        row.className = 'px-3 py-2 hover:bg-gray-50 text-sm flex items-center justify-between gap-3';
+        row.setAttribute('data-client-result', item.id);
 
         const label = item.label ?? item.name ?? (item.email ?? `Atleta #${item.id}`);
         const email = item.email ?? '';
@@ -1235,20 +1310,25 @@ function removeVideoFromSection(sectionEl, videoId) {
             <div class="font-medium text-gray-900"></div>
             <div class="text-xs text-gray-500"></div>
           </div>
-          <div class="text-xs text-gray-400">${isSelected(item.id) ? 'Asignado' : 'Doble clic'}</div>
+          <button type="button" data-client-action></button>
         `;
 
         row.querySelector('.font-medium').textContent = label;
         row.querySelector('.text-xs').textContent = email;
 
-        row.addEventListener('dblclick', () => {
+        row.querySelector('[data-client-action]').addEventListener('click', () => {
+          if (isSelected(item.id)) {
+            removePill(item.id);
+            return;
+          }
+
           addPill(item);
-          row.querySelector('.text-gray-400').textContent = 'Asignado';
         });
 
         inner.appendChild(row);
       });
 
+      syncClientResultActions();
       hint?.classList.remove('hidden');
     }
 

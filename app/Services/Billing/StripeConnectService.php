@@ -7,6 +7,7 @@ use App\Models\CoachClientPlan;
 use App\Models\CoachProfile;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Stripe\Account;
 use Stripe\AccountLink;
 use Stripe\Checkout\Session as CheckoutSession;
@@ -137,67 +138,92 @@ class StripeConnectService
 
     public function createMembershipCheckout(ClientMembership $membership): CheckoutSession
     {
-        $membership->loadMissing(['coach.coachProfile', 'client.userApp', 'coachClientPlan']);
+        return DB::transaction(function () use ($membership) {
+            $membership = ClientMembership::query()
+                ->whereKey($membership->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $profile = $membership->coach->coachProfile;
-        if (!$profile?->stripe_account_id || !$profile->stripe_charges_enabled) {
-            throw new \RuntimeException('El coach debe completar Stripe Connect antes de cobrar con Stripe.');
-        }
+            if ($membership->billing_status === 'paid') {
+                throw new \RuntimeException('Esta membresía ya está pagada.');
+            }
 
-        $plan = $this->ensurePlanPrice($membership->coachClientPlan);
-        $userApp = $membership->client->userApp;
-        if (!$userApp) {
-            throw new \RuntimeException('El cliente no tiene usuario de app para crear el customer de Stripe.');
-        }
+            $membership->loadMissing(['coach.coachProfile', 'client.userApp', 'coachClientPlan']);
 
-        $customerId = app(StripeClientBillingService::class)
-            ->getOrCreateCustomer($userApp, $profile->stripe_account_id);
+            $profile = $membership->coach->coachProfile;
+            if (!$profile?->stripe_account_id || !$profile->stripe_charges_enabled) {
+                throw new \RuntimeException('El coach debe completar Stripe Connect antes de cobrar con Stripe.');
+            }
 
-        $params = [
-            'mode' => 'subscription',
-            'customer' => $customerId,
-            'line_items' => [[
-                'price' => $plan->stripe_price_id,
-                'quantity' => 1,
-            ]],
-            'success_url' => route('coach.clients.index') . '?stripe=success&session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('coach.client-payments.create', $membership) . '?stripe=cancel',
-            'metadata' => [
-                'context' => 'client_membership',
-                'client_membership_id' => (string) $membership->id,
-                'coach_id' => (string) $membership->coach_id,
-                'client_id' => (string) $membership->client_id,
-                'coach_client_plan_id' => (string) $membership->coach_client_plan_id,
-            ],
-            'subscription_data' => [
+            $existingSession = $this->retrieveOpenCheckoutSession(
+                $membership->stripe_checkout_session_id,
+                $profile->stripe_account_id
+            );
+
+            if ($existingSession) {
+                return $existingSession;
+            }
+
+            $plan = $this->ensurePlanPrice($membership->coachClientPlan);
+            $userApp = $membership->client->userApp;
+            if (!$userApp) {
+                throw new \RuntimeException('El cliente no tiene usuario de app para crear el customer de Stripe.');
+            }
+
+            $customerId = app(StripeClientBillingService::class)
+                ->getOrCreateCustomer($userApp, $profile->stripe_account_id);
+
+            $params = [
+                'mode' => 'subscription',
+                'customer' => $customerId,
+                'line_items' => [[
+                    'price' => $plan->stripe_price_id,
+                    'quantity' => 1,
+                ]],
+                'success_url' => route('coach.clients.index') . '?stripe=success&session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('coach.client-payments.create', $membership) . '?stripe=cancel',
                 'metadata' => [
+                    'context' => 'client_membership',
                     'client_membership_id' => (string) $membership->id,
                     'coach_id' => (string) $membership->coach_id,
                     'client_id' => (string) $membership->client_id,
+                    'coach_client_plan_id' => (string) $membership->coach_client_plan_id,
                 ],
-            ],
-        ];
+                'subscription_data' => [
+                    'metadata' => [
+                        'client_membership_id' => (string) $membership->id,
+                        'coach_id' => (string) $membership->coach_id,
+                        'client_id' => (string) $membership->client_id,
+                    ],
+                ],
+            ];
 
-        $feePercent = config('services.stripe.application_fee_percent');
-        if ($feePercent !== null && $feePercent !== '') {
-            $params['subscription_data']['application_fee_percent'] = (float) $feePercent;
-        }
+            $feePercent = config('services.stripe.application_fee_percent');
+            if ($feePercent !== null && $feePercent !== '') {
+                $params['subscription_data']['application_fee_percent'] = (float) $feePercent;
+            }
 
-        $startsAt = $membership->starts_at ? Carbon::parse($membership->starts_at)->startOfDay() : null;
-        if ($startsAt && $startsAt->isFuture()) {
-            $params['subscription_data']['trial_end'] = $startsAt->timestamp;
-        }
+            $startsAt = $membership->starts_at ? Carbon::parse($membership->starts_at)->startOfDay() : null;
+            if ($startsAt && $startsAt->isFuture()) {
+                $params['subscription_data']['trial_end'] = $startsAt->timestamp;
+            }
 
-        $session = CheckoutSession::create($params, [
-            'stripe_account' => $profile->stripe_account_id,
-        ]);
+            $idempotencyKey = 'client-membership-checkout-' . $membership->id . '-' . (
+                $membership->stripe_checkout_session_id ?: 'initial'
+            );
 
-        $membership->update([
-            'stripe_connected_account_id' => $profile->stripe_account_id,
-            'stripe_checkout_session_id' => $session->id,
-        ]);
+            $session = CheckoutSession::create($params, [
+                'stripe_account' => $profile->stripe_account_id,
+                'idempotency_key' => $idempotencyKey,
+            ]);
 
-        return $session;
+            $membership->update([
+                'stripe_connected_account_id' => $profile->stripe_account_id,
+                'stripe_checkout_session_id' => $session->id,
+            ]);
+
+            return $session;
+        });
     }
 
     public function retrieveSubscription(string $subscriptionId, string $connectedAccountId): Subscription
@@ -222,5 +248,26 @@ class StripeConnectService
         }
 
         return ['interval' => 'day', 'interval_count' => max(1, $days)];
+    }
+
+    private function retrieveOpenCheckoutSession(?string $sessionId, string $connectedAccountId): ?CheckoutSession
+    {
+        if (!$sessionId) {
+            return null;
+        }
+
+        try {
+            $session = CheckoutSession::retrieve($sessionId, [
+                'stripe_account' => $connectedAccountId,
+            ]);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (($session->status ?? null) !== 'open' || empty($session->url)) {
+            return null;
+        }
+
+        return $session;
     }
 }

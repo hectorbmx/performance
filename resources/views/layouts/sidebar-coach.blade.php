@@ -6,14 +6,14 @@
 @endphp
 
 <aside
-    x-data="{ open: true }"
+    x-data="{ open: false }"
     class="bg-gray-900 text-white min-h-screen transition-all duration-300"
     :class="open ? 'w-64' : 'w-20'"
 >
     <div class="flex items-center justify-between px-4 py-4 border-b border-gray-700">
         <span class="font-bold text-lg" x-show="open">Coach</span>
 
-        <button @click="open = !open" class="text-gray-400 hover:text-white">
+        <button @click="open = !open" title="Abrir o cerrar menú" aria-label="Abrir o cerrar menú" class="text-gray-400 hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -25,6 +25,7 @@
     <nav class="mt-4 space-y-1">
 
         <a href="{{ route('coach.dashboard') }}"
+           title="Dashboard"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.dashboard')) }}">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -35,6 +36,7 @@
         {{-- Después del Dashboard y antes de Clientes --}}
 
             <a href="{{ route('coach.membresias.index') }}"
+            title="Planes"
             class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.membresias.*')) }}">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -45,6 +47,7 @@
 
         {{-- placeholders futuros --}}
         <a href="{{ route('coach.clients.index') }}"
+           title="Clientes"
            class="flex items-center gap-3 px-4 py-3  {{ $linkClass($is('coach.clients.*')) }}">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -55,6 +58,7 @@
         </a>
 
         <a href="{{ route('coach.trainings.index') }}"
+           title="Entrenamientos"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.trainings.*')) }}">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -64,6 +68,7 @@
         </a>
 
         <a href="{{ route('coach.groups.index') }}"
+           title="Grupos"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.groups.*')) }}">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -72,6 +77,7 @@
             <span x-show="open">Grupos</span>
         </a>
         <a href="{{ route('coach.library.index') }}"
+            title="Biblioteca"
             class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.library.*')) }}">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -81,6 +87,7 @@
             </a>
 
        <a href="{{ route('coach.config.index') }}"
+   title="Config"
    class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.config.*')) }}">
     {{-- Icono (elige uno de los 3) --}}
     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -97,6 +104,8 @@
     @csrf
 
     <button type="submit"
+        title="Cerrar sesión"
+        aria-label="Cerrar sesión"
         class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-gray-800 hover:text-red-300 rounded-md">
 
         {{-- Icon --}}

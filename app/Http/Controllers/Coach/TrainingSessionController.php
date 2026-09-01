@@ -32,7 +32,7 @@ class TrainingSessionController extends Controller
         
         // month: YYYY-MM (default: mes actual)
         $month = $request->get('month', now()->format('Y-m'));
-        $current = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $current = Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth();
 
         // grid: inicia lunes y termina domingo (6 semanas típicas)
         $start = $current->copy()->startOfMonth()->startOfWeek(Carbon::MONDAY);
@@ -41,11 +41,33 @@ class TrainingSessionController extends Controller
         $items = TrainingSession::query()
             ->where('coach_id', $coachId)
             ->whereBetween('scheduled_at', [$start->toDateString(), $end->toDateString()])
+            ->with([
+                'assignments.client:id,first_name,last_name,email',
+            ])
             ->orderBy('scheduled_at')
             ->orderBy('id')
             ->get(['id','title','tag_color','scheduled_at','visibility','level','type']);
 
         $byDate = $items->groupBy(fn ($t) => $t->scheduled_at->format('Y-m-d'));
+        $trainingIds = $items->pluck('id')->all();
+        $groupAssignments = GroupTrainingAssignment::query()
+            ->with('group:id,name')
+            ->whereIn('training_session_id', $trainingIds)
+            ->get()
+            ->groupBy('training_session_id');
+
+        $copyClients = Client::query()
+            ->where('coach_id', $coachId)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'email']);
+
+        $copyGroups = Group::query()
+            ->where('coach_id', $coachId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 // dd($items->take(10)->toArray());
         // Pasamos al blade lo necesario
         return view('coach.trainings.index', [
@@ -57,6 +79,9 @@ class TrainingSessionController extends Controller
             'start' => $start,
             'end' => $end,
             'byDate' => $byDate,
+            'groupAssignments' => $groupAssignments,
+            'copyClients' => $copyClients,
+            'copyGroups' => $copyGroups,
         ]);
     }
 
@@ -87,6 +112,14 @@ public function create(Request $request)
 {
     $date = $request->get('date');
     $coachId = $request->user()->id;
+    $presetClient = null;
+
+    if ($request->filled('client_id')) {
+        $presetClient = Client::query()
+            ->where('coach_id', $coachId)
+            ->where('is_active', true)
+            ->findOrFail((int) $request->input('client_id'));
+    }
 
     $clients = Client::where('coach_id', auth()->id())
         ->where('is_active', 1)
@@ -125,7 +158,7 @@ public function create(Request $request)
         ->get(['id','name','thumbnail_url','youtube_id','training_type_catalog_id']);
 
 
-return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups','units','libraryVideos'));
+return view('coach.trainings.create', compact('date','types','goals','clients','assignedGroups','units','libraryVideos','presetClient'));
 
 }
 
@@ -262,6 +295,7 @@ public function store(Request $request)
         'notes'            => ['nullable','string'],
         'tag_color'        => ['nullable','regex:/^#[0-9A-Fa-f]{6}$/'],
         'cover_image'      => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
+        'return_client_id' => ['nullable','integer'],
 
         // ✅ asignaciones (vienen del blade)
         'assigned_clients'   => ['nullable','array'],
@@ -344,6 +378,13 @@ foreach (($data['sections'] ?? []) as $idx => $s) {
         }
     }
 
+    $returnClient = null;
+    if (!empty($data['return_client_id'])) {
+        $returnClient = Client::query()
+            ->where('coach_id', $coachId)
+            ->findOrFail((int) $data['return_client_id']);
+    }
+
     // ✅ regla: si es assigned debe traer al menos 1 atleta o 1 grupo
     $clientIds = $data['assigned_clients'] ?? [];
     $groupIds  = $data['assigned_groups'] ?? [];
@@ -354,7 +395,7 @@ foreach (($data['sections'] ?? []) as $idx => $s) {
             ->withInput();
     }
 
-    return DB::transaction(function () use ($data, $coachId, $request, $clientIds, $groupIds) {
+    return DB::transaction(function () use ($data, $coachId, $request, $clientIds, $groupIds, $returnClient) {
 
         $coverPath = null;
         if ($request->hasFile('cover_image')) {
@@ -468,6 +509,16 @@ if ($training->visibility === 'assigned') {
     $training->assignments()->delete();
     \App\Models\GroupTrainingAssignment::where('training_session_id', $training->id)->delete();
 }
+        if ($returnClient) {
+            return redirect()
+                ->route('coach.clients.trainings.index', [
+                    'client' => $returnClient->id,
+                    'view' => 'calendar',
+                    'month' => Carbon::parse($training->scheduled_at)->format('Y-m'),
+                ])
+                ->with('success', 'Entrenamiento creado correctamente.');
+        }
+
         return redirect()
             ->route('coach.trainings.index')
             ->with('success', 'Entrenamiento creado correctamente.');
@@ -998,6 +1049,147 @@ private function syncLiftingRows(\App\Models\TrainingSectionExerciseBlock $block
             $block->rows()->create($payload);
         }
     }
+}
+
+
+public function copy(Request $request, TrainingSession $training)
+{
+    abort_unless($training->coach_id === auth()->id(), 403);
+
+    $data = $request->validate([
+        'scheduled_at' => ['required', 'date'],
+        'title' => ['required', 'string', 'max:255'],
+        'tag_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        'assigned_clients' => ['nullable', 'array'],
+        'assigned_clients.*' => ['integer'],
+        'assigned_groups' => ['nullable', 'array'],
+        'assigned_groups.*' => ['integer'],
+    ]);
+
+    $targetDate = Carbon::parse($data['scheduled_at'])->toDateString();
+    $clientIds = collect($data['assigned_clients'] ?? [])
+        ->map(fn ($id) => (int) $id)
+        ->unique()
+        ->values();
+    $groupIds = collect($data['assigned_groups'] ?? [])
+        ->map(fn ($id) => (int) $id)
+        ->unique()
+        ->values();
+
+    $validClientIds = Client::query()
+        ->where('coach_id', $training->coach_id)
+        ->whereIn('id', $clientIds)
+        ->pluck('id')
+        ->all();
+
+    $validGroupIds = Group::query()
+        ->where('coach_id', $training->coach_id)
+        ->whereIn('id', $groupIds)
+        ->pluck('id')
+        ->all();
+
+    if ($training->visibility === 'assigned' && empty($validClientIds) && empty($validGroupIds)) {
+        return back()
+            ->withErrors(['assigned_clients' => 'Debes seleccionar al menos 1 atleta o 1 grupo para copiar un entrenamiento asignado.'])
+            ->withInput();
+    }
+
+    $training->load([
+        'sections.libraryVideos',
+        'sections.liftingBlocks.rows',
+        'assignments',
+    ]);
+
+    DB::transaction(function () use ($training, $targetDate, $data, $validClientIds, $validGroupIds) {
+        $newTraining = TrainingSession::create([
+            'coach_id' => $training->coach_id,
+            'title' => $data['title'],
+            'scheduled_at' => $targetDate,
+            'duration_minutes' => $training->duration_minutes,
+            'level' => $training->level,
+            'goal' => $training->goal,
+            'training_goal_catalog_id' => $training->training_goal_catalog_id,
+            'type' => $training->type,
+            'training_type_catalog_id' => $training->training_type_catalog_id,
+            'visibility' => $training->visibility,
+            'notes' => $training->notes,
+            'tag_color' => $data['tag_color'] ?? null,
+            'cover_image' => $training->cover_image,
+        ]);
+
+        foreach ($training->sections as $section) {
+            $newSection = $newTraining->sections()->create([
+                'order' => $section->order,
+                'name' => $section->name,
+                'description' => $section->description,
+                'video_url' => $section->video_url,
+                'video_path' => $section->video_path,
+                'accepts_results' => $section->accepts_results,
+                'result_type' => $section->result_type,
+                'unit_id' => $section->unit_id,
+            ]);
+
+            $libraryPivot = $section->libraryVideos
+                ->mapWithKeys(fn ($video) => [
+                    $video->id => [
+                        'order' => $video->pivot->order,
+                        'notes' => $video->pivot->notes,
+                    ],
+                ])
+                ->all();
+
+            if (!empty($libraryPivot)) {
+                $newSection->libraryVideos()->sync($libraryPivot);
+            }
+
+            foreach ($section->liftingBlocks as $block) {
+                $newBlock = $newSection->liftingBlocks()->create([
+                    'exercise_catalog_id' => $block->exercise_catalog_id,
+                    'exercise_name' => $block->exercise_name,
+                    'notes' => $block->notes,
+                    'order' => $block->order,
+                ]);
+
+                foreach ($block->rows as $row) {
+                    $newBlock->rows()->create([
+                        'percentage' => $row->percentage,
+                        'reps' => $row->reps,
+                        'sets' => $row->sets,
+                        'rest_seconds' => $row->rest_seconds,
+                        'notes' => $row->notes,
+                        'order' => $row->order,
+                    ]);
+                }
+            }
+        }
+
+        if ($training->visibility === 'assigned') {
+            foreach ($validClientIds as $clientId) {
+                $newTraining->assignments()->create([
+                    'client_id' => $clientId,
+                    'scheduled_for' => $targetDate,
+                    'status' => 'scheduled',
+                ]);
+            }
+
+            foreach ($validGroupIds as $groupId) {
+                GroupTrainingAssignment::create([
+                    'group_id' => $groupId,
+                    'training_session_id' => $newTraining->id,
+                    'scheduled_for' => $targetDate,
+                ]);
+            }
+        }
+
+        return $newTraining;
+    });
+
+    return redirect()
+        ->route('coach.trainings.index', [
+            'view' => 'calendar',
+            'month' => Carbon::parse($targetDate)->format('Y-m'),
+        ])
+        ->with('success', 'Entrenamiento copiado correctamente.');
 }
 
    public function destroy(TrainingSession $training)

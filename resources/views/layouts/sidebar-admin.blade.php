@@ -11,7 +11,7 @@
 @endphp
 
 <aside
-    x-data="{ open: true }"
+    x-data="{ open: false }"
     class="bg-gray-900 text-white min-h-screen transition-all duration-300"
     :class="open ? 'w-64' : 'w-20'"
 >
@@ -20,7 +20,7 @@
     <div class="flex items-center justify-between px-4 py-4 border-b border-gray-700">
         <span class="font-bold text-lg" x-show="open">CoachSaaS</span>
 
-        <button @click="open = !open" class="text-gray-400 hover:text-white">
+        <button @click="open = !open" title="Abrir o cerrar menú" aria-label="Abrir o cerrar menú" class="text-gray-400 hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -34,6 +34,7 @@
 
         {{-- Dashboard --}}
         <a href="{{ route('admin.dashboard') }}"
+           title="Dashboard"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('admin.dashboard')) }}">
 
             <i class="fas fa-home text-lg"></i>
@@ -42,6 +43,7 @@
 
         {{-- Coaches --}}
         <a href="{{ route('admin.coaches.index') }}"
+           title="Coaches"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('admin.coaches.index')) }}">
            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -58,6 +60,7 @@
 
         {{-- Planes --}}
         <a href="{{ route('admin.plans.index') }}"
+           title="Planes"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('admin.plans.index')) }}">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -71,6 +74,7 @@
 
         {{-- Suscripciones --}}
             <a href="{{ route('admin.subscriptions.index') }}"
+            title="Suscripciones"
             class="flex items-center justify-between px-4 py-3 {{ $linkClass($is('admin.subscriptions.*')) }}">
 
                 <div class="flex items-center gap-3">
@@ -102,6 +106,7 @@
 
         {{-- Pagos --}}
         <a href="{{ route('admin.payments.index') }}"
+           title="Pagos"
            class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('admin.payments.index')) }}">
        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
   <rect x="2" y="5" width="20" height="14" rx="2" ry="2" stroke-width="2"></rect>
@@ -116,6 +121,8 @@
     @csrf
 
     <button type="submit"
+        title="Cerrar sesión"
+        aria-label="Cerrar sesión"
         class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-gray-800 hover:text-red-300 rounded-md">
 
         {{-- Icon --}}

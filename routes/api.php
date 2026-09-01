@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\Coach\GroupController as CoachApiGroupController
 use App\Http\Controllers\Api\V1\Coach\PlanController as CoachApiPlanController;
 use App\Http\Controllers\Api\V1\Coach\SubscriptionController as CoachApiSubscriptionController;
 use App\Http\Controllers\Api\V1\Coach\TrainingController as CoachApiTrainingController;
+use App\Http\Controllers\Api\V1\Coach\LibraryVideoController as CoachApiLibraryVideoController;
 
 
 /*
@@ -109,12 +110,17 @@ Route::prefix('v1')->group(function () {
 
             Route::middleware('coach.api')->group(function () {
                 Route::get('clients/{client}/trainings', [CoachApiClientController::class, 'trainings']);
+                Route::post('clients/{client}/memberships', [CoachApiSubscriptionController::class, 'storeForClient']);
                 Route::apiResource('clients', CoachApiClientController::class);
                 Route::post('groups/{group}/clients', [CoachApiGroupController::class, 'attachClient']);
                 Route::delete('groups/{group}/clients/{client}', [CoachApiGroupController::class, 'detachClient']);
                 Route::apiResource('groups', CoachApiGroupController::class)->except(['destroy']);
                 Route::apiResource('plans', CoachApiPlanController::class);
                 Route::get('subscriptions', [CoachApiSubscriptionController::class, 'index']);
+                Route::get('library/meta', [CoachApiLibraryVideoController::class, 'meta']);
+                Route::get('library', [CoachApiLibraryVideoController::class, 'index']);
+                Route::post('library', [CoachApiLibraryVideoController::class, 'store']);
+                Route::delete('library/{video}', [CoachApiLibraryVideoController::class, 'destroy']);
 
                 Route::get('trainings/meta', [CoachApiTrainingController::class, 'meta']);
                 Route::apiResource('trainings', CoachApiTrainingController::class);

@@ -17,7 +17,7 @@
                         <input type="text"
                                name="q"
                                value="{{ $q ?? request('q') }}"
-                               placeholder="Buscar por nombre, email o telefono..."
+                               placeholder="Buscar por nombre o email..."
                                class="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none">
                     </div>
 
@@ -40,12 +40,6 @@
                 </form>
             </div>
 
-            @if(session('success'))
-                <div class="mb-4 bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded">
-                    {{ session('success') }}
-                </div>
-            @endif
-
             @if(session('setup_password_url'))
                 <div class="rounded-lg border border-amber-200 p-4 mb-4 bg-amber-50">
                     <div class="font-semibold text-amber-900">Enlace para crear contrasena</div>
@@ -63,9 +57,7 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Celular</th>
+                                <th class="w-72 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inicia</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Termina</th>
@@ -85,16 +77,11 @@
                                 @endphp
 
                                 <tr>
-                                    <td class="px-6 py-4 font-medium text-gray-900">
-                                        {{ $client->full_name }}
-                                    </td>
-
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $client->email ?? '-' }}
-                                    </td>
-
-                                    <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $client->phone ?? '-' }}
+                                    <td class="w-72 px-6 py-4">
+                                        <div class="font-medium text-gray-900">{{ $client->full_name }}</div>
+                                        @if($client->email)
+                                            <div class="mt-1 text-sm text-gray-400">{{ $client->email }}</div>
+                                        @endif
                                     </td>
 
                                     <td class="px-6 py-4 text-sm">
@@ -103,8 +90,12 @@
                                             <div class="text-xs text-gray-500">${{ number_format($m->price_snapshot, 2) }}</div>
                                         @else
                                             <a href="{{ route('coach.client-memberships.create', $client) }}"
-                                               class="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-200">
-                                                Asignar plan
+                                               title="Asignar plan"
+                                               aria-label="Asignar plan a {{ $client->full_name }}"
+                                               class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white transition">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                                                </svg>
                                             </a>
                                         @endif
                                     </td>
@@ -133,8 +124,12 @@
                                                     Hasta {{ optional($m->grace_until)->format('d/m/Y') }}
                                                 </div>
                                                 <a href="{{ route('coach.client-payments.create', $m) }}"
-                                                   class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700">
-                                                    Registrar pago
+                                                   title="Registrar pago"
+                                                   aria-label="Registrar pago de {{ $client->full_name }}"
+                                                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700 hover:bg-green-600 hover:text-white transition">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v.58a3.18 3.18 0 00-1.34.5 2.3 2.3 0 00-1.03 1.94c0 1.06.62 1.71 1.33 2.1.54.3 1.19.48 1.74.64l.14.04c.64.19 1.12.34 1.43.54.25.16.35.32.35.62 0 .29-.12.55-.45.76-.36.23-.91.38-1.64.38-.77 0-1.46-.24-2.24-.7a.75.75 0 10-.76 1.3c.74.43 1.55.75 2.47.86v.69a.75.75 0 001.5 0v-.72a3.56 3.56 0 001.48-.56 2.42 2.42 0 001.14-2.02c0-1.07-.58-1.73-1.28-2.16-.56-.35-1.26-.55-1.84-.72l-.13-.04c-.66-.19-1.1-.34-1.39-.5-.23-.13-.35-.27-.35-.79 0-.26.1-.45.35-.61.29-.19.76-.32 1.42-.32.63 0 1.17.14 1.8.4a.75.75 0 00.58-1.38 6.05 6.05 0 00-1.78-.44v-.56z"/>
+                                                    </svg>
                                                 </a>
                                             </div>
                                         @else
@@ -148,8 +143,12 @@
                                                     </div>
                                                 @endif
                                                 <a href="{{ route('coach.client-payments.create', $m) }}"
-                                                   class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700">
-                                                    Registrar pago
+                                                   title="Registrar pago"
+                                                   aria-label="Registrar pago de {{ $client->full_name }}"
+                                                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700 hover:bg-green-600 hover:text-white transition">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v.58a3.18 3.18 0 00-1.34.5 2.3 2.3 0 00-1.03 1.94c0 1.06.62 1.71 1.33 2.1.54.3 1.19.48 1.74.64l.14.04c.64.19 1.12.34 1.43.54.25.16.35.32.35.62 0 .29-.12.55-.45.76-.36.23-.91.38-1.64.38-.77 0-1.46-.24-2.24-.7a.75.75 0 10-.76 1.3c.74.43 1.55.75 2.47.86v.69a.75.75 0 001.5 0v-.72a3.56 3.56 0 001.48-.56 2.42 2.42 0 001.14-2.02c0-1.07-.58-1.73-1.28-2.16-.56-.35-1.26-.55-1.84-.72l-.13-.04c-.66-.19-1.1-.34-1.39-.5-.23-.13-.35-.27-.35-.79 0-.26.1-.45.35-.61.29-.19.76-.32 1.42-.32.63 0 1.17.14 1.8.4a.75.75 0 00.58-1.38 6.05 6.05 0 00-1.78-.44v-.56z"/>
+                                                    </svg>
                                                 </a>
                                             </div>
                                         @endif
@@ -164,8 +163,12 @@
                                                     VENCIDA
                                                 </span>
                                                 <a href="{{ route('coach.client-memberships.create', $client) }}"
-                                                   class="inline-flex items-center px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700">
-                                                    Renovar
+                                                   title="Renovar membresia"
+                                                   aria-label="Renovar membresia de {{ $client->full_name }}"
+                                                   class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white transition">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M15.312 5.312A7.001 7.001 0 005.1 4.96a.75.75 0 10.8 1.27 5.5 5.5 0 018.016.276H12.75a.75.75 0 000 1.5h2.75a.75.75 0 00.75-.75V4.5a.75.75 0 00-1.5 0v.812h.562zM4.688 14.688A7.001 7.001 0 0014.9 15.04a.75.75 0 10-.8-1.27 5.5 5.5 0 01-8.016-.276H7.25a.75.75 0 000-1.5H4.5a.75.75 0 00-.75.75V15.5a.75.75 0 001.5 0v-.812h-.562z" clip-rule="evenodd"/>
+                                                    </svg>
                                                 </a>
                                             </div>
                                         @else
@@ -225,7 +228,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                         No hay clientes registrados.
                                     </td>
                                 </tr>

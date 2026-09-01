@@ -56,6 +56,7 @@
 
                 <form action="{{ route('coach.client-payments.store', $membership) }}" method="POST" id="paymentForm">
                     @csrf
+                    <input type="hidden" name="idempotency_key" value="{{ $paymentIdempotencyKey }}">
 
                     {{-- Monto --}}
                     <div class="mb-4">
@@ -190,7 +191,9 @@
                         </a>
 
                         <button type="submit"
-                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                id="manualPaymentSubmit"
+                                data-loading-text="Registrando..."
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70">
                             Registrar pago
                         </button>
                     </div>
@@ -198,10 +201,12 @@
 
                 @if($membership->billing_status !== 'paid')
                     <div class="mt-6 border-t pt-6">
-                        <form action="{{ route('coach.client-memberships.stripe-checkout', $membership) }}" method="POST">
+                        <form action="{{ route('coach.client-memberships.stripe-checkout', $membership) }}" method="POST" id="stripeCheckoutForm">
                             @csrf
                             <button type="submit"
-                                    class="w-full px-4 py-3 bg-slate-900 text-white rounded-md hover:bg-slate-800 font-semibold">
+                                    id="stripeCheckoutSubmit"
+                                    data-loading-text="Preparando cobro..."
+                                    class="w-full px-4 py-3 bg-slate-900 text-white rounded-md hover:bg-slate-800 font-semibold disabled:cursor-not-allowed disabled:opacity-70">
                                 Cobrar con Stripe
                             </button>
                             <p class="mt-2 text-sm text-gray-500">
@@ -212,6 +217,16 @@
                 @endif
             </div>
 
+        </div>
+    </div>
+
+    <div id="paymentLoadingOverlay"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 px-4"
+         aria-hidden="true">
+        <div class="w-full max-w-sm rounded-lg bg-white p-6 text-center shadow-xl">
+            <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
+            <p class="text-base font-semibold text-gray-900" id="paymentLoadingTitle">Procesando pago</p>
+            <p class="mt-1 text-sm text-gray-500">Espera un momento. No cierres esta ventana.</p>
         </div>
     </div>
 
@@ -235,6 +250,45 @@
 
         // Calcular al cargar
         calculateFinalAmount();
+
+        const loadingOverlay = document.getElementById('paymentLoadingOverlay');
+        const loadingTitle = document.getElementById('paymentLoadingTitle');
+        const submittingForms = new WeakSet();
+
+        function showPaymentLoading(message) {
+            loadingTitle.textContent = message;
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+            loadingOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function bindSingleSubmit(formId, buttonId) {
+            const form = document.getElementById(formId);
+            const button = document.getElementById(buttonId);
+
+            if (!form || !button) {
+                return;
+            }
+
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    return;
+                }
+
+                if (submittingForms.has(form)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                submittingForms.add(form);
+                button.disabled = true;
+                button.textContent = button.dataset.loadingText || 'Procesando...';
+                showPaymentLoading(button.dataset.loadingText || 'Procesando pago...');
+            });
+        }
+
+        bindSingleSubmit('paymentForm', 'manualPaymentSubmit');
+        bindSingleSubmit('stripeCheckoutForm', 'stripeCheckoutSubmit');
     </script>
     @endpush
 </x-app-layout>

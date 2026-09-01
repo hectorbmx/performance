@@ -19,6 +19,7 @@
 
             <!-- Formulario -->
             <form method="POST" action="{{ route('coach.clients.store') }}"
+                  id="clientCreateForm"
                   class="bg-white border border-slate-200/80 shadow-sm rounded-xl p-6 sm:p-8 space-y-6">
                 @csrf
 
@@ -119,7 +120,9 @@
                         Cancelar
                     </a>
                     <button type="submit"
-                            class="px-5 py-2.5 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-sm shadow-indigo-500/10">
+                            id="clientCreateSubmit"
+                            data-loading-text="Guardando..."
+                            class="px-5 py-2.5 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-sm shadow-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-70">
                         Guardar cliente
                     </button>
                 </div>
@@ -128,5 +131,47 @@
         </div>
     </div>
 
+    <div id="clientCreateLoadingOverlay"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+         aria-hidden="true">
+        <div class="w-full max-w-sm rounded-lg bg-white p-6 text-center shadow-xl">
+            <img src="{{ asset('images/logo-header.png') }}"
+                 alt="Training Flow"
+                 class="mx-auto mb-4 h-12 w-auto">
+            <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
+            <p class="text-base font-semibold text-slate-900" id="clientCreateLoadingTitle">Guardando cliente...</p>
+            <p class="mt-1 text-sm text-slate-500">Espera un momento. No cierres esta ventana.</p>
+        </div>
+    </div>
+
     @include('coach.clients.partials.contact-validation')
+
+    @push('scripts')
+    <script>
+        const clientCreateForm = document.getElementById('clientCreateForm');
+        const clientCreateSubmit = document.getElementById('clientCreateSubmit');
+        const clientCreateLoadingOverlay = document.getElementById('clientCreateLoadingOverlay');
+        const clientCreateLoadingTitle = document.getElementById('clientCreateLoadingTitle');
+        let clientCreateSubmitting = false;
+
+        clientCreateForm?.addEventListener('submit', function (event) {
+            if (!clientCreateForm.checkValidity()) {
+                return;
+            }
+
+            if (clientCreateSubmitting) {
+                event.preventDefault();
+                return;
+            }
+
+            clientCreateSubmitting = true;
+            clientCreateSubmit.disabled = true;
+            clientCreateSubmit.textContent = clientCreateSubmit.dataset.loadingText || 'Guardando...';
+            clientCreateLoadingTitle.textContent = clientCreateSubmit.dataset.loadingText || 'Guardando cliente...';
+            clientCreateLoadingOverlay.classList.remove('hidden');
+            clientCreateLoadingOverlay.classList.add('flex');
+            clientCreateLoadingOverlay.setAttribute('aria-hidden', 'false');
+        });
+    </script>
+    @endpush
 </x-app-layout>

@@ -20,6 +20,7 @@ class ClientPayment extends Model
         'payment_date',
         'notes',
         'status',
+        'idempotency_key',
     ];
 
     protected $casts = [

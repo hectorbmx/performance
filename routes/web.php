@@ -261,6 +261,10 @@ Route::middleware(['auth', 'role:coach'])
     ->name('coach.')
     ->group(function () {
 
+        Route::post('trainings/{training}/copy', [TrainingSessionController::class, 'copy'])
+            ->middleware(['coach.subscription'])
+            ->name('trainings.copy');
+
         Route::resource('trainings', TrainingSessionController::class)
             ->except(['show'])
             ->middleware(['coach.subscription'])

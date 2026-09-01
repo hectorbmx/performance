@@ -145,7 +145,9 @@
                             </a>
 
                             <button type="submit"
-                                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                                    id="membershipSubmit"
+                                    data-loading-text="Asignando membresía..."
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70">
                                 Asignar membresía
                             </button>
                         </div>
@@ -153,6 +155,19 @@
                 @endif
             </div>
 
+        </div>
+    </div>
+
+    <div id="membershipLoadingOverlay"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 px-4 backdrop-blur-sm"
+         aria-hidden="true">
+        <div class="w-full max-w-sm rounded-lg bg-white p-6 text-center shadow-xl">
+            <img src="{{ asset('images/logo-header.png') }}"
+                 alt="Training Flow"
+                 class="mx-auto mb-4 h-12 w-auto">
+            <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600"></div>
+            <p class="text-base font-semibold text-slate-900" id="membershipLoadingTitle">Asignando membresía...</p>
+            <p class="mt-1 text-sm text-slate-500">Espera un momento. No cierres esta ventana.</p>
         </div>
     </div>
 
@@ -197,6 +212,31 @@
             document.getElementById('previewDuration').textContent = days + ' días';
             
             datePreview.classList.remove('hidden');
+        });
+
+        const membershipForm = document.getElementById('membershipForm');
+        const membershipSubmit = document.getElementById('membershipSubmit');
+        const membershipLoadingOverlay = document.getElementById('membershipLoadingOverlay');
+        const membershipLoadingTitle = document.getElementById('membershipLoadingTitle');
+        let membershipSubmitting = false;
+
+        membershipForm?.addEventListener('submit', function (event) {
+            if (!membershipForm.checkValidity()) {
+                return;
+            }
+
+            if (membershipSubmitting) {
+                event.preventDefault();
+                return;
+            }
+
+            membershipSubmitting = true;
+            membershipSubmit.disabled = true;
+            membershipSubmit.textContent = membershipSubmit.dataset.loadingText || 'Asignando...';
+            membershipLoadingTitle.textContent = membershipSubmit.dataset.loadingText || 'Asignando membresía...';
+            membershipLoadingOverlay.classList.remove('hidden');
+            membershipLoadingOverlay.classList.add('flex');
+            membershipLoadingOverlay.setAttribute('aria-hidden', 'false');
         });
     </script>
     @endpush
