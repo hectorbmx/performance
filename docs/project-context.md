@@ -72,3 +72,33 @@ Problema de producto:
   - Historial de pagos.
   - Acciones: registrar pago manual, crear nueva suscripcion, generar link de pago Stripe cuando aplique.
 - La fuente de verdad para bloqueo debe quedar centralizada para evitar reglas duplicadas entre login, middleware y UI.
+
+## Regla De Feedback En Operaciones De Escritura
+
+Toda accion que ejecute una operacion contra base de datos debe dar feedback visible al usuario durante y despues de la operacion.
+
+Aplica como minimo a acciones `store`, `update`, `patch`, `delete`, copiado/clonado, asignaciones y cualquier submit que cree, modifique o elimine registros.
+
+Regla UI:
+
+- Al iniciar la operacion, mostrar un modal/overlay de carga que bloquee interaccion accidental.
+- El overlay debe aplicar blur o atenuacion sobre la pantalla y mostrar el icono/logo de la marca cuando la vista tenga acceso al asset.
+- Al terminar correctamente, mostrar toast o mensaje visible de exito.
+- Al fallar, ocultar el loading y mostrar error visible con el mensaje disponible.
+- Evitar submits dobles deshabilitando botones mientras la operacion esta en curso.
+- En pantallas de listado o calendario, refrescar el estado visible despues de una operacion exitosa cuando aplique.
+
+Esta regla aplica tanto en Laravel Blade como en Ionic/Angular. Si una pantalla todavia no tiene este patron, debe agregarse al tocar cualquier flujo de escritura de esa pantalla.
+
+## Regla De Arquitectura Y Reuso
+
+Todo cambio nuevo debe seguir principios SOLID y favorecer procesos eficientes, modulos existentes y contratos reutilizables antes de agregar logica duplicada en controllers, componentes o vistas.
+
+Reglas obligatorias:
+
+- Revisar si ya existe un servicio, helper, metodo compartido, modelo, DTO o componente que resuelva parte del flujo.
+- Reusar o extender el modulo existente cuando mantenga responsabilidades claras y reduzca duplicacion.
+- Evitar que controllers Laravel, componentes Ionic o vistas Blade concentren reglas de negocio que pertenecen a servicios o modulos compartidos.
+- Si no existe un modulo adecuado y la implementacion empieza a requerir una nueva responsabilidad transversal, hacer una pausa antes de codificar y avisar al usuario para decidir si conviene separarla como modulo independiente.
+- No crear abstracciones nuevas solo por forma; crearlas cuando reduzcan complejidad real, eviten contratos paralelos o permitan validar una regla en un solo punto.
+

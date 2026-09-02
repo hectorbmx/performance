@@ -4,6 +4,8 @@ import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { PushNotifications, PermissionStatus, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { ApiService } from './services/api.service';
+import { Router } from '@angular/router';
+import { ToastController } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-root',
@@ -11,11 +13,42 @@ import { ApiService } from './services/api.service';
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent implements OnInit { // Añade implements OnInit por buena práctica
-  constructor(private api: ApiService) {}
+  private handlingMembershipExpired = false;
+
+  constructor(
+    private api: ApiService,
+    private router: Router,
+    private toastCtrl: ToastController,
+  ) {}
 
   ngOnInit() {
+    window.addEventListener('app:membership-expired', this.handleMembershipExpired);
     this.initPush();
   }
+
+  private handleMembershipExpired = async (event: Event) => {
+    if (this.handlingMembershipExpired || this.router.url === '/login') {
+      return;
+    }
+
+    this.handlingMembershipExpired = true;
+
+    const detail = (event as CustomEvent<{ message?: string }>).detail;
+    const toast = await this.toastCtrl.create({
+      message: detail?.message || 'Tu membresia vencio. Renueva para continuar.',
+      duration: 2600,
+      position: 'top',
+      color: 'warning',
+      buttons: [{ text: 'OK', role: 'cancel' }],
+    });
+
+    await toast.present();
+    await this.router.navigateByUrl('/subscription-history', { replaceUrl: true });
+
+    setTimeout(() => {
+      this.handlingMembershipExpired = false;
+    }, 800);
+  };
 
   async initPush() {
     try {

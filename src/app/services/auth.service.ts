@@ -53,6 +53,11 @@ export interface MeResponse {
   user: AppUserDTO;
   client: ClientDTO;
   membership?: any | null;
+  access?: {
+    access_state: string;
+    can_access_service: boolean;
+    message?: string | null;
+  };
   notifications?: AppNotificationDTO[];
 }
 
@@ -117,7 +122,12 @@ export class AuthService {
         throw { needsActivation: true, message };
       }
 
-      throw { message };
+      throw {
+        message,
+        status: err?.status,
+        code: err?.code,
+        access_state: err?.access_state,
+      };
     }
   }
 

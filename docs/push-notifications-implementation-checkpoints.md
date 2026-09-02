@@ -85,6 +85,23 @@ No mover toda la creacion de entrenamientos en esta fase. La extraccion completa
 
 ## Roadmap con Checkpoints
 
+### Fase 0: Barrido y punto de arranque
+
+Estado verificado:
+
+- `AppNotificationService` ya existe y guarda registros en `push_notifications`, pero todavia expone metodos separados para entrenamientos libres y asignados.
+- `Api/V1/Coach/TrainingController` ya dispara push al crear y actualizar, pero aun conserva resolucion de destinatarios dentro del controller.
+- `Coach/TrainingSessionController` crea, copia y actualiza entrenamientos desde Blade, pero no dispara push y contiene logica propia de asignaciones.
+- `PushTestController` envia directo por Firebase y usa `training_id`, por lo que no valida el contrato real de produccion.
+- `app.component.ts` registra push tokens, conserva `pending_push_token` y todavia usa un `alert()` temporal al recibir pushes en foreground.
+- `auth.service.ts` refresca `app/me` y persiste `notifications`, por lo que ya hay una entrada reusable para sincronizar la lista interna.
+- Las rutas moviles ya distinguen `/training-details/:assignmentId` y `/training-details/free/:sessionId`; el payload asignado todavia necesita resolver como llegar al `assignment_id`.
+
+Regla para empezar:
+
+- No agregar nuevas llamadas push directamente en controllers hasta centralizar contrato, destinatarios y payload en un modulo reusable.
+- Si el servicio actual queda mezclando demasiadas responsabilidades, pausar antes de codificar y decidir si se separa un modulo independiente para contrato/destinatarios/envio.
+
 ### Checkpoint 1: Contrato unico de notificacion
 
 Cambios:

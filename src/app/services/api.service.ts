@@ -47,6 +47,13 @@ export interface TrainingsIndexResponse {
   data: TrainingFeedItemDTO[];
 }
 
+export interface ApiError extends Error {
+  status?: number;
+  code?: string;
+  access_state?: string;
+  raw?: HttpErrorResponse;
+}
+
 export interface TrainingSectionDTO {
   id: number;
   order: number;
@@ -261,20 +268,32 @@ private async buildHeaders(
 
   return `${cleanBase}/${cleanPath}`;
 }
-  private normalizeError(err: unknown): Error {
+  private normalizeError(err: unknown): ApiError {
     if (err instanceof HttpErrorResponse) {
       const msg =
         err.error?.message ||
         (typeof err.error === 'string' ? err.error : null) ||
         `HTTP ${err.status}: ${err.statusText || 'Error'}`;
 
-      const e = new Error(msg);
-      (e as any).status = err.status;
-      (e as any).raw = err;
+      const e = new Error(msg) as ApiError;
+      e.status = err.status;
+      e.code = err.error?.code;
+      e.access_state = err.error?.access_state;
+      e.raw = err;
+
+      if (e.status === 403 && e.code === 'membership_expired' && !err.url?.includes('/app/login')) {
+        window.dispatchEvent(new CustomEvent('app:membership-expired', {
+          detail: {
+            message: e.message,
+            access_state: e.access_state,
+          },
+        }));
+      }
+
       return e;
     }
 
-    return err instanceof Error ? err : new Error('Error inesperado en la petición.');
+    return err instanceof Error ? err as ApiError : new Error('Error inesperado en la petición.') as ApiError;
   }
   postFormData<T>(path: string, formData: FormData, params?: Record<string, any>, headers?: Record<string, string>) {
   return this.request<T>('POST', path, { body: formData, params, headers, isFormData: true });
