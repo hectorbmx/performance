@@ -66,6 +66,7 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\EnsureAdminRole::class,
         'coach.subscription' => \App\Http\Middleware\EnsureCoachSubscriptionIsActive::class,
         'coach.api' => \App\Http\Middleware\EnsureCoachApiAccess::class,
+        'client.membership' => \App\Http\Middleware\EnsureClientMembershipIsActive::class,
 
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

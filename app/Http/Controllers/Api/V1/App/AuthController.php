@@ -12,9 +12,8 @@ use App\Models\TrainingMetric;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\UserDevice;
-use App\Models\ClientMembership;
-use Illuminate\Support\Carbon;
 use App\Services\AppNotificationService;
+use App\Services\ClientMembershipAccessService;
 
 class AuthController extends Controller
 {
@@ -81,7 +80,7 @@ class AuthController extends Controller
             'message' => 'Cuenta activada correctamente. Ya puedes iniciar sesión.'
         ]);
     }
-public function login(Request $request)
+public function login(Request $request, ClientMembershipAccessService $membershipAccess)
 {
     
     \Log::info('LOGIN HIT',[
@@ -125,77 +124,24 @@ public function login(Request $request)
         ], 422);
     }
 
-        // =========================================================
-    // ✅ VALIDAR MEMBRESÍA VIGENTE (ANTES DE CREAR TOKEN)
-    // Reglas:
-    // - status = active
-    // - starts_at <= hoy
-    // - y (ends_at is null OR ends_at >= hoy OR grace_until >= hoy)
-    // - (billing_status NO bloquea si hay gracia, como definiste)
-    // =========================================================
- $today = Carbon::today();
+    $access = $membershipAccess->forUserApp($userApp);
 
-    $validMembership = ClientMembership::query()
-        ->where('client_id', $userApp->client_id)
-        ->where('coach_id', $userApp->client->coach_id)
-        ->whereNull('deleted_at')
-        ->where('status', 'active')
-        ->whereDate('starts_at', '<=', $today)
-        ->where(function ($q) use ($today) {
-            $q->whereNull('ends_at')
-              ->orWhereDate('ends_at', '>=', $today)
-              ->orWhereDate('grace_until', '>=', $today);
-        })
-        // prioridad: la más "reciente relevante"
-        ->orderByRaw('CASE WHEN ends_at IS NULL THEN 1 ELSE 0 END') // si quieres priorizar "sin vencimiento"
-        ->orderByDesc('ends_at')
-        ->orderByDesc('starts_at')
-        ->first();
-
-    if (!$validMembership) {
-        // Para mensaje más claro: traemos la última membresía del cliente
-        $latest = ClientMembership::query()
-            ->where('client_id', $userApp->client_id)
-            ->where('coach_id', $userApp->client->coach_id)
-            ->whereNull('deleted_at')
-            ->orderByDesc('starts_at')
-            ->orderByDesc('ends_at')
-            ->first();
-
-        // Mensajes según situación
-        if (!$latest) {
-            $msg = 'No tienes una membresía activa o vigente. Contacta a tu coach.';
-        } elseif ($latest->status === 'canceled') {
-            $msg = 'Tu membresía fue cancelada. Contacta a tu coach.';
-        } elseif ($latest->status === 'expired') {
-            $msg = 'Tu membresía ha vencido. Renueva para continuar.';
-        } else {
-            // status puede ser active pero fuera de fechas/gracia
-            $graceOk = $latest->grace_until && Carbon::parse($latest->grace_until)->startOfDay()->gte($today);
-            if ($graceOk) {
-                // Esto sería raro porque la query válida debió atraparla, pero por seguridad:
-                $msg = 'Tu membresía está en periodo de gracia. Intenta nuevamente.';
-            } else {
-                $msg = 'No tienes una membresía vigente. Renueva para continuar.';
-            }
-        }
-
+    if (!$access->canAccessService) {
         return response()->json([
             'ok' => false,
-            'message' => $msg,
+            'code' => 'membership_expired',
+            'message' => $access->message,
+            'access_state' => $access->state,
         ], 403);
     }
+
+    $validMembership = $access->membership;
+
     // (Opcional) registrar last_login_at
     $userApp->forceFill(['last_login_at' => now()])->save();
 
     // Crear token Sanctum
     $token = $userApp->createToken('app')->plainTextToken;
-
-        // Para que la app muestre banner si está en gracia:
-    $isGrace = $validMembership->grace_until
-        && Carbon::parse($validMembership->grace_until)->startOfDay()->gte($today)
-        && $validMembership->ends_at
-        && Carbon::parse($validMembership->ends_at)->startOfDay()->lt($today);
 
   return response()->json([
     'ok' => true,
@@ -213,7 +159,7 @@ public function login(Request $request)
                 'starts_at'     => $validMembership->starts_at,
                 'ends_at'       => $validMembership->ends_at,
                 'grace_until'   => $validMembership->grace_until,
-                'access_state'  => $isGrace ? 'grace' : 'active',
+                'access_state'  => $access->state,
             ],
         ],
     'user' => [
@@ -281,7 +227,7 @@ public function logout(Request $request)
 //     ]);
 // }
 
-public function me(Request $request)
+public function me(Request $request, ClientMembershipAccessService $membershipAccess, AppNotificationService $notificationService)
 {
     $auth = $request->user();
 
@@ -298,81 +244,8 @@ public function me(Request $request)
         ->where('email', $auth->email)
         ->firstOrFail();
 
-    // ==========================
-    // ✅ Membership + Notifications
-    // ==========================
-    $today = Carbon::today();
-
-    $membership = null;
-    $notifications = [];
-
-    if ($userApp->client) {
-        $membership = ClientMembership::query()
-            ->with('coachClientPlan:id,name,price,currency,billing_cycle_days,reminder_days_before,grace_days')
-            ->where('client_id', $userApp->client_id)
-            ->where('coach_id', $userApp->client->coach_id)
-            ->whereNull('deleted_at')
-            ->where('status', 'active')
-            ->whereDate('starts_at', '<=', $today)
-            ->where(function ($q) use ($today) {
-                $q->whereNull('ends_at')
-                  ->orWhereDate('ends_at', '>=', $today)
-                  ->orWhereDate('grace_until', '>=', $today);
-            })
-            ->orderByDesc('ends_at')
-            ->orderByDesc('starts_at')
-            ->first();
-
-        if ($membership && in_array($membership->billing_status, ['unpaid', 'past_due'], true)) {
-            $notifications[] = [
-                'id'      => 'membership_payment_pending',
-                'type'    => 'warning',
-                'title'   => 'Pago pendiente',
-                'message' => 'Tu membresía no está pagada. Regulariza tu pago para evitar la suspensión del servicio.',
-                'action'  => 'open_membership',
-                'meta'    => [
-                    'billing_status' => $membership->billing_status,
-                    'ends_at'        => $membership->ends_at,
-                    'grace_until'    => $membership->grace_until,
-                ],
-            ];
-        }
-
-        if ($membership && $membership->ends_at) {
-            $endsAt = Carbon::parse($membership->ends_at)->startOfDay();
-            $reminderDays = (int) ($membership->reminder_days_before ?? $membership->coachClientPlan?->reminder_days_before ?? 0);
-            $daysLeft = $today->diffInDays($endsAt, false);
-
-            if ($daysLeft < 0) {
-                $notifications[] = [
-                    'id' => 'membership_expired',
-                    'type' => 'danger',
-                    'title' => 'Membresia vencida',
-                    'message' => 'Tu plan ya vencio. Renueva tu membresia para mantener el acceso.',
-                    'action' => 'open_membership',
-                    'meta' => [
-                        'ends_at' => $membership->ends_at,
-                        'grace_until' => $membership->grace_until,
-                    ],
-                ];
-            } elseif ($reminderDays > 0 && $daysLeft <= $reminderDays) {
-                $notifications[] = [
-                    'id' => 'membership_expiring',
-                    'type' => 'warning',
-                    'title' => 'Tu plan esta por vencer',
-                    'message' => "Tu membresia vence en {$daysLeft} dia(s). Puedes contratar tu siguiente plan desde Mis membresias.",
-                    'action' => 'open_membership',
-                    'meta' => [
-                        'ends_at' => $membership->ends_at,
-                        'days_left' => $daysLeft,
-                    ],
-                ];
-            }
-        }
-    }
-
-    $notificationService = app(AppNotificationService::class);
-    $membership = $notificationService->currentMembershipFor($userApp);
+    $access = $membershipAccess->forUserApp($userApp);
+    $membership = $access->membership;
     $notifications = $notificationService->forUserApp($userApp, $membership);
 
     return response()->json([
@@ -410,6 +283,7 @@ public function me(Request $request)
             'paid_at'        => optional($membership->paid_at)->toDateString(),
             'is_stripe'      => (bool) $membership->stripe_subscription_id,
         ] : null,
+        'access' => $access->toArray(),
 
         'notifications' => $notifications,
     ]);

@@ -109,6 +109,8 @@ Decision pendiente:
 
 ## Checkpoint 1: Servicio Reusable De Acceso
 
+Estado: completado.
+
 Cambios:
 
 - Crear `app/Services/ClientMembershipAccessService.php`.
@@ -132,6 +134,8 @@ Validacion minima:
 
 ## Checkpoint 2: Reusar El Servicio En Login Y Me
 
+Estado: completado.
+
 Cambios:
 
 - Reemplazar la query manual de `AuthController::login()` por el servicio.
@@ -153,6 +157,8 @@ Validacion minima:
 
 ## Checkpoint 3: Middleware De Acceso Operativo
 
+Estado: completado.
+
 Cambios:
 
 - Crear `app/Http/Middleware/EnsureClientMembershipIsActive.php`.
@@ -172,6 +178,8 @@ Validacion minima:
 - `php -l app/Http/Kernel.php`
 
 ## Checkpoint 4: Separar Rutas Permitidas Y Rutas Operativas
+
+Estado: completado.
 
 Cambios:
 
@@ -193,6 +201,8 @@ Validacion minima:
 - Request manual a `/api/v1/app/memberships` con token vencido debe responder `200`.
 
 ## Checkpoint 5: UX Movil Para Bloqueo
+
+Estado: completado.
 
 Cambios:
 

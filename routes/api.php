@@ -57,48 +57,48 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/app/logout', [AuthController::class, 'logout']);
         Route::get('/app/me', [AuthController::class, 'me']);
-        Route::get('/app/me/profile', [AuthController::class, 'meProfile'])->middleware('auth:sanctum');
         Route::get('/app/ping', fn () => response()->json(['ok' => true]));
         Route::post('resend-activation-code', [AuthController::class, 'resendActivationCode']);
-        Route::get('/app/trainings', [TrainingsController::class, 'index']);
-        Route::get('/app/training-assignments/{assignment}',[TrainingAssignmentsController::class, 'show']);
-        Route::post('/app/training-assignments/{assignment}/start',[TrainingAssignmentsController::class, 'start']);
-        Route::post('/app/training-assignments/{assignment}/complete',[TrainingAssignmentsController::class, 'complete']);
-        Route::post('/app/training-assignments/{assignment}/lifting-sets',[TrainingAssignmentsController::class, 'saveLiftingSet']);
-        Route::post('/app/training-sections/{section}/results',[TrainingSectionResultsController::class, 'store']);
-        Route::put('/app/training-sections/{section}/results', [TrainingSectionResultsController::class, 'update']);
-
-        Route::post('/app/training-assignments/{assignment}/sections/{section}/complete', [TrainingAssignmentsController::class, 'completeSection']);
-        
-        Route::get('/app/training-sessions/{session}', [TrainingSessionsController::class, 'show']);
-        Route::post('/app/training-sessions/{trainingSession}/start', [TrainingSessionsController::class, 'start']);
-
-
-        Route::patch('/app/me/profile', [AuthController::class, 'updateProfile']);
-        Route::patch('/app/me/health-profile', [AuthController::class, 'updateHealthProfile']);
-        Route::post('/app/me/body-records', [AuthController::class, 'storeBodyRecord']);
-        Route::post('/app/me/metric-records', [AuthController::class, 'storeMetricRecord']);
 
         Route::post ('/app/register-device', [AuthController::class, 'registerDevice']);
 
         //test de envio de notificaciones
         Route::post('/app/test/push',[PushTestController::class,'send']);
 
-
-        //obtiene la foto del atleta
-          Route::get('client/profile', [ProfileController::class, 'show']);
-        //actualiza la foto desde la app movil
-        Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
-
         Route::get('/app/memberships', [MembershipController::class, 'index']);
-        Route::get('/app/streak', [StreakController::class, 'show']);
         Route::post('/app/memberships/future', [MembershipController::class, 'storeFuture']);
-        Route::get('/app/health-metrics', [HealthMetricController::class, 'index']);
-        Route::post('/app/health-metrics/sync', [HealthMetricController::class, 'sync']);
 
-     
+        Route::middleware('client.membership')->group(function () {
+            Route::get('/app/me/profile', [AuthController::class, 'meProfile']);
+            Route::patch('/app/me/profile', [AuthController::class, 'updateProfile']);
+            Route::patch('/app/me/health-profile', [AuthController::class, 'updateHealthProfile']);
+            Route::post('/app/me/body-records', [AuthController::class, 'storeBodyRecord']);
+            Route::post('/app/me/metric-records', [AuthController::class, 'storeMetricRecord']);
 
-        Route::patch('/app/athlete/trainings/assignments/{id}/status', [TrainingsController::class, 'updateStatus']);
+            Route::get('/app/trainings', [TrainingsController::class, 'index']);
+            Route::get('/app/training-assignments/{assignment}',[TrainingAssignmentsController::class, 'show']);
+            Route::post('/app/training-assignments/{assignment}/start',[TrainingAssignmentsController::class, 'start']);
+            Route::post('/app/training-assignments/{assignment}/complete',[TrainingAssignmentsController::class, 'complete']);
+            Route::post('/app/training-assignments/{assignment}/lifting-sets',[TrainingAssignmentsController::class, 'saveLiftingSet']);
+            Route::post('/app/training-assignments/{assignment}/sections/{section}/complete', [TrainingAssignmentsController::class, 'completeSection']);
+
+            Route::post('/app/training-sections/{section}/results',[TrainingSectionResultsController::class, 'store']);
+            Route::put('/app/training-sections/{section}/results', [TrainingSectionResultsController::class, 'update']);
+
+            Route::get('/app/training-sessions/{session}', [TrainingSessionsController::class, 'show']);
+            Route::post('/app/training-sessions/{trainingSession}/start', [TrainingSessionsController::class, 'start']);
+
+            //obtiene la foto del atleta
+            Route::get('client/profile', [ProfileController::class, 'show']);
+            //actualiza la foto desde la app movil
+            Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
+
+            Route::get('/app/streak', [StreakController::class, 'show']);
+            Route::get('/app/health-metrics', [HealthMetricController::class, 'index']);
+            Route::post('/app/health-metrics/sync', [HealthMetricController::class, 'sync']);
+
+            Route::patch('/app/athlete/trainings/assignments/{id}/status', [TrainingsController::class, 'updateStatus']);
+        });
     });
 
     Route::prefix('coach')->group(function () {
