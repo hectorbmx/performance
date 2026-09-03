@@ -86,6 +86,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/app/training-sections/{section}/results', [TrainingSectionResultsController::class, 'update']);
 
             Route::get('/app/training-sessions/{session}', [TrainingSessionsController::class, 'show']);
+            Route::get('/app/training-sessions/{trainingSession}/assignment', [TrainingSessionsController::class, 'resolveAssignment']);
             Route::post('/app/training-sessions/{trainingSession}/start', [TrainingSessionsController::class, 'start']);
 
             //obtiene la foto del atleta

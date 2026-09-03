@@ -7,6 +7,7 @@ use App\Models\TrainingSession;
 use App\Models\TrainingAssignment;
 use App\Models\TrainingSectionExerciseBlock;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class TrainingSessionsController extends Controller
@@ -185,4 +186,91 @@ class TrainingSessionsController extends Controller
                 ],
             ]);
         }
+
+    public function resolveAssignment(Request $request, TrainingSession $trainingSession)
+    {
+        $user = $request->user();
+        $clientId = $user->client_id ?? null;
+
+        if (!$clientId) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Cliente no identificado.',
+            ], 422);
+        }
+
+        if (($trainingSession->visibility ?? null) !== 'assigned') {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Este entrenamiento no es asignado.',
+            ], 422);
+        }
+
+        if (!empty($trainingSession->deleted_at)) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Entrenamiento no disponible.',
+            ], 404);
+        }
+
+        $data = $request->validate([
+            'scheduled_for' => ['nullable', 'date'],
+        ]);
+
+        $scheduledFor = !empty($data['scheduled_for'])
+            ? \Carbon\Carbon::parse($data['scheduled_for'])->toDateString()
+            : null;
+
+        $assignment = TrainingAssignment::query()
+            ->where('client_id', $clientId)
+            ->where('training_session_id', $trainingSession->id)
+            ->when($scheduledFor, fn ($query) => $query->whereDate('scheduled_for', $scheduledFor))
+            ->orderByDesc('scheduled_for')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$assignment) {
+            $groupIds = DB::table('client_group')
+                ->where('client_id', $clientId)
+                ->pluck('group_id');
+
+            $groupAssignment = DB::table('group_training_assignments')
+                ->where('training_session_id', $trainingSession->id)
+                ->whereIn('group_id', $groupIds)
+                ->when($scheduledFor, fn ($query) => $query->whereDate('scheduled_for', $scheduledFor))
+                ->orderByDesc('scheduled_for')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($groupAssignment) {
+                $assignment = TrainingAssignment::query()->firstOrCreate(
+                    [
+                        'client_id' => $clientId,
+                        'training_session_id' => $trainingSession->id,
+                        'scheduled_for' => $groupAssignment->scheduled_for,
+                    ],
+                    [
+                        'status' => 'scheduled',
+                    ]
+                );
+            }
+        }
+
+        if (!$assignment) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'No se encontro una asignacion para este atleta.',
+            ], 404);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'assignment_id' => (int) $assignment->id,
+                'training_session_id' => (int) $trainingSession->id,
+                'scheduled_for' => optional($assignment->scheduled_for)->format('Y-m-d'),
+                'status' => $assignment->status,
+            ],
+        ]);
+    }
 }

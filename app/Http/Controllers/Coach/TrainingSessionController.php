@@ -17,6 +17,7 @@ use App\Models\TrainingTypeCatalog;
 use App\Models\LibraryVideo;
 use Illuminate\Validation\Rule;
 use App\Enums\TrainingSectionResultType;
+use App\Services\AppNotificationService;
 
 class TrainingSessionController extends Controller
 {
@@ -255,7 +256,7 @@ return view('coach.trainings.create', compact('date','types','goals','clients','
 //             ->with('success', 'Entrenamiento creado correctamente.');
 //     });
 // }
-public function store(Request $request)
+public function store(Request $request, AppNotificationService $notifications)
 {
     $coachId = auth()->id();
 
@@ -395,7 +396,7 @@ foreach (($data['sections'] ?? []) as $idx => $s) {
             ->withInput();
     }
 
-    return DB::transaction(function () use ($data, $coachId, $request, $clientIds, $groupIds, $returnClient) {
+    $training = DB::transaction(function () use ($data, $coachId, $request, $clientIds, $groupIds) {
 
         $coverPath = null;
         if ($request->hasFile('cover_image')) {
@@ -509,20 +510,24 @@ if ($training->visibility === 'assigned') {
     $training->assignments()->delete();
     \App\Models\GroupTrainingAssignment::where('training_session_id', $training->id)->delete();
 }
-        if ($returnClient) {
-            return redirect()
-                ->route('coach.clients.trainings.index', [
-                    'client' => $returnClient->id,
-                    'view' => 'calendar',
-                    'month' => Carbon::parse($training->scheduled_at)->format('Y-m'),
-                ])
-                ->with('success', 'Entrenamiento creado correctamente.');
-        }
-
-        return redirect()
-            ->route('coach.trainings.index')
-            ->with('success', 'Entrenamiento creado correctamente.');
+        return $training;
     });
+
+    $notifications->notifyTrainingCreated($training, $coachId, $clientIds, $groupIds);
+
+    if ($returnClient) {
+        return redirect()
+            ->route('coach.clients.trainings.index', [
+                'client' => $returnClient->id,
+                'view' => 'calendar',
+                'month' => Carbon::parse($training->scheduled_at)->format('Y-m'),
+            ])
+            ->with('success', 'Entrenamiento creado correctamente.');
+    }
+
+    return redirect()
+        ->route('coach.trainings.index')
+        ->with('success', 'Entrenamiento creado correctamente.');
 }
 
 
@@ -826,10 +831,6 @@ public function update(Request $request, TrainingSession $training)
                 ->pluck('id')
                 ->all();
 
-            $training->assignedClients()->sync(
-                collect($selectedClientIds)->mapWithKeys(fn($id) => [$id => ['status' => 'scheduled']])->all()
-            );
-
             // sync groups via group_training_assignments
             $rawGroupIds = $request->input('assigned_groups', []);
 
@@ -837,12 +838,6 @@ public function update(Request $request, TrainingSession $training)
                 ->whereIn('id', $rawGroupIds)
                 ->pluck('id')
                 ->all();
-            \DB::table('training_assignments')
-                ->where('training_session_id', $training->id)
-                ->update(['scheduled_for' => $scheduledFor]);
-
-
-            $scheduledFor = \Carbon\Carbon::parse($data['scheduled_at'])->toDateString();
 
             $training->assignedClients()->sync(
                     collect($selectedClientIds)->mapWithKeys(fn($id) => [

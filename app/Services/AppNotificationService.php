@@ -52,54 +52,29 @@ class AppNotificationService
 
     public function notifyTrainingAssigned(array $clientIds, TrainingSession $training): void
     {
-        $userApps = UserApp::query()
-            ->whereIn('client_id', collect($clientIds)->unique()->values())
-            ->where('is_active', true)
-            ->get();
-
-        foreach ($userApps as $userApp) {
-            $this->sendToUserApp(
-                $userApp,
-                'training_assigned',
-                'Nuevo entrenamiento para ti',
-                'Tu coach agrego un nuevo entrenamiento: ' . $training->title,
-                [
-                    'action' => 'open_training',
-                    'training_session_id' => $training->id,
-                    'scheduled_for' => optional($training->scheduled_at)->toDateString(),
-                    'source' => 'assigned',
-                ]
-            );
-        }
+        $this->sendTrainingCreatedNotifications($training, $this->uniqueIntegerIds($clientIds), 'assigned');
     }
 
     public function notifyFreeTrainingCreated(int $coachId, TrainingSession $training): void
     {
-        $clientIds = Client::query()
-            ->where('coach_id', $coachId)
-            ->where('is_active', true)
-            ->pluck('id')
-            ->all();
+        $this->notifyTrainingCreated($training, $coachId);
+    }
 
-        $userApps = UserApp::query()
-            ->whereIn('client_id', $clientIds)
-            ->where('is_active', true)
-            ->get();
+    public function notifyTrainingCreated(TrainingSession $training, int $coachId, array $clientIds = [], array $groupIds = []): void
+    {
+        $recipientClientIds = $this->trainingRecipientClientIds($training, $coachId, $clientIds, $groupIds);
+        $source = $training->visibility === 'free' ? 'free' : 'assigned';
 
-        foreach ($userApps as $userApp) {
-            $this->sendToUserApp(
-                $userApp,
-                'training_free_created',
-                'Nuevo entrenamiento libre',
-                'Agregaron un nuevo entrenamiento libre: ' . $training->title,
-                [
-                    'action' => 'open_training',
-                    'training_session_id' => $training->id,
-                    'scheduled_for' => optional($training->scheduled_at)->toDateString(),
-                    'source' => 'free',
-                ]
-            );
+        $this->sendTrainingCreatedNotifications($training, $recipientClientIds, $source);
+    }
+
+    public function trainingRecipientClientIds(TrainingSession $training, int $coachId, array $clientIds = [], array $groupIds = []): array
+    {
+        if ($training->visibility === 'free') {
+            return $this->activeCoachClientIds($coachId);
         }
+
+        return $this->assignedTrainingClientIds($coachId, $clientIds, $groupIds);
     }
 
     public function sendToUserApp(UserApp $userApp, string $type, string $title, string $body, array $data = []): PushNotification
@@ -215,6 +190,117 @@ class AppNotificationService
         }
 
         return $notifications;
+    }
+
+    private function sendTrainingCreatedNotifications(TrainingSession $training, array $clientIds, string $source): void
+    {
+        $clientIds = $this->uniqueIntegerIds($clientIds);
+
+        if (empty($clientIds)) {
+            return;
+        }
+
+        $type = $source === 'free' ? 'training_free_created' : 'training_assigned';
+        $title = $source === 'free' ? 'Nuevo entrenamiento libre' : 'Nuevo entrenamiento para ti';
+        $body = $source === 'free'
+            ? 'Agregaron un nuevo entrenamiento libre: ' . $training->title
+            : 'Tu coach agrego un nuevo entrenamiento: ' . $training->title;
+        $payload = $this->trainingNotificationPayload($training, $source);
+
+        foreach ($this->activeUserAppsForClients($clientIds) as $userApp) {
+            $this->sendToUserApp($userApp, $type, $title, $body, $payload);
+        }
+    }
+
+    private function trainingNotificationPayload(TrainingSession $training, string $source): array
+    {
+        return [
+            'action' => 'open_training',
+            'training_session_id' => $training->id,
+            'scheduled_for' => optional($training->scheduled_at)->toDateString(),
+            'source' => $source,
+        ];
+    }
+
+    private function activeCoachClientIds(int $coachId): array
+    {
+        return Client::query()
+            ->where('coach_id', $coachId)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function assignedTrainingClientIds(int $coachId, array $clientIds = [], array $groupIds = []): array
+    {
+        $directClientIds = $this->activeCoachClientIdsByIds($coachId, $clientIds);
+        $groupClientIds = $this->activeCoachClientIdsForGroups($coachId, $groupIds);
+
+        return $this->uniqueIntegerIds(array_merge($directClientIds, $groupClientIds));
+    }
+
+    private function activeCoachClientIdsByIds(int $coachId, array $clientIds): array
+    {
+        $clientIds = $this->uniqueIntegerIds($clientIds);
+
+        if (empty($clientIds)) {
+            return [];
+        }
+
+        return Client::query()
+            ->where('coach_id', $coachId)
+            ->where('is_active', true)
+            ->whereIn('id', $clientIds)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function activeCoachClientIdsForGroups(int $coachId, array $groupIds): array
+    {
+        $groupIds = $this->uniqueIntegerIds($groupIds);
+
+        if (empty($groupIds)) {
+            return [];
+        }
+
+        return DB::table('client_group')
+            ->join('clients', 'clients.id', '=', 'client_group.client_id')
+            ->whereIn('client_group.group_id', $groupIds)
+            ->where('clients.coach_id', $coachId)
+            ->where('clients.is_active', true)
+            ->pluck('clients.id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function activeUserAppsForClients(array $clientIds)
+    {
+        $clientIds = $this->uniqueIntegerIds($clientIds);
+
+        if (empty($clientIds)) {
+            return collect();
+        }
+
+        return UserApp::query()
+            ->whereIn('client_id', $clientIds)
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get()
+            ->unique('client_id')
+            ->values();
+    }
+
+    private function uniqueIntegerIds(array $ids): array
+    {
+        return collect($ids)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function storedNotifications(UserApp $userApp): array

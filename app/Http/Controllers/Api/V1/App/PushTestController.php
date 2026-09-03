@@ -3,83 +3,51 @@
 namespace App\Http\Controllers\Api\V1\App;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserApp;
+use App\Services\AppNotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Kreait\Firebase\Messaging\CloudMessage;
-use Kreait\Firebase\Messaging\Notification;
+use Illuminate\Validation\Rule;
 
 class PushTestController extends Controller
 {
-    public function send(Request $request)
+    public function send(Request $request, AppNotificationService $notifications)
     {
-        // 1. Validación de entrada
         $data = $request->validate([
-            'user_id'     => ['required', 'integer'],
-            'title'       => ['nullable', 'string', 'max:120'],
-            'body'        => ['nullable', 'string', 'max:250'],
-            'type'        => ['required', 'string', 'max:60'],
-            'training_id' => ['nullable', 'integer'],
+            'user_id' => ['required', 'integer', 'exists:user_apps,id'],
+            'title' => ['nullable', 'string', 'max:120'],
+            'body' => ['nullable', 'string', 'max:250'],
+            'type' => ['nullable', 'string', 'max:60'],
+            'training_session_id' => ['nullable', 'integer', 'exists:training_sessions,id'],
+            'training_id' => ['nullable', 'integer', 'exists:training_sessions,id'],
+            'source' => ['nullable', Rule::in(['free', 'assigned'])],
         ]);
 
-        $title = $data['title'] ?? 'Entrenamiento asignado';
-        $body  = $data['body']  ?? 'Tienes un entrenamiento hoy';
+        $userApp = UserApp::query()->findOrFail((int) $data['user_id']);
+        $trainingSessionId = $data['training_session_id'] ?? $data['training_id'] ?? null;
+        $source = $data['source'] ?? 'assigned';
+        $type = $data['type'] ?? ($source === 'free' ? 'training_free_created' : 'training_assigned');
+        $title = $data['title'] ?? ($source === 'free' ? 'Nuevo entrenamiento libre' : 'Nuevo entrenamiento para ti');
+        $body = $data['body'] ?? ($source === 'free' ? 'Tienes un nuevo entrenamiento libre.' : 'Tienes un nuevo entrenamiento asignado.');
 
-        // 2. Obtener tokens activos del usuario
-        $tokens = DB::table('user_devices')
-            ->where('user_id', $data['user_id'])
-            ->where('is_enabled', 1)
-            ->whereNotNull('token')
-            ->pluck('token')
-            ->filter()
-            ->values()
-            ->all();
+        $notification = $notifications->sendToUserApp($userApp, $type, $title, $body, [
+            'action' => 'open_training',
+            'training_session_id' => $trainingSessionId,
+            'source' => $source,
+        ]);
 
-        if (empty($tokens)) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'No hay dispositivos activos para este usuario',
-            ], 422);
-        }
-
-        // 3. Construir el mensaje
-        $message = CloudMessage::new()
-            ->withNotification(Notification::create($title, $body))
-            ->withData([
-                'type' => $data['type'],
-                'training_id' => isset($data['training_id']) ? (string)$data['training_id'] : '',
-            ]);
-
-        /** @var \Kreait\Firebase\Messaging $messaging */
-        $messaging = app('firebase.messaging');
-
-        // 4. Envío Multicast y obtención de reporte
-        try {
-            $report = $messaging->sendMulticast($message, $tokens);
-            
-            $failures = $report->failures(); // Objeto SendReports (colección de objetos)
-
-            return response()->json([
-                'ok' => true,
-                'message' => 'Proceso de envío finalizado',
-                'summary' => [
-                    'requested_tokens' => count($tokens),
-                    'successes' => $report->successes()->count(),
-                    'failures'  => $failures->count(),
-                ],
-                'errors' => collect($failures->getItems())->map(function ($failure) {
-                    /** @var \Kreait\Firebase\Messaging\SendReport $failure */
-                    return [
-                        'token' => $failure->target()->value(),
-                        'error' => $failure->error()->getMessage(),
-                    ];
-                })->values(),
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'Error crítico en el envío: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'ok' => true,
+            'message' => 'Notificacion de prueba procesada con el contrato real.',
+            'data' => [
+                'id' => $notification->id,
+                'user_id' => $notification->user_id,
+                'type' => $notification->type,
+                'title' => $notification->title,
+                'status' => $notification->status,
+                'provider' => $notification->provider,
+                'payload' => $notification->data,
+                'error' => $notification->error,
+            ],
+        ]);
     }
 }
