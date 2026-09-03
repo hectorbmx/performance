@@ -1,31 +1,18 @@
-# Handoff Mac: Push Notifications iOS / FCM
+# Handoff Mac/Windows: Push Notifications iOS / FCM
 
 Fecha: 2026-09-03
 
-## Contexto
+## Resumen Ejecutivo
 
-Backend Laravel en produccion ya puede hablar con Firebase. El error inicial de Firebase era:
+El flujo iOS -> backend -> FCM ya quedo vivo para el usuario real `samuel_as13@hotmail.com`.
 
-```text
-Unable to determine the Firebase Project ID
-```
+Antes, el backend Laravel ya podia hablar con Firebase, pero iOS no generaba un FCM registration token valido. La app solo usaba `@capacitor/push-notifications`, que en iOS trabaja con APNs y no garantizaba el token FCM requerido por Kreait/Laravel.
 
-Ese problema quedo corregido al subir el service account JSON al contenedor y agregar al `.env`:
+Ahora la app movil usa `@capacitor-firebase/messaging`, genera un FCM token real, lo registra en `/api/v1/app/register-device`, y produccion ya guardo una fila `ios` en `user_devices`.
 
-```env
-FIREBASE_CREDENTIALS=storage/app/firebase/firebase-service-account.json
-FIREBASE_PROJECT_ID=performance-26b25
-```
+El envio FCM real tambien llego al iPhone como push del sistema.
 
-Despues de `php artisan config:clear` y `php artisan cache:clear`, una prueba con token fake ya cambio al error esperado:
-
-```text
-The registration token is not a valid FCM registration token
-```
-
-Eso confirma que el backend ya llega a FCM. El bloqueo actual esta en iOS: el usuario real `samuel_as13@hotmail.com` no tiene registros en `user_devices`.
-
-## Evidencia Actual
+## Estado Validado
 
 Usuario de prueba en produccion:
 
@@ -35,26 +22,36 @@ user_apps.id: 5
 client_id: 5
 ```
 
-Consulta ejecutada en produccion:
-
-```bash
-php artisan tinker --execute '$u = \App\Models\UserApp::where("email", "samuel_as13@hotmail.com")->first(); $rows = $u ? DB::table("user_devices")->where("user_id", $u->id)->orderByDesc("id")->get(["id","user_id","platform","token","is_enabled","last_seen_at"]) : collect(); echo json_encode(["user" => $u ? $u->only(["id","client_id","email"]) : null, "devices" => $rows], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);'
-```
-
-Resultado:
+Device guardado en produccion:
 
 ```json
 {
-  "user": {
-    "id": 5,
-    "client_id": 5,
-    "email": "samuel_as13@hotmail.com"
-  },
-  "devices": []
+  "id": 2,
+  "user_id": 5,
+  "platform": "ios",
+  "token": "dyevUZqGkEEHv_RCSMEDuZ:APA91bE5OPfmyHmWZ8wFm7Vl5YuehyeC4G468ujOv1rnvn_ClpMec-vSvfo5abGyLVThf3wWAf86OnommvGKwYBMDpZ25f_tOougLdO5e92g4eMPGsUWnZE",
+  "is_enabled": 1,
+  "last_seen_at": "2026-09-03 04:58:15"
 }
 ```
 
-Tambien se vio en la app una notificacion interna tipo "Nuevo entrenamiento para ti", pero no fue push real del sistema. Esa notificacion viene de `app/me` y se muestra en la campana/lista interna.
+Log iOS validado:
+
+```text
+FCM registration token >>> dyevUZqGkEEHv_RCSMEDuZ:APA91bE5...
+```
+
+Envio real validado:
+
+```text
+El push FCM llego al iPhone como notificacion del sistema.
+```
+
+Notas:
+
+- Que el push llegue no implica que la campana interna se actualice automaticamente.
+- La campana interna se alimenta de `AuthService.notifications()`, que viene de `GET /api/v1/app/me`.
+- Si la app esta en background/cerrada, iOS no siempre ejecuta listeners JS hasta que el usuario abre o toca la notificacion.
 
 ## Estado Firebase / Apple
 
@@ -87,112 +84,123 @@ Team ID: 44583X3BRM
 
 La APNs Auth Key `.p8` fue subida en Firebase para produccion y desarrollo.
 
-## Problema Tecnico Probable
+## Cambios Hechos En App iOS/Ionic
 
-La app Ionic tiene `@capacitor/push-notifications`, pero no hay evidencia de configuracion nativa de Firebase Messaging en iOS.
-
-Archivos revisados:
+Dependencias:
 
 ```text
-app/src/app/app.component.ts
-app/src/app/services/auth.service.ts
-app/ios/App/App/AppDelegate.swift
-app/package.json
+Agregado: @capacitor-firebase/messaging ^8.5.1
+Agregado: firebase ^12.18.0
+Actualizado: @capacitor/cli ^8.5.1
+Removido: @capacitor/push-notifications
 ```
 
-Hallazgos:
-
-- `app.component.ts` llama `PushNotifications.checkPermissions()`, `requestPermissions()` y `PushNotifications.register()`.
-- El listener `registration` llama `registerPushToken(token.value)` y postea a `/api/v1/app/register-device` si ya hay auth token.
-- `AuthService.login()` reintenta `registerPendingPushToken()` despues de login de atleta.
-- `AppDelegate.swift` no importa ni configura Firebase.
-- `package.json` no muestra un plugin especifico de Firebase Messaging, solo `@capacitor/push-notifications`.
-
-En iOS, `@capacitor/push-notifications` puede entregar token APNs, pero el backend Laravel esta enviando por FCM/Kreait. Para ese contrato necesitamos guardar un FCM registration token valido o cambiar toda la entrega a APNs directo. La opcion recomendada para mantener lo que ya existe en backend es agregar soporte real de Firebase Messaging en iOS.
-
-## Regla De Implementacion
-
-No cambiar el contrato del backend ahora. Mantener:
+Motivo de actualizar `@capacitor/cli`:
 
 ```text
-user_devices.token = FCM registration token
-AppNotificationService = fuente unica de envio FCM
-push_notifications = historial unico
+El proyecto usa Capacitor 8 con SPM.
+@capacitor-firebase/messaging requiere packageOptions symlink para evitar colision de identidad SPM.
+Ese soporte requiere Capacitor CLI 8.4.0+.
 ```
 
-No borrar registros de produccion ni limpiar tablas durante pruebas.
-
-## Paso 1: Verificar Configuracion Local iOS
-
-En Mac, desde la raiz del repo Ionic:
-
-```bash
-cd /ruta/al/coachSaaS/app
-git status --short
-npx cap sync ios
-npx cap open ios
-```
-
-En Xcode confirmar:
-
-- Target `App`.
-- `Signing & Capabilities`.
-- Bundle Identifier exacto:
+Archivos relevantes:
 
 ```text
-com.performanceCoachBarret.app
+package.json
+package-lock.json
+capacitor.config.ts
+src/app/app.component.ts
+src/app/services/auth.service.ts
+src/app/services/push-registration.service.ts
+ios/App/App/AppDelegate.swift
+ios/App/CapApp-SPM/Package.swift
+ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 ```
 
-- Capability `Push Notifications` presente.
-- Capability `Background Modes` presente.
-- En `Background Modes`, `Remote notifications` marcado.
-- `GoogleService-Info.plist` existe dentro de `ios/App/App/` y esta agregado al target `App`.
+### capacitor.config.ts
 
-## Paso 2: Revisar Logs Antes De Cambiar Codigo
-
-Ejecutar en Xcode con el usuario:
+Se alineo:
 
 ```text
-samuel_as13@hotmail.com
+appId = com.performanceCoachBarret.app
 ```
 
-Buscar en consola:
+Se agrego config para Firebase Messaging:
+
+```ts
+FirebaseMessaging: {
+  presentationOptions: ['alert', 'badge', 'sound'],
+}
+```
+
+Se agrego configuracion SPM:
+
+```ts
+experimental: {
+  ios: {
+    spm: {
+      packageOptions: {
+        '@capacitor-firebase/messaging': {
+          symlink: true,
+        },
+      },
+    },
+  },
+}
+```
+
+### AppDelegate.swift
+
+Se agrego:
+
+```swift
+import FirebaseCore
+```
+
+En `didFinishLaunchingWithOptions`:
+
+```swift
+FirebaseApp.configure()
+```
+
+Tambien se agregaron los handlers requeridos por el plugin:
+
+```swift
+didRegisterForRemoteNotificationsWithDeviceToken
+didFailToRegisterForRemoteNotificationsWithError
+didReceiveRemoteNotification fetchCompletionHandler
+```
+
+Esto corrigio el error:
 
 ```text
-FCM TOKEN
-registrationError
-No se pudo registrar el token push
-Push init error
+The default Firebase app has not yet been configured. Add FirebaseApp.configure()
 ```
 
-Interpretacion:
+### PushRegistrationService
 
-- Si aparece `registrationError`, copiar el error exacto.
-- Si aparece token pero no se crea `user_devices`, revisar respuesta HTTP del POST `app/register-device`.
-- Si no aparece token, falta configuracion nativa de Firebase Messaging o el listener/register esta mal secuenciado.
-
-## Paso 3: Fix Recomendado En Ionic/iOS
-
-Objetivo: que iOS genere un FCM token real y luego reutilizar el endpoint existente `/api/v1/app/register-device`.
-
-Recomendacion de bajo acoplamiento:
-
-1. Crear un servicio Ionic dedicado, por ejemplo:
+Se creo:
 
 ```text
 src/app/services/push-registration.service.ts
 ```
 
-Responsabilidades:
+Responsabilidades actuales:
 
 - Instalar listeners una sola vez.
-- Pedir permisos.
-- Registrar push.
-- Guardar token pendiente en Preferences.
-- Reintentar despues de login.
-- Postear a `app/register-device`.
+- Pedir permisos con `FirebaseMessaging.checkPermissions()` / `requestPermissions()`.
+- Obtener token FCM real con `FirebaseMessaging.getToken()`.
+- Escuchar `tokenReceived`.
+- Guardar `pending_push_token` en Preferences.
+- Registrar token en `app/register-device` si ya hay auth token.
+- Reintentar registro despues del login de atleta.
+- Refrescar `app/me` al recibir push en foreground.
+- Mostrar toast al recibir push en foreground.
+- Manejar toque de push con `notificationActionPerformed`.
 
-2. Dejar `AppComponent` delgado:
+### AppComponent
+
+Se adelgazo:
 
 ```ts
 ngOnInit() {
@@ -201,126 +209,301 @@ ngOnInit() {
 }
 ```
 
-3. Dejar `AuthService.login()` llamando un metodo publico tipo:
+### AuthService
+
+Despues del login de atleta ya no duplica el POST del push token.
+
+Ahora dispara:
 
 ```ts
-await this.pushRegistration.registerPendingToken();
+window.dispatchEvent(new Event('app:client-login'));
 ```
 
-Si se evita inyectar `PushRegistrationService` en `AuthService` para no crear dependencia circular, usar un evento de app o un metodo llamado desde la pagina de login despues de login exitoso.
-
-4. Mover los listeners antes de `PushNotifications.register()`.
-
-Orden recomendado:
+`PushRegistrationService` escucha ese evento y ejecuta:
 
 ```ts
-await PushNotifications.removeAllListeners();
-
-PushNotifications.addListener('registration', token => {
-  // guardar y registrar
-});
-
-PushNotifications.addListener('registrationError', error => {
-  console.error('Push registration error', error);
-});
-
-PushNotifications.addListener('pushNotificationReceived', ...);
-PushNotifications.addListener('pushNotificationActionPerformed', ...);
-
-await PushNotifications.register();
+registerPendingToken()
 ```
 
-5. Agregar Firebase Messaging nativo para iOS.
+## Comandos Ejecutados / Requeridos En Mac
 
-Como este proyecto usa Capacitor 8 con SPM (`ios/App/CapApp-SPM/Package.swift`), revisar compatibilidad antes de elegir camino:
+Instalacion:
 
-- Opcion A: usar un plugin Capacitor Firebase Messaging compatible con Capacitor 8.
-- Opcion B: integrar `FirebaseMessaging` en iOS nativo y reenviar el FCM token hacia JS.
+```bash
+npm install @capacitor-firebase/messaging firebase @capacitor/cli@^8.4.0
+```
 
-Preferencia: plugin mantenido y compatible con Capacitor 8 para no mantener mucho codigo Swift propio.
+Remocion del plugin anterior:
 
-No instalar Firebase SDK manualmente desde la pantalla de Firebase si el proyecto ya resuelve dependencias por Capacitor/SPM sin decidir antes el camino. Evitar mezclar SPM manual con la estrategia de Capacitor si no es necesario.
+```bash
+npm uninstall @capacitor/push-notifications
+```
 
-## Paso 4: Validacion Contra Produccion
+Sincronizacion iOS:
 
-Despues de instalar/configurar el soporte FCM iOS y recompilar:
+```bash
+npx cap sync ios
+```
 
-1. Abrir app desde Xcode.
-2. Aceptar permisos de notificaciones.
-3. Iniciar sesion con:
+Verificacion TypeScript:
+
+```bash
+npx tsc --noEmit
+```
+
+Resultado:
 
 ```text
-samuel_as13@hotmail.com
+OK
 ```
 
-4. En produccion, dentro del contenedor Laravel `/var/www`, revisar devices:
+Nota importante:
+
+En el entorno de Codex, `npm run build` cae con codigo `134` durante `ng build` sin mostrar error de Angular. En terminal local del Mac debe ejecutarse:
+
+```bash
+npm run build
+npx cap copy ios
+```
+
+Luego en Xcode:
+
+```text
+Product > Clean Build Folder
+Run en iPhone real
+```
+
+## Comandos De Validacion Backend
+
+Revisar devices de Samuel en produccion, dentro del contenedor Laravel `/var/www`:
 
 ```bash
 php artisan tinker --execute '$u = \App\Models\UserApp::where("email", "samuel_as13@hotmail.com")->first(); $rows = $u ? DB::table("user_devices")->where("user_id", $u->id)->orderByDesc("id")->get(["id","user_id","platform","token","is_enabled","last_seen_at"]) : collect(); echo json_encode(["user" => $u ? $u->only(["id","client_id","email"]) : null, "devices" => $rows], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);'
 ```
 
-Esperado:
-
-```text
-devices contiene al menos 1 fila ios con token largo real
-```
-
-5. Enviar prueba FCM al usuario real:
+Enviar prueba real:
 
 ```bash
 php artisan tinker --execute '$u = \App\Models\UserApp::where("email", "samuel_as13@hotmail.com")->firstOrFail(); $n = app(\App\Services\AppNotificationService::class)->sendToUserApp($u, "training_assigned", "Prueba FCM real", "Probando envio real a iOS", ["action" => "open_training", "training_session_id" => 1, "source" => "assigned"]); echo json_encode($n->fresh()->only(["id","user_id","type","status","provider","data","error"]), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);'
 ```
 
-Esperado:
-
-- `status=sent`, si el token es FCM valido y APNs esta correcto.
-- Si falla, guardar el error exacto. No borrar la notificacion.
-
-## Pendiente Paralelo: Campana Interna
-
-La campana interna muestra notificaciones desde `AuthService.notifications()`, pero el HTML actual:
+Resultado validado manualmente:
 
 ```text
-app/src/app/tab1/tab1.page.html
+El push llego al iPhone.
 ```
 
-renderiza:
+## Estado Actual De La Campana Interna
+
+La campana interna muestra notificaciones desde:
+
+```text
+AuthService.notifications()
+```
+
+Ese estado viene de:
+
+```text
+GET /api/v1/app/me
+```
+
+HTML actual:
+
+```text
+src/app/tab1/tab1.page.html
+```
+
+Renderiza:
 
 ```html
 <ion-item *ngFor="let n of notifications()" class="notif-item">
 ```
 
-No tiene `(click)`, por eso tocar "Nuevo entrenamiento para ti" no navega.
+Todavia no tiene `(click)`, por eso tocar "Nuevo entrenamiento para ti" dentro de la campana no navega.
 
-Fix recomendado despues de estabilizar FCM:
+## Checkpoints Pendientes
 
-- Crear/reusar un servicio de navegacion de notificaciones que entienda `action=open_training`, `source`, `training_session_id`.
-- Usarlo tanto en `pushNotificationActionPerformed` como en la campana interna.
-- Para `source=assigned`, resolver `assignment_id` con:
+### Checkpoint App 1: Navegacion al tocar push
+
+Estado:
+
+```text
+Implementado en codigo, pendiente QA manual con Xcode/iPhone.
+```
+
+Cambios ya hechos:
+
+- `PushRegistrationService` escucha `notificationActionPerformed`.
+- Normaliza `event.notification.data`.
+- Si `data.action != open_training`, navega a `/tabs/tab1`.
+- Si viene `assignment_id` y `source != free`, navega directo a `/training-details/{assignment_id}`.
+- Si `source=free`, navega a `/training-details/free/{training_session_id}`.
+- Si `source=assigned` sin `assignment_id`, llama:
 
 ```text
 GET /api/v1/app/training-sessions/{trainingSession}/assignment
 ```
 
-- Para `source=free`, navegar a:
+Y navega a:
 
 ```text
-/training-details/free/{training_session_id}
+/training-details/{assignment_id}
 ```
 
-## Checkpoint Al Terminar
+QA requerido:
 
-Actualizar estos documentos:
+1. En Mac:
+
+```bash
+npm run build
+npx cap copy ios
+```
+
+2. En Xcode:
 
 ```text
-app/docs/push-notifications-implementation-checkpoints.md
-coach/docs/push-notifications-implementation-checkpoints.md
+Product > Clean Build Folder
+Run en iPhone real
 ```
 
-Registrar:
+3. Enviar push real desde backend.
+4. Tocar la notificacion del sistema.
+5. Confirmar en consola:
 
-- Plugin/camino usado para FCM iOS.
-- Cambios nativos en Xcode/SPM/CocoaPods.
-- Resultado de `user_devices` para Samuel.
-- Resultado del envio FCM real.
-- Si se corrigio o no la campana interna.
+```text
+Push accion ejecutada:
+```
+
+6. Confirmar navegacion al entrenamiento correcto.
+
+### Checkpoint App 2: Refrescar campana al volver a la app
+
+Objetivo:
+
+Actualizar `AuthService.notifications()` cuando el usuario vuelve a la app desde background/foreground, aunque no haya llegado listener JS de foreground.
+
+Implementacion sugerida:
+
+- Usar listener de `@capacitor/app` para `appStateChange`.
+- Cuando `isActive=true` y el actor sea atleta/client, llamar `auth.me()`.
+- Evitar loops o llamadas excesivas con debounce/throttle simple.
+
+Criterio de aceptacion:
+
+- Despues de recibir una push con la app en background, al abrir la app la campana refleja las notificaciones de `app/me`.
+
+### Checkpoint App 3: Navegacion desde campana interna
+
+Objetivo:
+
+Tocar una notificacion interna debe usar la misma logica que tocar una push.
+
+Implementacion sugerida:
+
+- Crear/reusar un servicio de navegacion de notificaciones.
+- Reusar la logica de `action=open_training`, `source`, `training_session_id`, `assignment_id`.
+- En `src/app/tab1/tab1.page.html`, agregar `(click)` al `ion-item`.
+- En `src/app/tab1/tab1.page.ts`, cerrar modal y navegar.
+
+Criterio de aceptacion:
+
+- Tocar "Nuevo entrenamiento para ti" en la campana abre el detalle correcto.
+
+### Checkpoint Backend 1: Incluir assignment_id cuando sea posible
+
+Objetivo:
+
+Reducir el lookup movil para entrenamientos asignados.
+
+Estado actual:
+
+- El payload productivo manda `training_session_id`, `scheduled_for`, `source`, `type`, `notification_id`.
+- Para asignados puede no mandar `assignment_id`.
+- La app ya tiene fallback con `GET /api/v1/app/training-sessions/{trainingSession}/assignment`.
+
+Recomendacion para el agente backend Windows:
+
+- Revisar `AppNotificationService::trainingNotificationPayload()`.
+- Cuando el envio sea para un UserApp/Client especifico y exista un `training_assignment`, agregar:
+
+```text
+assignment_id
+```
+
+- Mantener `training_session_id` siempre, para compatibilidad.
+
+Criterio de aceptacion:
+
+- Push asignado incluye `assignment_id` cuando el backend puede resolverlo sin ambiguedad.
+- La app puede navegar directo sin lookup.
+- Si no hay `assignment_id`, el endpoint de resolucion sigue funcionando como fallback.
+
+### Checkpoint Backend 2: Alinear endpoint de prueba
+
+Objetivo:
+
+Que `/api/v1/app/test/push` valide el mismo contrato que produccion.
+
+Problema actual documentado:
+
+- `PushTestController` envia directo por Firebase.
+- Usa `training_id`.
+- Puede no mandar `action=open_training`.
+- No necesariamente reutiliza `AppNotificationService`.
+
+Recomendacion:
+
+- Reutilizar `AppNotificationService` o el mismo builder de payload productivo.
+- Mandar payload con:
+
+```text
+action=open_training
+training_session_id
+source
+scheduled_for
+notification_id
+assignment_id cuando aplique
+```
+
+Criterio de aceptacion:
+
+- Una prueba exitosa de `/app/test/push` valida entrega FCM y navegacion movil real.
+
+### Checkpoint Backend 3: Semantica de leido / visto
+
+Objetivo:
+
+Definir si la campana interna debe marcar notificaciones como vistas/leidas.
+
+Pendiente:
+
+- Confirmar si existe endpoint para marcar `push_notifications` como leidas.
+- Si no existe, decidir si se agrega:
+
+```text
+POST /api/v1/app/notifications/{notification}/read
+POST /api/v1/app/notifications/read-all
+```
+
+Criterio de aceptacion:
+
+- La campana puede diferenciar nuevas vs leidas.
+- Tocar una notificacion puede marcarla como leida sin romper la navegacion.
+
+## No Hacer Por Ahora
+
+- No cambiar el contrato principal del backend fuera de `AppNotificationService`.
+- No borrar registros de produccion ni limpiar `user_devices`.
+- No crear tablas paralelas para historial de notificaciones.
+- No volver a instalar `@capacitor/push-notifications` mientras se use `@capacitor-firebase/messaging`.
+- No mezclar SPM manual de Firebase desde Xcode con la estrategia de Capacitor/SPM salvo que haya un bloqueo especifico.
+
+## Resultado Esperado Del Siguiente Agente
+
+El agente backend en Windows debe poder continuar desde aqui:
+
+1. Confirmar que `user_devices` tiene token iOS real.
+2. Confirmar que `AppNotificationService` envia FCM real.
+3. Mejorar payload backend agregando `assignment_id` cuando aplique.
+4. Alinear `/app/test/push` con el contrato productivo.
+5. Coordinar con app para QA de navegacion desde push y campana.

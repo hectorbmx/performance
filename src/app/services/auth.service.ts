@@ -1,6 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
-import { Capacitor } from '@capacitor/core';
 import { ApiService } from './api.service';
 
 export type ActorType = 'client' | 'coach';
@@ -111,7 +110,7 @@ export class AuthService {
         await this.persistCoachSession(res.user, res.coach, res.subscription);
       } else {
         await this.persistClientSession(res.context as AuthContext, res.user, res.client as ClientDTO);
-        await this.registerPendingPushToken();
+        window.dispatchEvent(new Event('app:client-login'));
       }
 
       return res;
@@ -279,21 +278,6 @@ export class AuthService {
       return JSON.parse(value) as T;
     } catch {
       return null;
-    }
-  }
-
-  private async registerPendingPushToken(): Promise<void> {
-    const { value } = await Preferences.get({ key: 'pending_push_token' });
-    if (!value) return;
-
-    try {
-      await this.api.post('app/register-device', {
-        token: value,
-        platform: Capacitor.getPlatform(),
-      });
-      await Preferences.remove({ key: 'pending_push_token' });
-    } catch (err) {
-      console.warn('No se pudo registrar el token push pendiente', err);
     }
   }
 }

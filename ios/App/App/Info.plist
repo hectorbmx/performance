@@ -33,6 +33,10 @@ Usamos Apple Health para mostrar tu progreso diario: pasos, calorías quemadas y
 Usamos Apple Health para mostrar tu progreso diario: pasos , calorias quemadas y minutos activos</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Usamos Apple Health para guardar tus entrenamientos y actualizar datos de actividad, como calorías quemadas y minutos activos.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
