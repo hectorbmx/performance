@@ -6,6 +6,8 @@ import { PushNotifications, PermissionStatus, Token, PushNotificationSchema, Act
 import { ApiService } from './services/api.service';
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular/standalone';
+import { AuthService } from './services/auth.service';
+import { TrainingApiService } from './services/training-api.service';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +21,8 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
     private api: ApiService,
     private router: Router,
     private toastCtrl: ToastController,
+    private auth: AuthService,
+    private trainingApi: TrainingApiService,
   ) {}
 
   ngOnInit() {
@@ -83,17 +87,12 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
         console.error('❌ FCM registration error:', error);
       });
 
-      // 5) Listener: NOTIFICACIÓN RECIBIDA (App abierta)
-      // Este es el que te falta para ver algo en el emulador ahora mismo
       PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-        console.log('🔔 Notificación recibida:', notification);
-        // Esto lanzará un alert nativo para que confirmes que llegó
-        alert(`${notification.title}\n${notification.body}`);
+        this.handlePushReceived(notification);
       });
 
-      // 6) Listener: ACCIÓN REALIZADA (Usuario toca la notificación)
       PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
-        console.log('🖱️ Acción realizada:', notification.actionId, notification.notification);
+        this.handlePushAction(notification);
       });
 
     } catch (err) {
@@ -116,5 +115,64 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
     } catch (err) {
       console.warn('No se pudo registrar el token push', err);
     }
+  }
+
+  private async handlePushReceived(notification: PushNotificationSchema): Promise<void> {
+    console.log('Push recibida:', notification);
+
+    try {
+      await this.auth.me();
+    } catch (err) {
+      console.warn('No se pudo refrescar app/me despues de la push', err);
+    }
+
+    const toast = await this.toastCtrl.create({
+      message: notification.title || notification.body || 'Nueva notificacion',
+      duration: 2600,
+      position: 'top',
+      color: 'primary',
+    });
+
+    await toast.present();
+  }
+
+  private async handlePushAction(notification: ActionPerformed): Promise<void> {
+    const data = notification.notification?.data ?? {};
+
+    if (data?.action !== 'open_training') {
+      await this.router.navigateByUrl('/tabs/tab1');
+      return;
+    }
+
+    const sessionId = this.numericValue(data.training_session_id);
+
+    if (!sessionId) {
+      await this.router.navigateByUrl('/tabs/tab1');
+      return;
+    }
+
+    if (data.source === 'free') {
+      await this.router.navigate(['/training-details/free', sessionId]);
+      return;
+    }
+
+    try {
+      const resolved = await this.trainingApi.resolveAssignment(sessionId, data.scheduled_for ?? null);
+      const assignmentId = resolved?.data?.assignment_id;
+
+      if (assignmentId) {
+        await this.router.navigate(['/training-details', assignmentId]);
+        return;
+      }
+    } catch (err) {
+      console.warn('No se pudo resolver la asignacion desde la push', err);
+    }
+
+    await this.router.navigateByUrl('/tabs/tab1');
+  }
+
+  private numericValue(value: unknown): number | null {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
 }

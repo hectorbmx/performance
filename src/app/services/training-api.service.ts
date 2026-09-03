@@ -271,6 +271,15 @@ export type TrainingAssignmentStatusResponse = {
     status: TrainingStatus;
   };
 };
+export type ResolveTrainingAssignmentResponse = {
+  ok: boolean;
+  data: {
+    assignment_id: number;
+    training_session_id: number;
+    scheduled_for: string | null;
+    status: TrainingStatus;
+  };
+};
 
 @Injectable({ providedIn: 'root' })
 export class TrainingApiService {
@@ -545,6 +554,12 @@ async saveSectionResult(
 }
 startFreeSession(sessionId: number): Promise<StartFreeResponse> {
   return this.api.post<StartFreeResponse>(`app/training-sessions/${sessionId}/start`, {});
+}
+resolveAssignment(sessionId: number, scheduledFor?: string | null): Promise<ResolveTrainingAssignmentResponse> {
+  return this.api.get<ResolveTrainingAssignmentResponse>(
+    `app/training-sessions/${sessionId}/assignment`,
+    scheduledFor ? { scheduled_for: scheduledFor } : undefined
+  );
 }
 updateAssignmentStatus(assignmentId: number, status: string): Promise<{ ok: boolean; message?: string }> {
   return this.api.patch<{ ok: boolean; message?: string }>(
