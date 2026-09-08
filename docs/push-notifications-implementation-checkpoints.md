@@ -343,7 +343,7 @@ Validacion minima:
 
 ### Checkpoint 6: Navegacion movil desde push
 
-Estado 2026-09-02: implementado backend + app movil, pendiente QA en dispositivo.
+Estado 2026-09-08: implementado backend + app movil; navegacion centralizada y campana conectada; pendiente QA en dispositivo.
 
 Cambios:
 
@@ -356,6 +356,12 @@ Cambios:
 - Agregado `TrainingApiService.resolveAssignment()`.
 - Agregado `TrainingSessionsController::resolveAssignment()` en Laravel.
 - Agregada ruta protegida por `client.membership`: `GET /api/v1/app/training-sessions/{trainingSession}/assignment`.
+- Agregado `NotificationNavigationService` en Ionic para centralizar la navegacion por payload.
+- `PushRegistrationService` ya no contiene reglas de rutas de entrenamiento; delega en `NotificationNavigationService`.
+- La campana interna en `tab1` ahora usa la misma logica al tocar una notificacion.
+- `open_membership` navega a `/subscription-history`.
+- `PushRegistrationService` escucha `App.appStateChange` y refresca `app/me` al volver a foreground si el actor es `client`.
+- El refresh de foreground tiene throttle de 15 segundos para evitar llamadas repetidas.
 
 Decision pendiente:
 
@@ -377,7 +383,10 @@ Validacion minima:
 - Ejecutado: `php artisan route:list --path=api/v1/app/training-sessions`; la ruta `/assignment` aparece registrada.
 - Ejecutado: `ng build` con el Node bundled; compila correctamente con warnings preexistentes de imports no usados/budgets SCSS.
 - Ejecutado Tinker no destructivo contra `TrainingSessionsController::resolveAssignment()` con `user_app_id=7`, `training_session_id=10`, `scheduled_for=2026-09-04`; respuesta `200`, `assignment_id=10`.
+- Ejecutado 2026-09-08: `node .\node_modules\@angular\cli\bin\ng.js build` con Node bundled; compila correctamente con warnings preexistentes de imports no usados, empty glob de Stencil y budgets SCSS.
 - Pendiente QA real: tocar notificacion en dispositivo/emulador con app instalada.
+- Pendiente QA real: tocar notificacion desde la campana interna y confirmar navegacion.
+- Pendiente QA real: recibir push en background, abrir la app y confirmar que la campana se refresca desde `app/me`.
 
 ### Checkpoint 7: QA integral
 
@@ -607,6 +616,12 @@ Cambios:
 - Extender `app.component.ts` para nuevas acciones.
 - Reutilizar `AuthService.me()` para refrescar estado local.
 - Navegar a membresias o detalle de entrenamiento segun payload.
+
+Estado parcial 2026-09-08:
+
+- `open_membership` ya navega a `/subscription-history` desde `NotificationNavigationService`.
+- La campana interna y la push real ya comparten el mismo servicio de navegacion.
+- Queda pendiente definir/navegar tipos de no-entreno cuando exista el productor backend.
 
 Validacion:
 

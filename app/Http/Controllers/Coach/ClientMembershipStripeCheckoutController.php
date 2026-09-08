@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\ClientMembership;
 use App\Services\Billing\StripeConnectService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class ClientMembershipStripeCheckoutController extends Controller
 {
-    public function store(ClientMembership $membership, StripeConnectService $connect): RedirectResponse
+    public function store(Request $request, ClientMembership $membership, StripeConnectService $connect): RedirectResponse
     {
         abort_unless((int) $membership->coach_id === (int) auth()->id(), 403);
 
@@ -25,6 +26,13 @@ class ClientMembershipStripeCheckoutController extends Controller
             $session = $connect->createMembershipCheckout($membership);
         } catch (\Throwable $e) {
             return back()->withErrors(['stripe' => $e->getMessage()]);
+        }
+
+        if ($request->boolean('return_link')) {
+            return back()
+                ->with('success', 'Link de pago generado correctamente.')
+                ->with('stripe_payment_link', $session->url)
+                ->with('stripe_payment_link_membership_id', $membership->id);
         }
 
         return redirect()->away($session->url);

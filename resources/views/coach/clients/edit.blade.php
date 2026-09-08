@@ -38,6 +38,18 @@
     </div>
 @endif
 
+@if (session('stripe_payment_link'))
+    <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <div class="font-semibold text-emerald-900">Link de pago Stripe</div>
+        <div class="mt-2 rounded bg-white border border-emerald-200 px-3 py-2 text-sm text-gray-800 break-all">
+            {{ session('stripe_payment_link') }}
+        </div>
+        <div class="mt-2 text-sm text-emerald-800">
+            Copia este enlace y envialo al cliente para que pague su membresia.
+        </div>
+    </div>
+@endif
+
 
             <form method="POST"
       action="{{ route('coach.clients.update', $client) }}"
@@ -175,6 +187,8 @@
                         $payBadge = (str_contains($payStatus,'paid') || str_contains($payStatus,'complete') || str_contains($payStatus,'ok'))
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-slate-100 text-slate-800';
+                        $paymentProvider = $m->coachClientPlan?->payment_provider ?? ($m->stripe_subscription_id ? 'stripe' : 'manual');
+                        $isUnpaid = $m->billing_status !== 'paid';
                     @endphp
 
                     <tr>
@@ -244,7 +258,26 @@
                                 </span>
                             </div>
                         </td>
-                        <td class="px-6 py-2 text-center">
+                        <td class="px-6 py-2">
+                            <div class="flex flex-wrap items-center justify-center gap-2">
+                                @if($isUnpaid)
+                                    @if($paymentProvider === 'stripe')
+                                        <form method="POST" action="{{ route('coach.client-memberships.stripe-checkout', $m) }}">
+                                            @csrf
+                                            <input type="hidden" name="return_link" value="1">
+                                            <button type="submit"
+                                                    class="inline-flex items-center px-3 py-1 rounded bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">
+                                                Generar link
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('coach.client-payments.create', $m) }}"
+                                           class="inline-flex items-center px-3 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700">
+                                            Pagar
+                                        </a>
+                                    @endif
+                                @endif
+
                             <form method="POST"
                                 action="{{ route('coach.client-memberships.destroy', $m) }}"
                                 onsubmit="return confirm('¿Eliminar esta membresía? Se anularán los pagos asociados.');">
@@ -255,6 +288,7 @@
                                     Eliminar
                                 </button>
                             </form>
+                            </div>
                         </td>
 
                     </tr>

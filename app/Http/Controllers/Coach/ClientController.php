@@ -116,7 +116,10 @@ class ClientController extends Controller
         $client->load([
             'healthProfile',
             'memberships' => fn ($q) => $q->latest('starts_at')
-                ->with(['payments' => fn ($p) => $p->latest('payment_date')]),
+                ->with([
+                    'coachClientPlan',
+                    'payments' => fn ($p) => $p->latest('payment_date'),
+                ]),
             'metricRecords' => fn ($q) => $q->latest('recorded_at')->latest('id')->with('trainingMetric')->limit(15),
         ]);
 
