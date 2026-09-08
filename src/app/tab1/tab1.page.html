@@ -3,14 +3,14 @@
     <!-- Header -->
     <div class="home-header">
       <div class="user-greeting">
-        <div class="avatar-wrapper">
+        <button type="button" class="avatar-wrapper" (click)="openProfile()" aria-label="Abrir perfil">
           <img 
             [src]="clientAvatarUrl || fallbackCover"
             alt="User Avatar" 
             class="user-avatar"
             (error)="onImgError($event)"
           />
-        </div>
+        </button>
         <div class="greeting-text">
           <p class="greeting-label">BUEN DÍA!</p>
           <h1 class="user-name">Hola, {{ clientName || 'Alex' }}</h1>
@@ -51,7 +51,7 @@
     <ion-content class="ion-padding">
       <ng-container *ngIf="notifications().length > 0; else emptyState">
         <ion-list lines="none">
-          <ion-item *ngFor="let n of notifications()" class="notif-item">
+          <ion-item *ngFor="let n of notifications()" class="notif-item" button detail="false" (click)="openNotification(n)">
             <ion-icon
               slot="start"
               [name]="iconFor(n.type)"

@@ -1,0 +1,98 @@
+<ion-content [fullscreen]="true" class="library-content">
+  <div class="library-shell">
+    <header class="library-header">
+      <div>
+        <p>Biblioteca</p>
+        <h1>Videos</h1>
+      </div>
+
+      <button type="button" class="icon-action" (click)="load()" [disabled]="loading" aria-label="Actualizar biblioteca">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </button>
+    </header>
+
+    <ion-searchbar
+      placeholder="Buscar video"
+      debounce="450"
+      [value]="searchTerm"
+      (ionInput)="search($event)">
+    </ion-searchbar>
+
+    <div class="type-filter">
+      <ion-select
+        interface="popover"
+        placeholder="Todos los tipos"
+        [value]="selectedTypeId"
+        (ionChange)="filterByType($event)">
+        <ion-select-option [value]="null">Todos los tipos</ion-select-option>
+        <ion-select-option *ngFor="let type of types" [value]="type.id">
+          {{ type.name }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <section class="loading-state" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Cargando biblioteca</span>
+    </section>
+
+    <section class="empty-state" *ngIf="!loading && videos.length === 0">
+      <ion-icon name="videocam-outline"></ion-icon>
+      <h2>Sin videos</h2>
+      <p>Cuando tu coach agregue contenido a la biblioteca, aparecera aqui.</p>
+    </section>
+
+    <section class="video-list" *ngIf="!loading && videos.length > 0">
+      <article class="video-card" *ngFor="let video of videos" (click)="openVideo(video)">
+        <div class="video-thumb">
+          <img *ngIf="video.thumbnail_url" [src]="video.thumbnail_url" [alt]="video.name">
+          <ion-icon *ngIf="!video.thumbnail_url" name="videocam-outline"></ion-icon>
+        </div>
+
+        <div class="video-info">
+          <h2>{{ video.name }}</h2>
+          <p>{{ sourceLabel(video) }}</p>
+        </div>
+
+        <button type="button" class="open-action" aria-label="Reproducir video">
+          <ion-icon name="play-circle-outline"></ion-icon>
+        </button>
+      </article>
+    </section>
+  </div>
+
+  <ion-modal
+    [isOpen]="!!selectedVideo"
+    (didDismiss)="closePlayer()"
+    cssClass="video-player-modal">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ selectedVideo?.name || 'Video' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closePlayer()" aria-label="Cerrar video">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="player-content">
+        <div class="player-wrap" *ngIf="selectedVideo as video">
+          <iframe
+            *ngIf="isYoutubeVideo(video); else nativeVideo"
+            [src]="playerUrl(video)"
+            title="Video"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+
+          <ng-template #nativeVideo>
+            <video [src]="playerUrl(video)" controls playsinline></video>
+          </ng-template>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

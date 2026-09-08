@@ -28,6 +28,7 @@ import { TrainingApiService, TrainingFeedItemDTO } from '../services/training-ap
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { HealthMetricsService, type HealthMetricKey } from '../services/health-metrics.service';
+import { NotificationNavigationService } from '../services/notification-navigation.service';
 import type { AppNotificationDTO } from 'src/app/services/auth.service'; // ajusta ruta si aplica
 
 /* =========================
@@ -110,6 +111,7 @@ notifEvent: any;
     private api: ApiService,
     private auth: AuthService,
     private healthMetrics: HealthMetricsService,
+    private notificationNavigation: NotificationNavigationService,
     private router: Router, // Inyectar Router
   ) {
     addIcons({notificationsOffOutline,timeOutline,play,barbellOutline,walkOutline,flameOutline,flashOutline,calendarOutline,notificationsOutline,});
@@ -120,6 +122,16 @@ notifEvent: any;
     
     this.isNotifOpen = true;
   }
+
+  openProfile() {
+    this.router.navigate(['/tabs/tab3']);
+  }
+
+  async openNotification(notification: AppNotificationDTO) {
+    this.isNotifOpen = false;
+    await this.notificationNavigation.navigateFromAppNotification(notification);
+  }
+
     iconFor(type: AppNotificationDTO['type']) {
     switch (type) {
       case 'danger': return 'alert-circle';

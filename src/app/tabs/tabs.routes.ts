@@ -21,6 +21,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../tab3/tab3.page').then((m) => m.Tab3Page),
       },
+      {
+        path: 'library',
+        loadComponent: () =>
+          import('../pages/library/library.page').then((m) => m.LibraryPage),
+      },
  
       {
         path: '',

@@ -1,31 +1,25 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
+import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import { FirebaseMessaging, type NotificationActionPerformedEvent, type NotificationReceivedEvent } from '@capacitor-firebase/messaging';
 import { ToastController } from '@ionic/angular/standalone';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { TrainingApiService } from './training-api.service';
-
-type PushNotificationData = {
-  action?: string;
-  source?: string;
-  scheduled_for?: string | null;
-  assignment_id?: unknown;
-  training_session_id?: unknown;
-};
+import { NotificationNavigationService } from './notification-navigation.service';
 
 @Injectable({ providedIn: 'root' })
 export class PushRegistrationService {
   private loginListenerInstalled = false;
+  private appStateListenerInstalled = false;
+  private lastForegroundRefreshAt = 0;
+  private readonly foregroundRefreshThrottleMs = 15000;
 
   constructor(
     private api: ApiService,
-    private router: Router,
     private toastCtrl: ToastController,
     private auth: AuthService,
-    private trainingApi: TrainingApiService,
+    private notificationNavigation: NotificationNavigationService,
   ) {}
 
   async init(): Promise<void> {
@@ -35,6 +29,7 @@ export class PushRegistrationService {
       }
 
       this.installLoginListener();
+      this.installAppStateListener();
 
       await FirebaseMessaging.removeAllListeners();
 
@@ -97,6 +92,20 @@ export class PushRegistrationService {
     this.loginListenerInstalled = true;
   }
 
+  private installAppStateListener(): void {
+    if (this.appStateListenerInstalled) {
+      return;
+    }
+
+    App.addListener('appStateChange', (state) => {
+      if (state.isActive) {
+        this.refreshNotificationsFromForeground();
+      }
+    });
+
+    this.appStateListenerInstalled = true;
+  }
+
   private async registerPushToken(token: string): Promise<void> {
     await Preferences.set({ key: 'pending_push_token', value: token });
 
@@ -126,59 +135,30 @@ export class PushRegistrationService {
     await toast.present();
   }
 
-  private async handlePushAction(event: NotificationActionPerformedEvent): Promise<void> {
-    const data = this.pushData(event.notification?.data);
-    console.log('Push accion ejecutada:', { actionId: event.actionId, data });
+  private async refreshNotificationsFromForeground(): Promise<void> {
+    const now = Date.now();
 
-    if (data?.action !== 'open_training') {
-      await this.router.navigateByUrl('/tabs/tab1');
+    if (now - this.lastForegroundRefreshAt < this.foregroundRefreshThrottleMs) {
       return;
     }
 
-    const assignmentId = this.numericValue(data.assignment_id);
-
-    if (assignmentId && data.source !== 'free') {
-      await this.router.navigate(['/training-details', assignmentId]);
-      return;
-    }
-
-    const sessionId = this.numericValue(data.training_session_id);
-
-    if (!sessionId) {
-      await this.router.navigateByUrl('/tabs/tab1');
-      return;
-    }
-
-    if (data.source === 'free') {
-      await this.router.navigate(['/training-details/free', sessionId]);
-      return;
-    }
+    this.lastForegroundRefreshAt = now;
 
     try {
-      const resolved = await this.trainingApi.resolveAssignment(sessionId, data.scheduled_for ?? null);
-      const resolvedAssignmentId = resolved?.data?.assignment_id;
-
-      if (resolvedAssignmentId) {
-        await this.router.navigate(['/training-details', resolvedAssignmentId]);
+      if ((await this.auth.getActorType()) !== 'client') {
         return;
       }
+
+      await this.auth.me();
     } catch (err) {
-      console.warn('No se pudo resolver la asignacion desde la push', err);
+      console.warn('No se pudo refrescar app/me al volver a foreground', err);
     }
-
-    await this.router.navigateByUrl('/tabs/tab1');
   }
 
-  private numericValue(value: unknown): number | null {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  }
+  private async handlePushAction(event: NotificationActionPerformedEvent): Promise<void> {
+    const data = event.notification?.data ?? {};
+    console.log('Push accion ejecutada:', { actionId: event.actionId, data });
 
-  private pushData(value: unknown): PushNotificationData {
-    if (!value || typeof value !== 'object') {
-      return {};
-    }
-
-    return value as PushNotificationData;
+    await this.notificationNavigation.navigate(data);
   }
 }

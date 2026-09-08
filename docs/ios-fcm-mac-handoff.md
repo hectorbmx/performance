@@ -323,6 +323,143 @@ Todavia no tiene `(click)`, por eso tocar "Nuevo entrenamiento para ti" dentro d
 
 ## Checkpoints Pendientes
 
+## Plan De Ejecucion Siguiente
+
+Orden recomendado para retomar:
+
+### Fase App A: Centralizar navegacion de notificaciones
+
+Objetivo:
+
+- Crear/reusar un servicio movil tipo `NotificationNavigationService`.
+- Mover ahi la logica de navegacion por payload:
+  - `action=open_training`
+  - `source=free`
+  - `source=assigned`
+  - `training_session_id`
+  - `assignment_id`
+  - fallback a `/tabs/tab1`
+
+Criterio:
+
+- `PushRegistrationService` o `AppComponent` no deben duplicar reglas de navegacion.
+- La campana interna y la push real deben usar la misma logica.
+
+Estado 2026-09-08:
+
+- Implementado `src/app/services/notification-navigation.service.ts`.
+- `PushRegistrationService` delega `notificationActionPerformed` al servicio.
+- Soporta `open_training` libre/asignado con `assignment_id` o lookup por `training_session_id`.
+- Soporta `open_membership` hacia `/subscription-history`.
+- Validado con `node .\node_modules\@angular\cli\bin\ng.js build`.
+
+### Fase App B: Conectar campana interna
+
+Objetivo:
+
+- En `src/app/tab1/tab1.page.html`, agregar `(click)` al `<ion-item>` de cada notificacion.
+- En `src/app/tab1/tab1.page.ts`, cerrar modal y llamar al servicio de navegacion.
+
+Criterio:
+
+- Tocar "Nuevo entrenamiento para ti" en la campana abre el entrenamiento correcto.
+- Entrenamiento asignado navega a `/training-details/{assignment_id}`.
+- Entrenamiento libre navega a `/training-details/free/{training_session_id}`.
+
+Estado 2026-09-08:
+
+- Implementado en `src/app/tab1/tab1.page.html` y `src/app/tab1/tab1.page.ts`.
+- El item de la campana ahora es clickeable y cierra el modal antes de navegar.
+- Usa `NotificationNavigationService`, igual que la push real.
+- Pendiente QA manual en iPhone/emulador tocando una notificacion real desde la campana.
+
+### Fase App C: Refrescar campana al volver a foreground
+
+Objetivo:
+
+- Usar `App.addListener('appStateChange', ...)`.
+- Cuando `isActive=true` y el actor sea atleta/client, ejecutar `auth.me()`.
+- Agregar throttle/debounce simple para no llamar al backend demasiadas veces.
+
+Criterio:
+
+- Si llega una push con la app en background, al abrir la app se refresca `AuthService.notifications()`.
+- La campana refleja lo que devuelve `GET /api/v1/app/me`.
+
+Estado 2026-09-08:
+
+- Implementado en `src/app/services/push-registration.service.ts`.
+- Se usa `App.addListener('appStateChange', ...)`.
+- Cuando `isActive=true`, refresca `auth.me()` solo si `AuthService.getActorType()` devuelve `client`.
+- Tiene throttle de 15 segundos para evitar llamadas repetidas al backend.
+- Validado con `node .\node_modules\@angular\cli\bin\ng.js build`.
+- Pendiente QA manual: recibir push en background, abrir la app y confirmar que la campana se actualiza.
+
+### Fase Backend D: Enriquecer payload asignado
+
+Objetivo:
+
+- En `AppNotificationService`, agregar `assignment_id` cuando exista una asignacion directa clara para ese atleta.
+- Mantener siempre `training_session_id` para compatibilidad.
+- Mantener el fallback actual:
+
+```text
+GET /api/v1/app/training-sessions/{trainingSession}/assignment
+```
+
+Criterio:
+
+- Push asignado incluye `assignment_id` cuando Laravel puede resolverlo sin ambiguedad.
+- Si no hay `assignment_id`, la app sigue resolviendo por endpoint.
+
+### Fase QA E: Pruebas integrales sin borrar datos
+
+Validaciones:
+
+- `ng build`.
+- `php -l` en archivos backend tocados.
+- Tinker:
+  - revisar `user_devices` de Samuel,
+  - enviar push asignado,
+  - enviar push libre,
+  - revisar `push_notifications`.
+- iPhone:
+  - tocar push asignado,
+  - tocar push libre,
+  - tocar notificacion desde campana.
+
+Regla:
+
+- No borrar registros de prueba.
+- No limpiar tablas.
+- No resetear base de datos.
+
+### Fase Docs F: Checkpoint
+
+Actualizar:
+
+```text
+app/docs/push-notifications-implementation-checkpoints.md
+coach/docs/push-notifications-implementation-checkpoints.md
+app/docs/ios-fcm-mac-handoff.md
+```
+
+Registrar:
+
+- Cambios implementados.
+- Evidencia de build/Tinker/Xcode.
+- Estado de `user_devices`.
+- Estado de `push_notifications`.
+- Pendientes restantes.
+
+Recomendacion concreta para retomar:
+
+```text
+Ejecutar Fase App A + Fase App B juntas.
+```
+
+Motivo: son del mismo frente, corrigen el bug visible de la campana y reutilizan la misma navegacion que ya existe para push.
+
 ### Checkpoint App 1: Navegacion al tocar push
 
 Estado:
