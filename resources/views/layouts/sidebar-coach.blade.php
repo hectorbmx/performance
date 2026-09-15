@@ -86,6 +86,8 @@
                 <span x-show="open">Biblioteca</span>
             </a>
 
+        <x-tips.menu-link route-name="coach.tips.index" active-pattern="coach.tips.*" />
+
        <a href="{{ route('coach.config.index') }}"
    title="Config"
    class="flex items-center gap-3 px-4 py-3 {{ $linkClass($is('coach.config.*')) }}">

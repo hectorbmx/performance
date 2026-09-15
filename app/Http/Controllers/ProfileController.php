@@ -48,9 +48,17 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
+        // Tips retain their authors, including when archived.
+        if (\Illuminate\Support\Facades\Schema::hasTable('tips') &&
+            \App\Models\Tip::where('author_id', $user->id)->orWhere('coach_id', $user->id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'password' => 'No puedes eliminar una cuenta vinculada a Tips. Contacta al administrador para gestionar la baja de la cuenta.',
+            ])->errorBag('userDeletion');
+        }
 
         $user->delete();
+
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

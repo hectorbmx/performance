@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\App\Client\ProfileController;
 use App\Http\Controllers\Api\V1\App\Client\MembershipController;
 use App\Http\Controllers\Api\V1\App\Client\HealthMetricController;
 use App\Http\Controllers\Api\V1\App\Client\StreakController;
+use App\Http\Controllers\Api\V1\App\Client\TipController as AppTipController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
@@ -67,6 +68,10 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/app/memberships', [MembershipController::class, 'index']);
         Route::post('/app/memberships/future', [MembershipController::class, 'storeFuture']);
+        Route::get('/app/tips/categories', [AppTipController::class, 'categories'])->name('app.tips.categories');
+        Route::get('/app/tips', [AppTipController::class, 'index'])->name('app.tips.index');
+        Route::get('/app/tips/{tip}', [AppTipController::class, 'show'])->whereNumber('tip')->name('app.tips.show');
+        Route::get('/app/tips/{tip}/image', [AppTipController::class, 'image'])->whereNumber('tip')->name('app.tips.image');
 
         Route::middleware('client.membership')->group(function () {
             Route::get('/app/me/profile', [AuthController::class, 'meProfile']);

@@ -117,6 +117,8 @@
 
             <span x-show="open">Pagos</span>
         </a>
+        <x-tips.menu-link route-name="admin.tips.index" active-pattern="admin.tips.*" />
+
 <form method="POST" action="{{ route('logout') }}" class="mt-6 px-4">
     @csrf
 

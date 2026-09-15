@@ -30,6 +30,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if ($request->user()->hasRole('admin')) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('admin.dashboard');
+        }
+
         if ($request->user()->hasRole('coach')) {
             $catalogs->seedForCoach($request->user());
 

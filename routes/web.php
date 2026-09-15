@@ -80,6 +80,11 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('tips/pending', [\App\Http\Controllers\Admin\TipController::class, 'pending'])->name('tips.pending');
+        Route::resource('tips', \App\Http\Controllers\Admin\TipController::class)->except('destroy')->whereNumber('tip');
+        Route::get('tips/{tip}/image', [\App\Http\Controllers\Admin\TipController::class, 'image'])->whereNumber('tip')->name('tips.image');
+        Route::post('tips/{tip}/{action}', [\App\Http\Controllers\Admin\TipController::class, 'transition'])
+            ->whereNumber('tip')->whereIn('action', ['publish', 'approve', 'reject', 'archive', 'restore'])->name('tips.transition');
         Route::post('coaches/{coach}/toggle-status', [CoachController::class, 'toggleStatus'])->name('coaches.toggleStatus');
         Route::resource('coaches', CoachController::class);
         Route::resource('plans', MembershipPlanController::class)->except(['show']);
@@ -125,6 +130,13 @@ Route::prefix('coach')->name('coach.')->middleware(['auth'])->group(function () 
     Route::post('clients/{client}/resend-activation-code', [CoachClientController::class, 'resendActivationCode'])->name('clients.resendActivationCode');
     Route::get('clients/{client}/trainings', [CoachClientTrainingController::class, 'index'])->name('clients.trainings.index');
     
+    Route::middleware(['role:coach', 'coach.subscription'])->group(function () {
+        Route::resource('tips', \App\Http\Controllers\Coach\TipController::class)->except('destroy')->whereNumber('tip');
+        Route::get('tips/{tip}/image', [\App\Http\Controllers\Coach\TipController::class, 'image'])->whereNumber('tip')->name('tips.image');
+        Route::post('tips/{tip}/{action}', [\App\Http\Controllers\Coach\TipController::class, 'transition'])
+            ->whereNumber('tip')->whereIn('action', ['submit', 'withdraw', 'archive', 'restore'])->name('tips.transition');
+    });
+
     Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
     Route::post('/library', [LibraryController::class, 'store'])->name('library.store');
     Route::delete('/library/{video}', [LibraryController::class, 'destroy'])->name('library.destroy');
@@ -271,6 +283,14 @@ Route::middleware(['auth', 'role:coach'])
             ->parameters(['trainings' => 'training']); // opcional
     });
 Route::get('/dashboard', function () {
+    if (auth()->user()->hasRole('admin')) {
+        return redirect()->route('admin.dashboard');
+    }
+
+    if (auth()->user()->hasRole('coach')) {
+        return redirect()->route('coach.dashboard');
+    }
+
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
