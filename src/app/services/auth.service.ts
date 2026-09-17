@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { ApiService } from './api.service';
+import { BiometricAuthService, type StoredBiometricSession } from './biometric-auth.service';
 
 export type ActorType = 'client' | 'coach';
 
@@ -76,7 +77,10 @@ export class AuthService {
   actorType = signal<ActorType | null>(null);
   notifications = signal<AppNotificationDTO[]>([]);
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private biometricAuth: BiometricAuthService,
+  ) {}
 
   async hydrateFromStorage(): Promise<void> {
     const [ctx, usr, cli, coach, actor, notifications] = await Promise.all([
@@ -175,28 +179,27 @@ export class AuthService {
     return res;
   }
 
+  async resumeWithBiometricSession(session: StoredBiometricSession): Promise<void> {
+    await this.api.setToken(session.token, true);
+    await Preferences.set({ key: this.ACTOR_TYPE_KEY, value: session.actorType });
+    this.actorType.set(session.actorType);
+
+    try {
+      await this.me();
+    } catch (err) {
+      await this.clearLocalSession();
+      throw err;
+    }
+  }
+
   async logout(): Promise<void> {
     const actorType = await this.getActorType();
 
     try {
       await this.api.post<any>(actorType === 'coach' ? 'coach/logout' : 'app/logout', {});
     } finally {
-      await this.api.clearToken();
-      await Promise.all([
-        Preferences.remove({ key: this.ACTOR_TYPE_KEY }),
-        Preferences.remove({ key: this.CONTEXT_KEY }),
-        Preferences.remove({ key: this.USER_KEY }),
-        Preferences.remove({ key: this.CLIENT_KEY }),
-        Preferences.remove({ key: this.COACH_KEY }),
-        Preferences.remove({ key: this.NOTIFICATIONS_KEY }),
-      ]);
-
-      this.actorType.set(null);
-      this.context.set(null);
-      this.user.set(null);
-      this.client.set(null);
-      this.coach.set(null);
-      this.notifications.set([]);
+      await this.clearLocalSession();
+      await this.biometricAuth.clearSession();
     }
   }
 
@@ -279,5 +282,24 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  private async clearLocalSession(): Promise<void> {
+    await this.api.clearToken();
+    await Promise.all([
+      Preferences.remove({ key: this.ACTOR_TYPE_KEY }),
+      Preferences.remove({ key: this.CONTEXT_KEY }),
+      Preferences.remove({ key: this.USER_KEY }),
+      Preferences.remove({ key: this.CLIENT_KEY }),
+      Preferences.remove({ key: this.COACH_KEY }),
+      Preferences.remove({ key: this.NOTIFICATIONS_KEY }),
+    ]);
+
+    this.actorType.set(null);
+    this.context.set(null);
+    this.user.set(null);
+    this.client.set(null);
+    this.coach.set(null);
+    this.notifications.set([]);
   }
 }

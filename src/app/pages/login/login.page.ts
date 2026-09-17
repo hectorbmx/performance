@@ -10,23 +10,18 @@ import {
   playCircle,eyeOffOutline,
   flashOutline,eyeOutline,
   fitnessOutline,
+  fingerPrintOutline,
 } from 'ionicons/icons';
 import {
   IonContent,
-  IonHeader,
-  IonTitle,
-  IonToolbar,
   IonIcon,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonButton,
   LoadingController,
   AlertController,ToastController
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Preferences } from '@capacitor/preferences';
+import { BiometricAuthService } from 'src/app/services/biometric-auth.service';
 
 @Component({
   selector: 'app-login',
@@ -37,14 +32,7 @@ import { Preferences } from '@capacitor/preferences';
     CommonModule,
     FormsModule,
     IonContent,
-    IonHeader,
-    IonTitle,
-    IonToolbar,
     IonIcon,
-    IonItem,
-    IonLabel,
-    IonInput,
-    IonButton,
   ],
 })
 export class LoginPage {
@@ -52,6 +40,10 @@ export class LoginPage {
   password: string = '';
   rememberSession: boolean = true;
   showPassword: boolean = false;
+  biometricAvailable = false;
+  biometricLoginReady = false;
+  biometricLabel = 'biometria';
+  biometricBusy = false;
   
   constructor(
     private router: Router,
@@ -59,13 +51,15 @@ export class LoginPage {
     private loadingCtrl: LoadingController,
     private alertCtrl: AlertController,
     private api: ApiService,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private biometricAuth: BiometricAuthService
   ) {
       addIcons({
       timeOutline,eyeOffOutline,
       barbellOutline,
       flashOutline,eyeOutline,
       fitnessOutline,
+      fingerPrintOutline,
       arrowBack,
       playCircle,
     });
@@ -82,10 +76,60 @@ export class LoginPage {
     }
 
     this.rememberSession = rememberSession.value !== '0';
+    await this.loadBiometricState();
 
     const loggedIn = await this.auth.isLoggedIn();
     if (loggedIn) {
       await this.router.navigateByUrl(await this.getRedirectUrl(), { replaceUrl: true });
+    }
+  }
+
+  async handleBiometricLogin() {
+    if (this.biometricBusy) {
+      return;
+    }
+
+    this.biometricBusy = true;
+
+    try {
+      const storedSession = await this.biometricAuth.getStoredSession();
+      if (!storedSession) {
+        this.biometricLoginReady = false;
+        await this.showToast('Primero inicia sesion con correo y activa biometria.', 'warning');
+        return;
+      }
+
+      const prompt = await this.biometricAuth.authenticate(`Usa ${this.biometricLabel} para entrar.`);
+      if (!prompt.ok) {
+        if (!prompt.cancelled) {
+          await this.showToast(prompt.message ?? 'No se pudo validar la biometria.', 'danger');
+        }
+        return;
+      }
+
+      const loading = await this.loadingCtrl.create({
+        message: 'Validando sesion...',
+        backdropDismiss: false,
+      });
+      await loading.present();
+
+      try {
+        await this.auth.resumeWithBiometricSession(storedSession);
+        if (storedSession.email) {
+          await Preferences.set({ key: 'login_email', value: storedSession.email });
+        }
+
+        await loading.dismiss();
+        await this.showToast('Sesion desbloqueada', 'success');
+        await this.router.navigateByUrl(await this.getRedirectUrl(), { replaceUrl: true });
+      } catch (err: any) {
+        await loading.dismiss();
+        await this.biometricAuth.clearSession();
+        this.biometricLoginReady = false;
+        await this.showToast(err?.message ?? 'Tu sesion expiro. Inicia sesion con correo.', 'warning');
+      }
+    } finally {
+      this.biometricBusy = false;
     }
   }
 
@@ -132,6 +176,8 @@ export class LoginPage {
       // Cerrar loading antes de navegar
       await loading.dismiss();
 
+      await this.offerBiometricSession(token, res, email);
+
       await this.showToast('Sesión iniciada', 'success');
 
 
@@ -170,6 +216,11 @@ export class LoginPage {
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
+
+  async onRememberSessionChange() {
+    await this.loadBiometricState();
+  }
+
  private async showToast(message: string, color: 'success' | 'danger' | 'warning' | 'medium' = 'medium') {
     const toast = await this.toastCtrl.create({
       message,
@@ -201,6 +252,88 @@ private async getRedirectUrl(): Promise<string> {
   return typeof redirectUrl === 'string' && redirectUrl.startsWith('/')
     ? redirectUrl
     : await this.auth.getDefaultRoute();
+}
+
+private async loadBiometricState(): Promise<void> {
+  try {
+    const availability = await this.biometricAuth.availability();
+    const storedSession = await this.biometricAuth.getStoredSession();
+
+    this.biometricAvailable = availability.available;
+    this.biometricLabel = availability.label;
+    this.biometricLoginReady = availability.available && !!storedSession;
+
+    if (!this.email && storedSession?.email) {
+      this.email = storedSession.email;
+    }
+  } catch (err) {
+    console.warn('No se pudo revisar biometria', err);
+    this.biometricAvailable = false;
+    this.biometricLoginReady = false;
+  }
+}
+
+private async offerBiometricSession(token: string, res: any, email: string): Promise<void> {
+  if (!this.rememberSession) {
+    return;
+  }
+
+  const availability = await this.biometricAuth.availability();
+  const storedSession = await this.biometricAuth.getStoredSession();
+
+  this.biometricAvailable = availability.available;
+  this.biometricLabel = availability.label;
+  this.biometricLoginReady = availability.available && !!storedSession;
+
+  if (!availability.available || storedSession) {
+    return;
+  }
+
+  const alert = await this.alertCtrl.create({
+    header: `Usar ${this.biometricLabel}?`,
+    message: `Quieres usar ${this.biometricLabel} para acceder la proxima vez?`,
+    buttons: [
+      {
+        text: 'Ahora no',
+        role: 'cancel',
+      },
+      {
+        text: 'Si, activar',
+        role: 'confirm',
+      },
+    ],
+  });
+
+  await alert.present();
+  const result = await alert.onDidDismiss();
+
+  if (result.role !== 'confirm') {
+    return;
+  }
+
+  await this.enableBiometricSession(token, res, email);
+}
+
+private async enableBiometricSession(token: string, res: any, email: string): Promise<void> {
+  const prompt = await this.biometricAuth.authenticate(`Activa ${this.biometricLabel} para futuros accesos.`);
+
+  if (!prompt.ok) {
+    if (!prompt.cancelled) {
+      await this.showToast(prompt.message ?? 'No se pudo activar la biometria.', 'warning');
+    }
+    return;
+  }
+
+  const actorType = res.actor_type ?? (res.coach ? 'coach' : 'client');
+  await this.biometricAuth.enableSession({
+    token,
+    actorType,
+    email,
+    savedAt: new Date().toISOString(),
+  });
+
+  this.biometricLoginReady = true;
+  await this.showToast(`${this.biometricLabel} activado para futuros accesos`, 'success');
 }
 
 

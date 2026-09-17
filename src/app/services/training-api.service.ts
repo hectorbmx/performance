@@ -320,8 +320,11 @@ private mapLiftingBlocks(blocks: any[] | null | undefined): TrainingLiftingBlock
    * GET /api/v1/app/trainings
    * params opcionales: from, to, status, include=free
    */
-  index(params?: { from?: string; to?: string; status?: string; include?: 'free' }) {
-    return this.api.get<TrainingsIndexResponse>('app/trainings', params);
+  index(
+    params?: { from?: string; to?: string; status?: string; include?: 'free' },
+    options?: { suppressMembershipRedirect?: boolean },
+  ) {
+    return this.api.get<TrainingsIndexResponse>('app/trainings', params, undefined, options);
   }
 
   streak() {

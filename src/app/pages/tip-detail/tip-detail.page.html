@@ -1,0 +1,59 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tips" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Tip</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="tip-detail-content">
+  <main class="tip-detail-shell">
+    <section class="loading-state" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Cargando tip</span>
+    </section>
+
+    <section class="state-card" *ngIf="!loading && errorMessage">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <h1>No disponible</h1>
+      <p>{{ errorMessage }}</p>
+      <div class="state-actions">
+        <ion-button fill="clear" (click)="load()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
+          Reintentar
+        </ion-button>
+        <ion-button fill="clear" (click)="goBack()">Volver</ion-button>
+      </div>
+    </section>
+
+    <article class="tip-detail" *ngIf="!loading && !errorMessage && tip as item">
+      <div class="tip-hero" *ngIf="item.image_url">
+        <img *ngIf="imageUrl; else imagePlaceholder" [src]="imageUrl" [alt]="item.title">
+        <ng-template #imagePlaceholder>
+          <ion-icon name="newspaper-outline"></ion-icon>
+        </ng-template>
+      </div>
+
+      <div class="tip-meta">
+        <span>{{ item.category.label }}</span>
+        <span>{{ typeLabel(item.type) }}</span>
+        <span>{{ scopeLabel(item) }}</span>
+      </div>
+
+      <h1>{{ item.title }}</h1>
+
+      <div class="tip-date" *ngIf="item.published_at">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <span>{{ dateLabel(item.published_at) }}</span>
+      </div>
+
+      <div class="tip-date tip-expiration" *ngIf="expirationLabel(item.expires_at) as expires">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <span>{{ expires }}</span>
+      </div>
+
+      <p class="tip-body">{{ item.body }}</p>
+    </article>
+  </main>
+</ion-content>

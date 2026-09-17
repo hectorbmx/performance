@@ -3,7 +3,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.performanceCoachBarret.app',
+  appId: 'com.app33performance',
   appName: 'Coach',
   webDir: 'www',
   experimental: {
@@ -22,7 +22,7 @@ const config: CapacitorConfig = {
     hostname: 'localhost',
     iosScheme: 'capacitor', 
     allowNavigation: [
-      'bmxmexico.com'
+      'https://coach.training-flow.com/login'
     ],
   },
   plugins: {

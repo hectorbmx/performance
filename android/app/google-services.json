@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:313092640386:android:b8f89aa4e6d2140ac32e9b",
         "android_client_info": {
-          "package_name": "com.bmxmexico.com"
+          "package_name": "https://coach.training-flow.com/login"
         }
       },
       "oauth_client": [],
@@ -28,7 +28,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:313092640386:android:65ed5f38807a8249c32e9b",
         "android_client_info": {
-          "package_name": "io.ionic.starter"
+          "package_name": "com.app33performance"
         }
       },
       "oauth_client": [],

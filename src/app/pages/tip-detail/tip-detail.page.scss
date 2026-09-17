@@ -1,0 +1,153 @@
+.tip-detail-content {
+  --background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 100%);
+}
+
+.tip-detail-shell {
+  min-height: 100%;
+  padding: 22px 20px 96px;
+}
+
+:host {
+  --tip-panel: rgba(255, 255, 255, 0.055);
+  --tip-stroke: rgba(255, 255, 255, 0.08);
+  --tip-text: #f8fafc;
+  --tip-muted: rgba(248, 250, 252, 0.62);
+  --tip-blue: #7ab4ff;
+}
+
+.loading-state,
+.state-card {
+  min-height: 68vh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--tip-muted);
+}
+
+.loading-state {
+  gap: 12px;
+
+  ion-spinner {
+    --color: var(--tip-blue);
+  }
+}
+
+.state-card {
+  align-content: center;
+  padding: 28px;
+  border: 1px solid var(--tip-stroke);
+  border-radius: 18px;
+  background: var(--tip-panel);
+
+  ion-icon {
+    color: var(--tip-blue);
+    font-size: 42px;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    color: var(--tip-text);
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}
+
+.state-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+
+  ion-button {
+    --color: var(--tip-blue);
+  }
+}
+
+.tip-detail {
+  color: var(--tip-text);
+}
+
+.tip-hero {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 18px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--tip-stroke);
+  border-radius: 18px;
+  background: rgba(122, 180, 255, 0.12);
+  color: var(--tip-blue);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon {
+    font-size: 40px;
+  }
+}
+
+.tip-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  span {
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(122, 180, 255, 0.12);
+    color: var(--tip-blue);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+}
+
+.tip-detail h1 {
+  margin: 0 0 12px;
+  color: var(--tip-text);
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1.16;
+}
+
+.tip-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: rgba(248, 250, 252, 0.48);
+  font-size: 12px;
+  font-weight: 700;
+
+  ion-icon {
+    color: var(--tip-blue);
+    font-size: 16px;
+  }
+}
+
+.tip-expiration {
+  margin-bottom: 22px;
+  color: rgba(248, 250, 252, 0.62);
+}
+
+.tip-body {
+  margin: 0;
+  color: var(--tip-muted);
+  font-size: 16px;
+  line-height: 1.72;
+  white-space: pre-line;
+}

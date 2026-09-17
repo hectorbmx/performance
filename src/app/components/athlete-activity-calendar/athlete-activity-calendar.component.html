@@ -1,0 +1,58 @@
+<section class="activity-calendar">
+  <div class="calendar-header">
+    <div class="calendar-title">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <div>
+        <p>Calendario</p>
+        <h2>{{ monthLabel }}</h2>
+      </div>
+    </div>
+
+    <div class="month-actions">
+      <button type="button" class="icon-btn" aria-label="Mes anterior" (click)="previousMonth()">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      <button type="button" class="icon-btn" aria-label="Mes siguiente" (click)="nextMonth()">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="calendar-loading" *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div class="weekday-grid" aria-hidden="true">
+    <span *ngFor="let weekday of weekdays">{{ weekday }}</span>
+  </div>
+
+  <div class="days-grid">
+    <button
+      type="button"
+      *ngFor="let cell of cells"
+      class="day-cell"
+      [class.is-empty]="!cell.date"
+      [class.is-today]="cell.isToday"
+      [class.is-selected]="cell.date === selectedDate"
+      [class.status-completed]="cell.item?.status === 'completed'"
+      [class.status-missed]="cell.item?.status === 'missed'"
+      [class.status-scheduled]="cell.item?.status === 'scheduled'"
+      [class.status-free]="cell.item?.status === 'free_completed'"
+      [class.status-rest]="cell.item?.status === 'rest'"
+      [disabled]="!cell.item"
+      [attr.aria-label]="cell.item ? (cell.date + ' ' + statusLabel(cell.item.status)) : null"
+      (click)="selectDay(cell)"
+    >
+      <span class="day-number" *ngIf="cell.dayNumber">{{ cell.dayNumber }}</span>
+      <span class="status-dot" *ngIf="cell.item"></span>
+    </button>
+  </div>
+
+  <div class="calendar-legend">
+    <span><i class="legend-dot status-completed"></i>Entrenado</span>
+    <span><i class="legend-dot status-missed"></i>No realizado</span>
+    <span><i class="legend-dot status-scheduled"></i>Programado</span>
+    <span><i class="legend-dot status-free"></i>Libre</span>
+    <span><i class="legend-dot status-rest"></i>Descanso</span>
+  </div>
+</section>

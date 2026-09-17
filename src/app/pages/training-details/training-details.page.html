@@ -24,7 +24,7 @@
         <div class="td-cover">
           <img
             class="td-cover-img"
-            [src]="detail.training_session?.cover_image || fallbackCover"
+            [src]="detail.training_session.cover_image || fallbackCover"
             alt="Cover"
             (error)="onImgError($event)"
           />

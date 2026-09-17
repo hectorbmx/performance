@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSHEAL</key>
 	<string></string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Usamos Face ID para confirmar tu identidad antes de desbloquear tu sesion.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Usamos Apple Health para mostrar tu progreso diario: pasos, calorías quemadas y minutos activos.
 Usamos Apple Health para mostrar tu progreso diario: pasos, calorías quemadas y minutos activos.

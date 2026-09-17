@@ -18,69 +18,69 @@
         </div>
       </div>
       <div class="header-actions">
-        <div class="streak-chip" title="Racha de entrenamientos">
-          <ion-icon name="flame-outline"></ion-icon>
+        <button type="button" class="streak-chip" title="Calendario de actividad" aria-label="Abrir calendario de actividad" (click)="openActivityCalendar()">
+          <ion-icon name="calendar-outline"></ion-icon>
           <span>{{ streak.current }}</span>
+        </button>
+
+        <div class="notification-icon" (click)="openNotifications()">
+          <ion-icon name="notifications-outline"></ion-icon>
+
+          <span class="notification-badge" *ngIf="notifCount() > 0">
+            {{ notifCount() }}
+          </span>
+
+          <ion-modal
+            [isOpen]="isNotifOpen"
+            (didDismiss)="isNotifOpen = false"
+            cssClass="notif-sheet"
+            [breakpoints]="[0, 0.35, 0.7, 1]"
+            [initialBreakpoint]="0.7"
+            [backdropBreakpoint]="0.35"
+            [handle]="true"
+          >
+            <ion-header>
+              <ion-toolbar>
+                <ion-title>Notificaciones</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button (click)="isNotifOpen = false">Cerrar</ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+
+            <ion-content class="ion-padding">
+              <ng-container *ngIf="notifications().length > 0; else emptyState">
+                <ion-list lines="none">
+                  <ion-item *ngFor="let n of notifications()" class="notif-item" button detail="false" (click)="openNotification(n)">
+                    <ion-icon
+                      slot="start"
+                      [name]="iconFor(n.type)"
+                      [color]="colorFor(n.type)"
+                    ></ion-icon>
+
+                    <ion-label>
+                      <h3 class="notif-title">{{ n.title }}</h3>
+                      <p class="notif-message">{{ n.message }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+              </ng-container>
+
+              <ng-template #emptyState>
+                <div class="empty">
+                  <ion-text color="medium">No tienes notificaciones.</ion-text>
+                </div>
+              </ng-template>
+            </ion-content>
+          </ion-modal>
         </div>
-
-      <div class="notification-icon" (click)="openNotifications()">
-  <ion-icon name="notifications-outline"></ion-icon>
-
-  <span class="notification-badge" *ngIf="notifCount() > 0">
-    {{ notifCount() }}
-  </span>
-
-  <ion-modal
-    [isOpen]="isNotifOpen"
-    (didDismiss)="isNotifOpen = false"
-    cssClass="notif-sheet"
-    [breakpoints]="[0, 0.35, 0.7, 1]"
-    [initialBreakpoint]="0.7"
-    [backdropBreakpoint]="0.35"
-    [handle]="true"
-  >
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Notificaciones</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="isNotifOpen = false">Cerrar</ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content class="ion-padding">
-      <ng-container *ngIf="notifications().length > 0; else emptyState">
-        <ion-list lines="none">
-          <ion-item *ngFor="let n of notifications()" class="notif-item" button detail="false" (click)="openNotification(n)">
-            <ion-icon
-              slot="start"
-              [name]="iconFor(n.type)"
-              [color]="colorFor(n.type)"
-            ></ion-icon>
-
-            <ion-label>
-              <h3 class="notif-title">{{ n.title }}</h3>
-              <p class="notif-message">{{ n.message }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
-      </ng-container>
-
-      <ng-template #emptyState>
-        <div class="empty">
-          <ion-text color="medium">No tienes notificaciones.</ion-text>
-        </div>
-      </ng-template>
-    </ion-content>
-  </ion-modal>
-</div>
-</div>
+      </div>
+    </div>
 
       <!-- <div class="notification-icon">
         <ion-icon name="notifications-outline"></ion-icon>
         <span class="notification-badge"></span>
       </div> -->
-    </div>
 
     <!-- Calendar Days -->
     <div class="calendar-strip">
@@ -147,6 +147,49 @@
       <ion-icon name="barbell-outline"></ion-icon>
       <p>No workout scheduled for today</p>
     </div> -->
+
+    <!-- Tips -->
+    <div class="section-header">
+      <h3 class="section-title">Tips</h3>
+      <a class="view-details" (click)="openTips()">Ver todos</a>
+    </div>
+
+    <div class="tips-preview-loading" *ngIf="tipsLoading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <div class="tips-preview-empty" *ngIf="!tipsLoading && tipsPreview.length === 0">
+      <ion-icon name="notifications-off-outline"></ion-icon>
+      <p *ngIf="!tipsErrorMsg">Aún no hay tips disponibles.</p>
+      <p *ngIf="tipsErrorMsg">{{ tipsErrorMsg }}</p>
+    </div>
+
+    <div class="tips-preview-list" *ngIf="!tipsLoading && tipsPreview.length > 0">
+      <article
+        class="tip-preview-card"
+        *ngFor="let tip of tipsPreview"
+        [class.has-image]="tipsPreviewImageUrls[tip.id]"
+        (click)="openTip(tip)">
+        <div
+          class="tip-preview-bg"
+          *ngIf="tipsPreviewImageUrls[tip.id]"
+          [style.background-image]="tipPreviewBackground(tip)">
+        </div>
+        <div class="tip-preview-main">
+          <div class="tip-preview-meta">
+            <span>{{ tip.category.label }}</span>
+            <span>{{ tipTypeLabel(tip.type) }}</span>
+          </div>
+          <h4>{{ tip.title }}</h4>
+          <p>{{ tip.excerpt }}</p>
+          <small>
+            {{ tipScopeLabel(tip) }}
+            <span *ngIf="tipExpirationLabel(tip) as expires"> · {{ expires }}</span>
+          </small>
+        </div>
+        <ion-icon name="calendar-outline"></ion-icon>
+      </article>
+    </div>
 
     <!-- Daily Progress -->
     <div class="section-header">
@@ -224,38 +267,6 @@
       </div>
     </div>
 
-    <!-- Recommended Recovery -->
-    <div class="section-header">
-      <h3 class="section-title">Recommended Recovery</h3>
-    </div>
-
-    <div class="recovery-cards">
-      <div class="recovery-card">
-        <img 
-          src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80" 
-          alt="Yoga"
-          class="recovery-image"
-        />
-        <div class="recovery-info">
-          <span class="recovery-duration">15 MIN</span>
-          <h4 class="recovery-title">Post-HIIT Yoga</h4>
-        </div>
-      </div>
-
-      <div class="recovery-card">
-        <img 
-          src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80" 
-          alt="Muscle Release"
-          class="recovery-image"
-        />
-        <div class="recovery-info">
-          <span class="recovery-duration">10 MIN</span>
-          <h4 class="recovery-title">Muscle Release</h4>
-        </div>
-      </div>
-    </div>
-
-    <!-- Upcoming Workouts -->
    <!-- Upcoming Workouts -->
 <ng-container *ngIf="upcoming.length > 0; else noUpcoming">
 

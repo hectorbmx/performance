@@ -37,6 +37,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/training-details/training-details.page').then(m => m.TrainingDetailsPage),
   },
   {
+    path: 'tips/:id',
+    canMatch: [authGuard],
+    loadComponent: () => import('./pages/tip-detail/tip-detail.page').then(m => m.TipDetailPage),
+  },
+  {
     path: 'subscription-history',
     canMatch: [authGuard],
     loadComponent: () => import('./pages/subscription-history/subscription-history.page').then( m => m.SubscriptionHistoryPage)
@@ -45,6 +50,11 @@ export const routes: Routes = [
     path: 'health-history/:metric',
     canMatch: [authGuard],
     loadComponent: () => import('./pages/health-history/health-history.page').then(m => m.HealthHistoryPage)
+  },
+  {
+    path: 'activity-calendar',
+    canMatch: [authGuard],
+    loadComponent: () => import('./pages/activity-calendar/activity-calendar.page').then(m => m.ActivityCalendarPage)
   },
   // Timer route - OPCIÓN 1: Sin autenticación (accesible sin login)
   // {

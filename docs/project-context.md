@@ -102,3 +102,29 @@ Reglas obligatorias:
 - Si no existe un modulo adecuado y la implementacion empieza a requerir una nueva responsabilidad transversal, hacer una pausa antes de codificar y avisar al usuario para decidir si conviene separarla como modulo independiente.
 - No crear abstracciones nuevas solo por forma; crearlas cuando reduzcan complejidad real, eviten contratos paralelos o permitan validar una regla en un solo punto.
 
+## Pendiente Futuro: Login Con Biometricos
+
+Idea anotada para desarrollar despues: permitir desbloqueo de sesion con biometricos en Android y iOS, usando huella, Face ID o Touch ID segun disponibilidad del dispositivo.
+
+Alcance esperado:
+
+- Revisar el login Ionic actual y `AuthService` antes de tocar codigo, para reutilizar token, contexto de actor y rutas existentes.
+- Elegir plugin Capacitor mantenido para biometria y almacenamiento seguro. Evitar guardar password en texto plano o en Preferences.
+- Flujo opt-in: despues de login normal con email/password, preguntar con un toggle si quiere usar Face ID/huella para futuros accesos.
+- Al activar el toggle, pedir biometria una vez para confirmar que el usuario local es el dueno del dispositivo.
+- Guardar el token de sesion y contexto minimo solo en almacenamiento seguro nativo; no guardar password ni datos biometricos.
+- Mostrar opcion "Entrar con biometria" solo si el dispositivo soporta biometria, el usuario ya inicio sesion antes y activo esa preferencia.
+- En proximos accesos, pedir Face ID/huella; si pasa, recuperar el token seguro y continuar contra el backend.
+- Soportar iOS con Face ID/Touch ID y Android con BiometricPrompt.
+- Agregar fallback obligatorio a email/password si falla biometria, cambia el dispositivo, se revoca token o el usuario cierra sesion.
+- Primera version recomendada: logout normal borra tambien la credencial/token biometrico; cerrar la app no lo borra.
+- Validar en dispositivo fisico; navegador no prueba biometria real.
+
+Notas de seguridad:
+
+- La biometria no debe reemplazar la autenticacion del backend. Solo desbloquea localmente un token/credencial previamente emitido.
+- La app nunca debe guardar huella, rostro, Face ID, Touch ID ni plantilla biometrica; eso vive dentro del sistema operativo.
+- Si el backend invalida el token por single-session, logout, membresia o seguridad, la app debe volver a login normal.
+- No implementar este flujo como almacenamiento de password reutilizable salvo que se apruebe explicitamente y con cifrado nativo.
+- Considerar migrar `auth_token` fuera de `Preferences` cuando biometria este activa, para evitar tener dos fuentes de verdad inseguras.
+

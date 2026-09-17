@@ -1,7 +1,6 @@
-import { Component,OnInit } from '@angular/core';
+import { Component, OnDestroy, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router'; // Importar Router
-import {  } from '@angular/core';
 import {
   IonContent,
   IonHeader,
@@ -16,7 +15,6 @@ import {
   IonIcon,IonText,
 } from '@ionic/angular/standalone';
 import { Health } from '@capgo/capacitor-health';
-import { computed } from '@angular/core';
 import { addIcons } from 'ionicons';
 import {
   notificationsOutline,
@@ -29,6 +27,7 @@ import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { HealthMetricsService, type HealthMetricKey } from '../services/health-metrics.service';
 import { NotificationNavigationService } from '../services/notification-navigation.service';
+import { AthleteTipCardDTO, AthleteTipsService, AthleteTipType } from '../services/athlete-tips.service';
 import type { AppNotificationDTO } from 'src/app/services/auth.service'; // ajusta ruta si aplica
 
 /* =========================
@@ -61,7 +60,7 @@ type CalendarDay = {
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
 })
-export class Tab1Page {
+export class Tab1Page implements OnDestroy {
   isNotifOpen = false;
   notifCount = computed(() => this.auth.notifications().length);
   notifications = computed(() => this.auth.notifications());
@@ -104,8 +103,14 @@ goals = {
 
 readonly CIRC = 2 * Math.PI * 40; // r=40
 
-healthLoading = false;
+  healthLoading = false;
 notifEvent: any;
+tipsPreview: AthleteTipCardDTO[] = [];
+tipsPreviewImageUrls: Record<number, string> = {};
+tipsLoading = false;
+tipsErrorMsg: string | null = null;
+private readonly tipsApi = inject(AthleteTipsService);
+
   constructor(
     private trainingApi: TrainingApiService,
     private api: ApiService,
@@ -117,6 +122,10 @@ notifEvent: any;
     addIcons({notificationsOffOutline,timeOutline,play,barbellOutline,walkOutline,flameOutline,flashOutline,calendarOutline,notificationsOutline,});
 
     this.buildDays();
+  }
+
+  ngOnDestroy() {
+    this.clearTipsPreviewImageUrls();
   }
   openNotifications() {
     
@@ -164,7 +173,7 @@ notifEvent: any;
       // aquí puedes decidir: ignorar o forzar logout/redirect
     }
 
-    await Promise.all([this.load(), this.loadStreak()]);
+    await Promise.all([this.load(), this.loadStreak(), this.loadTipsPreview()]);
   }
 
   private async loadStreak() {
@@ -299,7 +308,7 @@ notifEvent: any;
 
       list.push({
         date: iso,
-        dow: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        dow: d.toLocaleDateString('es-MX', { weekday: 'short' }).replace('.', ''),
         dom: String(d.getDate()),
         isToday,
       });
@@ -379,7 +388,7 @@ async startWorkout(item: TrainingFeedItemDTO) {
   this.errorMsg = null;
 
   try {
-    const res = await this.trainingApi.index();
+    const res = await this.trainingApi.index(undefined, { suppressMembershipRedirect: true });
     this.items = res.data ?? [];
     await this.loadStreak();
 
@@ -390,11 +399,96 @@ async startWorkout(item: TrainingFeedItemDTO) {
     console.log('today found:', this.today);
 
   } catch (e: any) {
-    this.errorMsg = e?.message ?? 'Error cargando entrenamientos';
+    this.errorMsg = e?.status === 403 && e?.code === 'membership_expired'
+      ? 'Tu membresía está vencida. Renueva para ver tus entrenamientos.'
+      : e?.message ?? 'Error cargando entrenamientos';
   } finally {
     this.loading = false;
     if (event?.target) event.target.complete();
   }
+}
+
+async loadTipsPreview() {
+  this.tipsLoading = true;
+  this.tipsErrorMsg = null;
+
+  try {
+    const res = await this.tipsApi.index({ per_page: 3 });
+    this.clearTipsPreviewImageUrls();
+    this.tipsPreview = res.data ?? [];
+    await this.loadTipsPreviewImages();
+  } catch (e: any) {
+    this.clearTipsPreviewImageUrls();
+    this.tipsPreview = [];
+    this.tipsErrorMsg = e?.message ?? 'No se pudieron cargar los tips';
+  } finally {
+    this.tipsLoading = false;
+  }
+}
+
+async openTips() {
+  await this.router.navigate(['/tabs/tips']);
+}
+
+async openTip(tip: AthleteTipCardDTO) {
+  await this.router.navigate(['/tips', tip.id]);
+}
+
+async openActivityCalendar() {
+  await this.router.navigate(['/activity-calendar']);
+}
+
+tipTypeLabel(type: AthleteTipType): string {
+  switch (type) {
+    case 'news':
+      return 'Noticia';
+    case 'note':
+      return 'Nota';
+    default:
+      return 'Consejo';
+  }
+}
+
+tipScopeLabel(tip: AthleteTipCardDTO): string {
+  return tip.scope === 'global' ? 'General' : 'De tu coach';
+}
+
+tipExpirationLabel(tip: AthleteTipCardDTO): string | null {
+  if (!tip.expires_at) {
+    return null;
+  }
+
+  const date = new Intl.DateTimeFormat('es-MX', {
+    day: '2-digit',
+    month: 'short',
+  }).format(new Date(tip.expires_at));
+
+  return `Expira ${date}`;
+}
+
+tipPreviewBackground(tip: AthleteTipCardDTO): string | null {
+  const url = this.tipsPreviewImageUrls[tip.id];
+  return url ? `url("${url}")` : null;
+}
+
+private async loadTipsPreviewImages() {
+  await Promise.all(this.tipsPreview.map(async tip => {
+    if (!tip.image_url || this.tipsPreviewImageUrls[tip.id]) {
+      return;
+    }
+
+    try {
+      const blob = await this.tipsApi.imageBlob(tip.id);
+      this.tipsPreviewImageUrls[tip.id] = this.tipsApi.objectUrlFor(blob);
+    } catch (err) {
+      console.warn('No se pudo cargar imagen de tip en home', tip.id, err);
+    }
+  }));
+}
+
+private clearTipsPreviewImageUrls() {
+  Object.values(this.tipsPreviewImageUrls).forEach(url => this.tipsApi.revokeObjectUrl(url));
+  this.tipsPreviewImageUrls = {};
 }
 
 

@@ -1,0 +1,112 @@
+<ion-header class="activity-header">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab1" text="Back"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Actividad</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="activity-content">
+  <main class="activity-shell">
+    <section class="activity-hero">
+      <div class="hero-icon">
+        <ion-icon name="calendar-outline"></ion-icon>
+      </div>
+      <div>
+        <p>Consistencia</p>
+        <h1>{{ calendar?.summary?.activity_days ?? 0 }}</h1>
+        <span>Dias con actividad este mes</span>
+      </div>
+    </section>
+
+    <section class="loading-state" *ngIf="loading && !calendar">
+      <ion-spinner name="crescent"></ion-spinner>
+    </section>
+
+    <section class="error-state" *ngIf="errorMsg && !loading">
+      <p>{{ errorMsg }}</p>
+      <ion-button fill="clear" (click)="load()">Reintentar</ion-button>
+    </section>
+
+    <ng-container *ngIf="calendar">
+      <section class="summary-grid">
+        <article class="summary-tile is-positive">
+          <span>Entrenados</span>
+          <strong>{{ calendar.summary.completed_days + calendar.summary.free_completed_days }}</strong>
+        </article>
+        <article class="summary-tile is-negative">
+          <span>No realizados</span>
+          <strong>{{ calendar.summary.missed_days }}</strong>
+        </article>
+        <article class="summary-tile">
+          <span>Programados</span>
+          <strong>{{ calendar.summary.scheduled_days }}</strong>
+        </article>
+        <article class="summary-tile">
+          <span>Descanso</span>
+          <strong>{{ calendar.summary.rest_days }}</strong>
+        </article>
+      </section>
+
+      <section class="calendar-panel">
+        <app-athlete-activity-calendar
+          [days]="calendar.days"
+          [month]="month"
+          [loading]="loading"
+          [selectedDate]="selectedDay?.date ?? null"
+          (monthChange)="changeMonth($event)"
+          (daySelected)="selectDay($event)">
+        </app-athlete-activity-calendar>
+      </section>
+
+      <section class="detail-panel">
+        <h3>Detalle del dia</h3>
+
+        <div class="detail-header">
+          <div>
+            <p>{{ friendlyDate(selectedDay?.date) }}</p>
+            <h2>{{ statusLabel(selectedDay) }}</h2>
+          </div>
+          <span class="status-pill" [ngClass]="selectedDay?.status || 'rest'">
+            {{ statusPillLabel(selectedDay) }}
+          </span>
+        </div>
+
+        <p class="detail-text">{{ detailText(selectedDay) }}</p>
+
+        <div class="detail-grid" *ngIf="selectedDay">
+          <div>
+            <span>Asignados</span>
+            <strong>{{ selectedDay.assigned_count }}</strong>
+          </div>
+          <div>
+            <span>Con actividad</span>
+            <strong>{{ assignedActivityCount(selectedDay) }}</strong>
+          </div>
+          <div>
+            <span>Libres</span>
+            <strong>{{ selectedDay.free_completed_count }}</strong>
+          </div>
+        </div>
+
+        <div class="detail-note" *ngIf="selectedDay">
+          <span *ngIf="selectedDay.status === 'missed'">
+            Este dia cuenta como no realizado porque ya paso y no hay actividad registrada.
+          </span>
+          <span *ngIf="selectedDay.status === 'scheduled'">
+            Este dia todavia no cuenta como negativo.
+          </span>
+          <span *ngIf="selectedDay.status === 'free_completed'">
+            Cuenta como dia positivo aunque no hubiera entrenamiento asignado.
+          </span>
+        </div>
+      </section>
+    </ng-container>
+  </main>
+</ion-content>

@@ -10,7 +10,7 @@
     <div class="login-card">
       <!-- Logo y título -->
       <div class="header-section">
-        <h1 class="main-title">ATHLETE CORE</h1>
+        <h1 class="main-title">33 PERFORMANCE</h1>
         <h2 class="sub-title">COACH</h2>
         <p class="portal-text">PERFORMANCE PORTAL</p>
       </div>
@@ -55,7 +55,13 @@
         <!-- Stay logged in & Forgot password -->
         <div class="options-row">
           <label class="checkbox-label">
-            <input type="checkbox" class="custom-checkbox" [(ngModel)]="rememberSession" name="rememberSession" />
+            <input
+              type="checkbox"
+              class="custom-checkbox"
+              [(ngModel)]="rememberSession"
+              name="rememberSession"
+              (ngModelChange)="onRememberSessionChange()"
+            />
             <span>Mantener sesion iniciada</span>
           </label>
           <a href="#" class="forgot-link">Olvide mi contrasena</a>
@@ -66,14 +72,29 @@
           Iniciar sesion
         </button>
 
+        <div class="biometric-divider" *ngIf="biometricLoginReady">
+          <span>o</span>
+        </div>
+
+        <button
+          type="button"
+          class="biometric-btn"
+          *ngIf="biometricLoginReady"
+          [disabled]="biometricBusy"
+          (click)="handleBiometricLogin()"
+        >
+          <ion-icon name="finger-print-outline"></ion-icon>
+          <span>Entrar con {{ biometricLabel }}</span>
+        </button>
+
         <!-- Contact Administrator -->
-<p class="contact-text">
+<!-- <p class="contact-text">
   ¿Nuevo en la plataforma?
   <a class="contact-link" role="button" tabindex="0"
      href="mailto:soporte@athletecore.com">
     Contacta a tu coach
   </a>
-</p>
+</p> -->
 
 
       </form>

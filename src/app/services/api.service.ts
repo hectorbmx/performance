@@ -8,6 +8,14 @@ import { Preferences } from '@capacitor/preferences';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
+interface ApiRequestOptions {
+  body?: any;
+  params?: Record<string, any>;
+  headers?: Record<string, string>;
+  isFormData?: boolean;
+  suppressMembershipRedirect?: boolean;
+}
+
 export type TrainingStatus = 'scheduled' | 'in_progress' | 'completed' | 'skipped' | 'cancelled';
 export type TrainingSource = 'personal' | 'group' | 'free';
 
@@ -196,12 +204,7 @@ private async buildHeaders(
   async request<T>(
     method: HttpMethod,
     path: string,
-    options?: {
-      body?: any;
-      params?: Record<string, any>;
-      headers?: Record<string, string>;
-      isFormData?: boolean;
-    }
+    options?: ApiRequestOptions
   ): Promise<T> {
     const url = this.normalizeUrl(path);
     // const headers = await this.buildHeaders(options?.headers);
@@ -218,33 +221,55 @@ private async buildHeaders(
 
       return await firstValueFrom(obs);
     } catch (err) {
-      throw this.normalizeError(err);
+      throw this.normalizeError(err, {
+        suppressMembershipRedirect: options?.suppressMembershipRedirect ?? false,
+      });
     }
   }
 
   // Helpers para uso cómodo
-  get<T>(path: string, params?: Record<string, any>, headers?: Record<string, string>) {
-    return this.request<T>('GET', path, { params, headers });
+  get<T>(path: string, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+    return this.request<T>('GET', path, { params, headers, ...options });
   }
 
-  post<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>) {
-    return this.request<T>('POST', path, { body, params, headers });
+  post<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+    return this.request<T>('POST', path, { body, params, headers, ...options });
   }
 
-  postForm<T>(path: string, body: FormData, params?: Record<string, any>, headers?: Record<string, string>) {
-    return this.request<T>('POST', path, { body, params, headers, isFormData: true });
+  postForm<T>(path: string, body: FormData, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+    return this.request<T>('POST', path, { body, params, headers, isFormData: true, ...options });
   }
 
-  put<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>) {
-    return this.request<T>('PUT', path, { body, params, headers });
+  put<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+    return this.request<T>('PUT', path, { body, params, headers, ...options });
   }
 
-  patch<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>) {
-    return this.request<T>('PATCH', path, { body, params, headers });
+  patch<T>(path: string, body?: any, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+    return this.request<T>('PATCH', path, { body, params, headers, ...options });
   }
 
-  delete<T>(path: string, params?: Record<string, any>, headers?: Record<string, string>) {
-    return this.request<T>('DELETE', path, { params, headers });
+  delete<T>(path: string, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+    return this.request<T>('DELETE', path, { params, headers, ...options });
+  }
+
+  async getBlob(path: string, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>): Promise<Blob> {
+    const url = this.normalizeUrl(path);
+    const requestHeaders = await this.buildHeaders(headers, { isFormData: true });
+    const requestParams = this.buildParams(params);
+
+    try {
+      const obs = this.http.get(url, {
+        headers: requestHeaders,
+        params: requestParams,
+        responseType: 'blob',
+      });
+
+      return await firstValueFrom(obs);
+    } catch (err) {
+      throw this.normalizeError(err, {
+        suppressMembershipRedirect: options?.suppressMembershipRedirect ?? false,
+      });
+    }
   }
 
 
@@ -268,7 +293,7 @@ private async buildHeaders(
 
   return `${cleanBase}/${cleanPath}`;
 }
-  private normalizeError(err: unknown): ApiError {
+  private normalizeError(err: unknown, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>): ApiError {
     if (err instanceof HttpErrorResponse) {
       const msg =
         err.error?.message ||
@@ -281,7 +306,12 @@ private async buildHeaders(
       e.access_state = err.error?.access_state;
       e.raw = err;
 
-      if (e.status === 403 && e.code === 'membership_expired' && !err.url?.includes('/app/login')) {
+      if (
+        !options?.suppressMembershipRedirect &&
+        e.status === 403 &&
+        e.code === 'membership_expired' &&
+        !err.url?.includes('/app/login')
+      ) {
         window.dispatchEvent(new CustomEvent('app:membership-expired', {
           detail: {
             message: e.message,
@@ -295,8 +325,8 @@ private async buildHeaders(
 
     return err instanceof Error ? err as ApiError : new Error('Error inesperado en la petición.') as ApiError;
   }
-  postFormData<T>(path: string, formData: FormData, params?: Record<string, any>, headers?: Record<string, string>) {
-  return this.request<T>('POST', path, { body: formData, params, headers, isFormData: true });
+  postFormData<T>(path: string, formData: FormData, params?: Record<string, any>, headers?: Record<string, string>, options?: Pick<ApiRequestOptions, 'suppressMembershipRedirect'>) {
+  return this.request<T>('POST', path, { body: formData, params, headers, isFormData: true, ...options });
 }
 
 }

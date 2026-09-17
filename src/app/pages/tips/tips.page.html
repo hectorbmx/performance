@@ -1,0 +1,107 @@
+<ion-content [fullscreen]="true" class="tips-content">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <main class="tips-shell">
+    <header class="tips-header">
+      <div>
+        <p>Contenido para ti</p>
+        <h1>Tips</h1>
+      </div>
+
+      <button type="button" class="icon-action" (click)="refresh()" [disabled]="loading" aria-label="Actualizar tips">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </button>
+    </header>
+
+    <ion-searchbar
+      placeholder="Buscar tip"
+      debounce="450"
+      [value]="searchTerm"
+      (ionInput)="search($event)">
+    </ion-searchbar>
+
+    <section class="filters">
+      <ion-select
+        interface="popover"
+        placeholder="Categoría"
+        [value]="selectedCategory"
+        (ionChange)="filterByCategory($event)">
+        <ion-select-option [value]="null">Todas</ion-select-option>
+        <ion-select-option *ngFor="let category of categories" [value]="category.key">
+          {{ category.label }}
+        </ion-select-option>
+      </ion-select>
+
+      <ion-select
+        interface="popover"
+        placeholder="Tipo"
+        [value]="selectedType"
+        (ionChange)="filterByType($event)">
+        <ion-select-option [value]="null">Todos</ion-select-option>
+        <ion-select-option *ngFor="let type of types" [value]="type.key">
+          {{ type.label }}
+        </ion-select-option>
+      </ion-select>
+    </section>
+
+    <section class="loading-state" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <span>Cargando tips</span>
+    </section>
+
+    <section class="state-card" *ngIf="!loading && errorMessage">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <h2>No pudimos cargar los tips</h2>
+      <p>{{ errorMessage }}</p>
+      <ion-button fill="clear" (click)="retry()">Reintentar</ion-button>
+    </section>
+
+    <section class="state-card" *ngIf="!loading && !errorMessage && tips.length === 0">
+      <ion-icon name="newspaper-outline"></ion-icon>
+      <h2>Sin tips por ahora</h2>
+      <p>Cuando haya contenido disponible para tu cuenta, aparecerá aquí.</p>
+    </section>
+
+    <section class="tips-list" *ngIf="!loading && !errorMessage && tips.length > 0">
+      <article class="tip-card" *ngFor="let tip of tips" (click)="openTip(tip)">
+        <div class="tip-image" *ngIf="tip.image_url">
+          <img *ngIf="imageUrls[tip.id]; else imageLoading" [src]="imageUrls[tip.id]" [alt]="tip.title">
+          <ng-template #imageLoading>
+            <ion-icon name="newspaper-outline"></ion-icon>
+          </ng-template>
+        </div>
+
+        <div class="tip-main">
+          <div class="tip-meta">
+            <span>{{ tip.category.label }}</span>
+            <span>{{ typeLabel(tip.type) }}</span>
+          </div>
+
+          <h2>{{ tip.title }}</h2>
+          <p>{{ tip.excerpt }}</p>
+
+          <div class="tip-footer">
+            <span>{{ scopeLabel(tip) }}</span>
+            <span *ngIf="expirationLabel(tip.expires_at) as expires">{{ expires }}</span>
+            <span *ngIf="tip.published_at">{{ dateLabel(tip.published_at) }}</span>
+          </div>
+        </div>
+
+        <ion-icon class="open-icon" name="chevron-forward-outline"></ion-icon>
+      </article>
+
+      <ion-button
+        class="load-more"
+        expand="block"
+        fill="clear"
+        *ngIf="hasMore"
+        [disabled]="loadingMore"
+        (click)="loadMore()">
+        <ion-spinner *ngIf="loadingMore" name="crescent"></ion-spinner>
+        <span *ngIf="!loadingMore">Cargar más</span>
+      </ion-button>
+    </section>
+  </main>
+</ion-content>
