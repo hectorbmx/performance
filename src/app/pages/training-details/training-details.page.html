@@ -188,13 +188,25 @@
 
             <!-- Video (solo si existe) -->
             <div class="td-video" *ngIf="section.video_url">
+              <ion-button
+                *ngIf="isNativeYoutubeVideo(section.video_url); else embeddedVideo"
+                expand="block"
+                color="danger"
+                (click)="openYoutubeVideo(section.video_url)">
+                <ion-icon slot="start" name="logo-youtube"></ion-icon>
+                Ver video en YouTube
+              </ion-button>
+
+              <ng-template #embeddedVideo>
               <iframe
                 [src]="youtubeEmbedUrl(section.video_url)"
                 title="Video"
                 frameborder="0"
+                referrerpolicy="strict-origin-when-cross-origin"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowfullscreen>
               </iframe>
+              </ng-template>
             </div>
 
             <!-- Result -->

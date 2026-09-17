@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import {
   IonButton,
   IonButtons,
@@ -103,6 +105,11 @@ export class LibraryPage {
       return;
     }
 
+    if (Capacitor.isNativePlatform() && this.isYoutubeVideo(video)) {
+      this.openExternalVideo(video);
+      return;
+    }
+
     this.selectedVideo = video;
   }
 
@@ -151,6 +158,19 @@ export class LibraryPage {
     await toast.present();
   }
 
+  private async openExternalVideo(video: AthleteLibraryVideoDTO): Promise<void> {
+    const url = video.youtube_url || video.playback_url;
+
+    if (!url) {
+      return;
+    }
+
+    await Browser.open({
+      url,
+      presentationStyle: 'fullscreen',
+    });
+  }
+
   private toYoutubeEmbed(url: string | null): string {
     if (!url) {
       return '';
@@ -158,33 +178,42 @@ export class LibraryPage {
 
     try {
       const parsed = new URL(url);
+      let id: string | null = null;
 
       if (parsed.hostname.includes('youtube.com')) {
-        const id = parsed.searchParams.get('v');
-        if (id) {
-          return `https://www.youtube.com/embed/${id}`;
-        }
+        id = parsed.searchParams.get('v');
 
         const parts = parsed.pathname.split('/').filter(Boolean);
-        if (parts[0] === 'embed' && parts[1]) {
-          return `https://www.youtube.com/embed/${parts[1]}`;
+        if (!id && parts[0] === 'embed' && parts[1]) {
+          id = parts[1];
         }
 
-        if (parts[0] === 'shorts' && parts[1]) {
-          return `https://www.youtube.com/embed/${parts[1]}`;
+        if (!id && parts[0] === 'shorts' && parts[1]) {
+          id = parts[1];
         }
       }
 
       if (parsed.hostname.includes('youtu.be')) {
-        const id = parsed.pathname.replace('/', '');
-        if (id) {
-          return `https://www.youtube.com/embed/${id}`;
-        }
+        id = parsed.pathname.split('/').filter(Boolean)[0] ?? null;
+      }
+
+      if (id) {
+        return this.youtubeEmbedUrl(id);
       }
 
       return url;
     } catch {
       return url;
     }
+  }
+
+  private youtubeEmbedUrl(id: string): string {
+    const params = new URLSearchParams({
+      playsinline: '1',
+      rel: '0',
+      origin: 'https://coach.training-flow.com',
+    });
+
+    return `https://www.youtube.com/embed/${encodeURIComponent(id)}?${params.toString()}`;
   }
 }

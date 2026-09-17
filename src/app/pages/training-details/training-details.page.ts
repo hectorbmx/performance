@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 
 
 import {
@@ -12,6 +14,7 @@ import {
   IonToolbar,
   IonButtons,
   IonBackButton,
+  IonButton,
   IonSpinner,
   IonIcon,
 } from '@ionic/angular/standalone';
@@ -49,6 +52,7 @@ import {
     IonToolbar,
     IonButtons,
     IonBackButton,
+    IonButton,
     IonSpinner,
     IonIcon,
   ],
@@ -333,26 +337,45 @@ async loadFreeDetails() {
   return this.sanitizer.bypassSecurityTrustResourceUrl(embed);
 }
 
+isNativeYoutubeVideo(url: string | null): boolean {
+  return Capacitor.isNativePlatform() && this.isYoutubeUrl(url);
+}
+
+async openYoutubeVideo(url: string | null): Promise<void> {
+  if (!url) {
+    return;
+  }
+
+  await Browser.open({
+    url,
+    presentationStyle: 'fullscreen',
+  });
+}
+
 private toYoutubeEmbed(url: string | null): string {
   if (!url) return '';
 
   try {
     const u = new URL(url);
+    let id: string | null = null;
 
     // youtube.com/watch?v=XXXX
     if (u.hostname.includes('youtube.com')) {
-      const v = u.searchParams.get('v');
-      if (v) return `https://www.youtube.com/embed/${v}`;
+      id = u.searchParams.get('v');
 
       // youtube.com/embed/XXXX
       const parts = u.pathname.split('/').filter(Boolean);
-      if (parts[0] === 'embed' && parts[1]) return `https://www.youtube.com/embed/${parts[1]}`;
+      if (!id && parts[0] === 'embed' && parts[1]) id = parts[1];
+      if (!id && parts[0] === 'shorts' && parts[1]) id = parts[1];
     }
 
     // youtu.be/XXXX
     if (u.hostname.includes('youtu.be')) {
-      const id = u.pathname.replace('/', '');
-      if (id) return `https://www.youtube.com/embed/${id}`;
+      id = u.pathname.split('/').filter(Boolean)[0] ?? null;
+    }
+
+    if (id) {
+      return this.buildYoutubeEmbedUrl(id);
     }
 
     // si no se reconoce, intenta usar tal cual
@@ -360,6 +383,29 @@ private toYoutubeEmbed(url: string | null): string {
   } catch {
     return url;
   }
+}
+
+private isYoutubeUrl(url: string | null): boolean {
+  if (!url) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.includes('youtube.com') || parsed.hostname.includes('youtu.be');
+  } catch {
+    return false;
+  }
+}
+
+private buildYoutubeEmbedUrl(id: string): string {
+  const params = new URLSearchParams({
+    playsinline: '1',
+    rel: '0',
+    origin: 'https://coach.training-flow.com',
+  });
+
+  return `https://www.youtube.com/embed/${encodeURIComponent(id)}?${params.toString()}`;
 }
 
 
