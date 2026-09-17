@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\App\Client\MembershipController;
 use App\Http\Controllers\Api\V1\App\Client\HealthMetricController;
 use App\Http\Controllers\Api\V1\App\Client\StreakController;
 use App\Http\Controllers\Api\V1\App\Client\TipController as AppTipController;
+use App\Http\Controllers\Api\V1\App\Client\ActivityCalendarController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\App\PushTestController;
 use App\Http\Controllers\Client\TrainingSectionResultsController;
@@ -100,6 +101,7 @@ Route::prefix('v1')->group(function () {
             Route::post('client/profile/avatar', [ProfileController::class, 'storeAvatar']);
 
             Route::get('/app/streak', [StreakController::class, 'show']);
+            Route::get('/app/activity-calendar', [ActivityCalendarController::class, 'index']);
             Route::get('/app/health-metrics', [HealthMetricController::class, 'index']);
             Route::post('/app/health-metrics/sync', [HealthMetricController::class, 'sync']);
 
