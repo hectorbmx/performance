@@ -1047,7 +1047,7 @@ private function syncLiftingRows(\App\Models\TrainingSectionExerciseBlock $block
 }
 
 
-public function copy(Request $request, TrainingSession $training)
+public function copy(Request $request, TrainingSession $training, AppNotificationService $notifications)
 {
     abort_unless($training->coach_id === auth()->id(), 403);
 
@@ -1103,7 +1103,7 @@ public function copy(Request $request, TrainingSession $training)
         'assignments',
     ]);
 
-    DB::transaction(function () use ($training, $targetDate, $data, $validClientIds, $validGroupIds) {
+    $newTraining = DB::transaction(function () use ($training, $targetDate, $data, $validClientIds, $validGroupIds) {
         $newTraining = TrainingSession::create([
             'coach_id' => $training->coach_id,
             'title' => $data['title'],
@@ -1186,6 +1186,13 @@ public function copy(Request $request, TrainingSession $training)
 
         return $newTraining;
     });
+
+    $notifications->notifyTrainingCreated(
+        $newTraining,
+        (int) $training->coach_id,
+        $validClientIds,
+        $validGroupIds
+    );
 
     $redirectRoute = $returnClient
         ? route('coach.clients.trainings.index', [

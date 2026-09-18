@@ -68,6 +68,7 @@ class AppPasswordSetupController extends Controller
 
         return view('app-password-setup.success', [
             'email' => $userApp->email,
+            'appOpenUrl' => 'com.app33performance://login?email=' . rawurlencode($userApp->email),
         ]);
     }
 }
