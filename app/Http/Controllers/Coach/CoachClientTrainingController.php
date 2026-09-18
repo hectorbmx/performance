@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Coach;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Group;
 use App\Models\GroupTrainingAssignment;
 use App\Models\TrainingSession;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class CoachClientTrainingController extends Controller
@@ -36,18 +38,48 @@ class CoachClientTrainingController extends Controller
                         ->whereIn('group_id', $clientGroupIds));
                 }
             })
+            ->with([
+                'assignments.client:id,first_name,last_name,email',
+            ])
             ->withCount('sections')
             ->distinct()
             ->orderBy('scheduled_at', 'desc');
 
-        // Para modo lista puedes paginar; para calendario normalmente traes el mes visible.
         $trainings = $query->get();
+        $trainingIds = $trainings->pluck('id')->all();
+
+        $groupAssignments = GroupTrainingAssignment::query()
+            ->with('group:id,name')
+            ->whereIn('training_session_id', $trainingIds)
+            ->get()
+            ->groupBy('training_session_id');
+
+        $copyClients = Client::query()
+            ->where('coach_id', $request->user()->id)
+            ->where('is_active', true)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'email']);
+
+        $copyGroups = Group::query()
+            ->where('coach_id', $request->user()->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $month = $request->get('month', now()->format('Y-m'));
+        $currentMonth = Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth();
 
         return view('coach.clients.trainings.index', [
             'client' => $client,
             'trainings' => $trainings,
             'viewMode' => $view,
             'date' => $date,
+            'month' => $month,
+            'currentMonth' => $currentMonth,
+            'groupAssignments' => $groupAssignments,
+            'copyClients' => $copyClients,
+            'copyGroups' => $copyGroups,
         ]);
     }
 }

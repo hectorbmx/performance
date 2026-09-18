@@ -1059,6 +1059,7 @@ public function copy(Request $request, TrainingSession $training)
         'assigned_clients.*' => ['integer'],
         'assigned_groups' => ['nullable', 'array'],
         'assigned_groups.*' => ['integer'],
+        'return_client_id' => ['nullable', 'integer'],
     ]);
 
     $targetDate = Carbon::parse($data['scheduled_at'])->toDateString();
@@ -1082,6 +1083,13 @@ public function copy(Request $request, TrainingSession $training)
         ->whereIn('id', $groupIds)
         ->pluck('id')
         ->all();
+    $returnClient = null;
+
+    if (!empty($data['return_client_id'])) {
+        $returnClient = Client::query()
+            ->where('coach_id', $training->coach_id)
+            ->find((int) $data['return_client_id']);
+    }
 
     if ($training->visibility === 'assigned' && empty($validClientIds) && empty($validGroupIds)) {
         return back()
@@ -1179,22 +1187,44 @@ public function copy(Request $request, TrainingSession $training)
         return $newTraining;
     });
 
-    return redirect()
-        ->route('coach.trainings.index', [
+    $redirectRoute = $returnClient
+        ? route('coach.clients.trainings.index', [
+            'client' => $returnClient->id,
             'view' => 'calendar',
             'month' => Carbon::parse($targetDate)->format('Y-m'),
         ])
+        : route('coach.trainings.index', [
+            'view' => 'calendar',
+            'month' => Carbon::parse($targetDate)->format('Y-m'),
+        ]);
+
+    return redirect($redirectRoute)
         ->with('success', 'Entrenamiento copiado correctamente.');
 }
 
-   public function destroy(TrainingSession $training)
+   public function destroy(Request $request, TrainingSession $training)
         {
             abort_unless($training->coach_id === auth()->id(), 403);
 
+            $returnClient = null;
+
+            if ($request->filled('return_client_id')) {
+                $returnClient = Client::query()
+                    ->where('coach_id', $training->coach_id)
+                    ->find((int) $request->input('return_client_id'));
+            }
+
             $training->delete(); // si usas SoftDeletes, queda en papelera
 
-            return redirect()
-                ->route('coach.trainings.index', request()->query())
+            $redirectRoute = $returnClient
+                ? route('coach.clients.trainings.index', [
+                    'client' => $returnClient->id,
+                    'view' => $request->input('return_view', 'calendar'),
+                    'month' => $request->input('return_month', now()->format('Y-m')),
+                ])
+                : route('coach.trainings.index', $request->query());
+
+            return redirect($redirectRoute)
                 ->with('success', 'Entrenamiento eliminado correctamente.');
         }
 
