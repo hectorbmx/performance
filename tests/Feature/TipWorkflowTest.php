@@ -185,6 +185,24 @@ class TipWorkflowTest extends TestCase
         $this->service->save($this->coach, $this->content(), image: UploadedFile::fake()->create('bad.svg', 1, 'image/svg+xml'));
     }
 
+    public function test_uploaded_image_is_resized_and_stored_as_webp(): void
+    {
+        $tip = $this->service->save(
+            $this->coach,
+            $this->content(),
+            image: UploadedFile::fake()->image('large.png', 3000, 1800)
+        );
+
+        $this->assertStringEndsWith('.webp', $tip->image_path);
+        Storage::disk('local')->assertExists($tip->image_path);
+        $stored = Storage::disk('local')->get($tip->image_path);
+        $dimensions = getimagesizefromstring($stored);
+
+        $this->assertNotFalse($dimensions);
+        $this->assertSame('image/webp', $dimensions['mime']);
+        $this->assertLessThanOrEqual(1920, max($dimensions[0], $dimensions[1]));
+    }
+
     public function test_private_image_is_available_to_author_and_reviewer_only(): void
     {
         $tip = $this->service->save($this->coach, $this->content(), image: UploadedFile::fake()->image('private.png'));
@@ -215,7 +233,10 @@ class TipWorkflowTest extends TestCase
         $this->withoutMiddleware(\App\Http\Middleware\EnsureCoachSubscriptionIsActive::class);
         $this->actingAs($this->coach)->withSession(['_token' => 'tips-test-csrf']);
         $this->get(route('coach.tips.index'))->assertOk()->assertSee('Nuevo Tip');
-        $this->get(route('coach.tips.create'))->assertOk()->assertSee('Guardar borrador');
+        $this->get(route('coach.tips.create'))->assertOk()
+            ->assertSee('Guardar borrador')
+            ->assertSee('data-tip-form', false)
+            ->assertSee('data-tip-image-preview', false);
         $this->post(route('coach.tips.store'), array_merge($this->content(), [
             'type' => 'tip', 'category' => 'general', '_token' => 'tips-test-csrf',
         ]))->assertSessionHasNoErrors()->assertRedirect();
