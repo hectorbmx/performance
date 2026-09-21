@@ -26,10 +26,19 @@ class TipImageService
             'dimensions:max_width=4096,max_height=4096',
         ]])->validate();
 
-        $sourceBytes = file_get_contents($image->getRealPath());
-        $source = $sourceBytes === false ? false : @imagecreatefromstring($sourceBytes);
+        $realPath = $image->getRealPath();
+        $sourceBytes = $realPath ? @file_get_contents($realPath) : false;
+        if ($sourceBytes === false) {
+            $this->fail('No se pudo leer el archivo temporal de la imagen del Tip.', $image);
+        }
+
+        if (! function_exists('imagecreatefromstring')) {
+            $this->fail('La extension GD no tiene disponible imagecreatefromstring para procesar imagenes de Tips.', $image);
+        }
+
+        $source = @imagecreatefromstring($sourceBytes);
         if ($source === false) {
-            throw new RuntimeException('No se pudo procesar la imagen del Tip.');
+            $this->fail('GD no pudo decodificar la imagen del Tip recibida.', $image);
         }
 
         $source = $this->applyExifOrientation($source, $image);
@@ -42,7 +51,7 @@ class TipImageService
 
         if ($target === false) {
             imagedestroy($source);
-            throw new RuntimeException('No se pudo preparar la imagen del Tip.');
+            $this->fail('GD no pudo preparar el lienzo destino para la imagen del Tip.', $image);
         }
 
         imagealphablending($target, false);
@@ -53,7 +62,13 @@ class TipImageService
         if (! imagecopyresampled($target, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height)) {
             imagedestroy($source);
             imagedestroy($target);
-            throw new RuntimeException('No se pudo redimensionar la imagen del Tip.');
+            $this->fail('GD no pudo redimensionar la imagen del Tip.', $image);
+        }
+
+        if (! function_exists('imagewebp')) {
+            imagedestroy($source);
+            imagedestroy($target);
+            $this->fail('La extension GD de este servidor no tiene soporte imagewebp para guardar imagenes de Tips.', $image);
         }
 
         ob_start();
@@ -63,12 +78,12 @@ class TipImageService
         imagedestroy($target);
 
         if (! $encoded || ! is_string($contents) || $contents === '') {
-            throw new RuntimeException('No se pudo comprimir la imagen del Tip.');
+            $this->fail('GD no pudo comprimir la imagen del Tip como WebP.', $image);
         }
 
         $path = "tips/{$authorId}/".Str::uuid().'.webp';
         if (! Storage::disk('local')->put($path, $contents)) {
-            throw new RuntimeException('No se pudo guardar la imagen del Tip.');
+            $this->fail('Laravel no pudo guardar la imagen del Tip en el disco local.', $image);
         }
 
         return $path;
@@ -100,6 +115,55 @@ class TipImageService
         imagedestroy($source);
 
         return $oriented;
+    }
+
+    private function fail(string $message, UploadedFile $image): never
+    {
+        throw new RuntimeException($message.' Contexto: '.json_encode($this->imageContext($image), JSON_UNESCAPED_SLASHES));
+    }
+
+    private function imageContext(UploadedFile $image): array
+    {
+        $realPath = $image->getRealPath();
+        $detected = $realPath ? @getimagesize($realPath) : false;
+
+        return [
+            'client_name' => $image->getClientOriginalName(),
+            'client_extension' => $image->getClientOriginalExtension(),
+            'client_mime' => $image->getClientMimeType(),
+            'detected_mime' => $image->getMimeType(),
+            'size_bytes' => $image->getSize(),
+            'is_valid_upload' => $image->isValid(),
+            'upload_error' => $image->getError(),
+            'temp_readable' => $realPath ? is_readable($realPath) : false,
+            'getimagesize' => $detected === false ? false : [
+                'width' => $detected[0] ?? null,
+                'height' => $detected[1] ?? null,
+                'mime' => $detected['mime'] ?? null,
+            ],
+            'gd' => $this->gdContext(),
+        ];
+    }
+
+    private function gdContext(): array
+    {
+        if (! function_exists('gd_info')) {
+            return ['loaded' => false];
+        }
+
+        $info = gd_info();
+
+        return [
+            'loaded' => true,
+            'version' => $info['GD Version'] ?? null,
+            'jpeg' => (bool) ($info['JPEG Support'] ?? false),
+            'png' => (bool) ($info['PNG Support'] ?? false),
+            'webp' => (bool) ($info['WebP Support'] ?? false),
+            'avif' => (bool) ($info['AVIF Support'] ?? false),
+            'imagecreatefromstring' => function_exists('imagecreatefromstring'),
+            'imagewebp' => function_exists('imagewebp'),
+            'exif_read_data' => function_exists('exif_read_data'),
+        ];
     }
 
     public function delete(?string $disk, ?string $path): void
