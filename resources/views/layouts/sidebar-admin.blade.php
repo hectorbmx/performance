@@ -117,7 +117,11 @@
 
             <span x-show="open">Pagos</span>
         </a>
-        <x-tips.menu-link route-name="admin.tips.index" active-pattern="admin.tips.*" />
+        <x-tips.menu-link
+            :route-name="($sidebarPendingTipsCount ?? 0) > 0 ? 'admin.tips.pending' : 'admin.tips.index'"
+            active-pattern="admin.tips.*"
+            :pending-count="$sidebarPendingTipsCount ?? 0"
+        />
 
 <form method="POST" action="{{ route('logout') }}" class="mt-6 px-4">
     @csrf

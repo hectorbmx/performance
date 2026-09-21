@@ -59,6 +59,14 @@ class TipWorkflowTest extends TestCase
         return ['title' => 'Consejo de prueba', 'body' => 'Contenido de prueba'];
     }
 
+    private function renderAdminSidebar(): array
+    {
+        $view = view('layouts.sidebar-admin');
+        $html = $view->render();
+
+        return [$view->getData()['sidebarPendingTipsCount'], $html];
+    }
+
     public function test_coach_requires_review_and_admin_can_publish_own_content(): void
     {
         $tip = $this->service->save($this->coach, array_merge($this->content(), ['expires_at' => now()->addWeek()]), intent: 'submit');
@@ -277,6 +285,56 @@ class TipWorkflowTest extends TestCase
         $this->assertSame(TipStatus::PUBLISHED, $pending->fresh()->status);
         $this->assertSame($this->admin->id, $pending->fresh()->reviewed_by);
         $this->postJson($url.'/reject', ['rejection_reason' => 'Revisión vieja'])->assertStatus(409);
+    }
+
+    public function test_admin_sidebar_receives_pending_tips_count(): void
+    {
+        $this->withoutVite();
+        $this->actingAs($this->admin);
+        $this->service->save($this->coach, $this->content(), intent: 'submit');
+        $this->service->save($this->coach, ['title' => 'Borrador', 'body' => 'Sin enviar']);
+
+        [$pendingCount, $html] = $this->renderAdminSidebar();
+
+        $this->assertSame(1, $pendingCount);
+        $this->assertStringContainsString('Tips, 1 pendientes de aprobación', $html);
+        $this->assertStringContainsString('/admin/tips/pending', $html);
+        $this->assertStringContainsString('bg-red-500', $html);
+    }
+
+    public function test_admin_sidebar_hides_tip_badge_without_pending_tips(): void
+    {
+        $this->withoutVite();
+        $this->actingAs($this->admin);
+        $this->service->save($this->coach, ['title' => 'Borrador', 'body' => 'Sin enviar']);
+
+        [$pendingCount, $html] = $this->renderAdminSidebar();
+
+        $this->assertSame(0, $pendingCount);
+        $this->assertStringContainsString('/admin/tips"', $html);
+        $this->assertStringNotContainsString('/admin/tips/pending', $html);
+        $this->assertStringNotContainsString('pendientes de aprobación', $html);
+        $this->assertStringNotContainsString('bg-red-500', $html);
+    }
+
+    public function test_admin_sidebar_tip_badge_clears_after_review_decision(): void
+    {
+        $this->withoutVite();
+        $this->actingAs($this->admin);
+        $approved = $this->service->save($this->coach, $this->content(), intent: 'submit');
+        $rejected = $this->service->save($this->coach, ['title' => 'Segundo tip', 'body' => 'Contenido'], intent: 'submit');
+
+        [$pendingCount] = $this->renderAdminSidebar();
+        $this->assertSame(2, $pendingCount);
+
+        $this->service->transition($this->admin, $approved->id, 'approve');
+        [$pendingCountAfterApproval] = $this->renderAdminSidebar();
+        $this->assertSame(1, $pendingCountAfterApproval);
+
+        $this->service->transition($this->admin, $rejected->id, 'reject', 'Necesita mas detalle');
+        [$pendingCountAfterRejection, $html] = $this->renderAdminSidebar();
+        $this->assertSame(0, $pendingCountAfterRejection);
+        $this->assertStringNotContainsString('pendientes de aprobación', $html);
     }
 
     public function test_coach_cannot_enter_admin_moderation_routes(): void

@@ -1,9 +1,13 @@
 <?php
 
 namespace App\Providers;
-use App\Models\CoachSubscription;
-use Illuminate\Support\Facades\View;
 
+use App\Enums\TipScope;
+use App\Enums\TipStatus;
+use App\Models\CoachSubscription;
+use App\Models\Tip;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,23 +25,33 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
-        View::composer('layouts.sidebar', function ($view) {
-    $today = now()->toDateString();
+        View::composer('layouts.sidebar-admin', function ($view) {
+            $today = now()->toDateString();
 
-    $unpaidCount = CoachSubscription::where('billing_status', 'unpaid')
-        ->whereNull('deleted_at')
-        ->count();
+            $unpaidCount = 0;
+            $graceCount = 0;
+            if (Schema::hasTable('coach_subscriptions')) {
+                $unpaidCount = CoachSubscription::where('billing_status', 'unpaid')
+                    ->whereNull('deleted_at')
+                    ->count();
 
-    $graceCount = CoachSubscription::where('billing_status', 'unpaid')
-        ->whereDate('grace_until', '>=', $today)
-        ->whereNull('deleted_at')
-        ->count();
+                $graceCount = CoachSubscription::where('billing_status', 'unpaid')
+                    ->whereDate('grace_until', '>=', $today)
+                    ->whereNull('deleted_at')
+                    ->count();
+            }
 
-    $view->with([
-        'sidebarUnpaidCount' => $unpaidCount,
-        'sidebarGraceCount' => $graceCount,
-    ]);
-});
+            $pendingTipsCount = Schema::hasTable('tips')
+                ? Tip::where('scope', TipScope::TENANT->value)
+                    ->where('status', TipStatus::PENDING_APPROVAL->value)
+                    ->count()
+                : 0;
+
+            $view->with([
+                'sidebarUnpaidCount' => $unpaidCount,
+                'sidebarGraceCount' => $graceCount,
+                'sidebarPendingTipsCount' => $pendingTipsCount,
+            ]);
+        });
     }
 }
