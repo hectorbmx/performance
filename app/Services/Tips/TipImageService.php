@@ -19,6 +19,8 @@ class TipImageService
 
     private const WEBP_QUALITY = 82;
 
+    private const JPEG_QUALITY = 84;
+
     public function store(UploadedFile $image, int $authorId): string
     {
         Validator::make(['image' => $image], ['image' => [
@@ -65,23 +67,20 @@ class TipImageService
             $this->fail('GD no pudo redimensionar la imagen del Tip.', $image);
         }
 
-        if (! function_exists('imagewebp')) {
-            imagedestroy($source);
-            imagedestroy($target);
-            $this->fail('La extension GD de este servidor no tiene soporte imagewebp para guardar imagenes de Tips.', $image);
-        }
-
         ob_start();
-        $encoded = imagewebp($target, null, self::WEBP_QUALITY);
+        $extension = $this->canEncodeWebp() ? 'webp' : 'jpg';
+        $encoded = $extension === 'webp'
+            ? imagewebp($target, null, self::WEBP_QUALITY)
+            : imagejpeg($target, null, self::JPEG_QUALITY);
         $contents = ob_get_clean();
         imagedestroy($source);
         imagedestroy($target);
 
         if (! $encoded || ! is_string($contents) || $contents === '') {
-            $this->fail('GD no pudo comprimir la imagen del Tip como WebP.', $image);
+            $this->fail("GD no pudo comprimir la imagen del Tip como {$extension}.", $image);
         }
 
-        $path = "tips/{$authorId}/".Str::uuid().'.webp';
+        $path = "tips/{$authorId}/".Str::uuid().".{$extension}";
         if (! Storage::disk('local')->put($path, $contents)) {
             $this->fail('Laravel no pudo guardar la imagen del Tip en el disco local.', $image);
         }
@@ -164,6 +163,17 @@ class TipImageService
             'imagewebp' => function_exists('imagewebp'),
             'exif_read_data' => function_exists('exif_read_data'),
         ];
+    }
+
+    private function canEncodeWebp(): bool
+    {
+        if (! function_exists('imagewebp') || ! function_exists('gd_info')) {
+            return false;
+        }
+
+        $info = gd_info();
+
+        return (bool) ($info['WebP Support'] ?? false);
     }
 
     public function delete(?string $disk, ?string $path): void

@@ -185,7 +185,7 @@ class TipWorkflowTest extends TestCase
         $this->service->save($this->coach, $this->content(), image: UploadedFile::fake()->create('bad.svg', 1, 'image/svg+xml'));
     }
 
-    public function test_uploaded_image_is_resized_and_stored_as_webp(): void
+    public function test_uploaded_image_is_resized_and_stored_optimized(): void
     {
         $tip = $this->service->save(
             $this->coach,
@@ -193,13 +193,13 @@ class TipWorkflowTest extends TestCase
             image: UploadedFile::fake()->image('large.png', 3000, 1800)
         );
 
-        $this->assertStringEndsWith('.webp', $tip->image_path);
+        $this->assertMatchesRegularExpression('/\.(webp|jpg)$/', $tip->image_path);
         Storage::disk('local')->assertExists($tip->image_path);
         $stored = Storage::disk('local')->get($tip->image_path);
         $dimensions = getimagesizefromstring($stored);
 
         $this->assertNotFalse($dimensions);
-        $this->assertSame('image/webp', $dimensions['mime']);
+        $this->assertContains($dimensions['mime'], ['image/webp', 'image/jpeg']);
         $this->assertLessThanOrEqual(1920, max($dimensions[0], $dimensions[1]));
     }
 

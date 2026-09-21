@@ -1,6 +1,8 @@
 const MAX_IMAGE_EDGE = 1920;
 const TARGET_IMAGE_BYTES = 850 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const OUTPUT_IMAGE_TYPE = 'image/jpeg';
+const OUTPUT_IMAGE_EXTENSION = 'jpg';
 
 const formatBytes = (bytes) => {
     if (bytes < 1024 * 1024) {
@@ -55,7 +57,7 @@ const optimizeImage = async (file) => {
     let blob;
     while (true) {
         for (const quality of [0.84, 0.76, 0.68, 0.60]) {
-            blob = await canvasToBlob(canvas, 'image/webp', quality);
+            blob = await canvasToBlob(canvas, OUTPUT_IMAGE_TYPE, quality);
             if (blob.size <= TARGET_IMAGE_BYTES) {
                 break;
             }
@@ -77,7 +79,7 @@ const optimizeImage = async (file) => {
     source.close?.();
 
     const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-') || 'tip';
-    return new File([blob], `${baseName}.webp`, { type: 'image/webp', lastModified: Date.now() });
+    return new File([blob], `${baseName}.${OUTPUT_IMAGE_EXTENSION}`, { type: OUTPUT_IMAGE_TYPE, lastModified: Date.now() });
 };
 
 const initializeTipForm = (form) => {
