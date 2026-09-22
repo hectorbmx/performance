@@ -1,6 +1,20 @@
 <x-app-layout>
+    @php
+        $activeClientTab = old('_tab', session('active_client_tab', 'datos_generales'));
+        $validClientTabs = ['datos_generales', 'membresias', 'progreso', 'metricas'];
+
+        if (! in_array($activeClientTab, $validClientTabs, true)) {
+            $activeClientTab = 'datos_generales';
+        }
+    @endphp
+
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     <div class="py-8">
-        <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-9xl mx-auto sm:px-6 lg:px-8"
+             x-data="{ activeTab: @js($activeClientTab) }">
 
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-2xl font-bold">Editar cliente</h1>
@@ -9,11 +23,55 @@
                     Volver
                 </a>
             </div>
+
+            <div class="mb-6 border-b border-slate-200">
+                <nav class="-mb-px flex flex-wrap gap-2" aria-label="Secciones del cliente">
+                    <button type="button"
+                            class="rounded-t-lg border px-4 py-2 text-sm font-medium transition"
+                            :class="activeTab === 'datos_generales'
+                                ? 'border-slate-200 border-b-white bg-white text-indigo-700'
+                                : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'"
+                            :aria-selected="activeTab === 'datos_generales'"
+                            @click="activeTab = 'datos_generales'">
+                        Datos generales
+                    </button>
+                    <button type="button"
+                            class="rounded-t-lg border px-4 py-2 text-sm font-medium transition"
+                            :class="activeTab === 'membresias'
+                                ? 'border-slate-200 border-b-white bg-white text-indigo-700'
+                                : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'"
+                            :aria-selected="activeTab === 'membresias'"
+                            @click="activeTab = 'membresias'">
+                        Membresías
+                    </button>
+                    <button type="button"
+                            class="rounded-t-lg border px-4 py-2 text-sm font-medium transition"
+                            :class="activeTab === 'progreso'
+                                ? 'border-slate-200 border-b-white bg-white text-indigo-700'
+                                : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'"
+                            :aria-selected="activeTab === 'progreso'"
+                            @click="activeTab = 'progreso'">
+                        Progreso
+                    </button>
+                    <button type="button"
+                            class="rounded-t-lg border px-4 py-2 text-sm font-medium transition"
+                            :class="activeTab === 'metricas'
+                                ? 'border-slate-200 border-b-white bg-white text-indigo-700'
+                                : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'"
+                            :aria-selected="activeTab === 'metricas'"
+                            @click="activeTab = 'metricas'">
+                        Métricas
+                    </button>
+                </nav>
+            </div>
+
+            <section x-show="activeTab === 'datos_generales'" x-cloak class="space-y-6">
          @if($client->userApp && is_null($client->userApp->password))
     <form method="POST"
           action="{{ route('coach.clients.resendActivationCode', $client) }}"
           class="mb-4">
         @csrf
+        <input type="hidden" name="_tab" value="datos_generales">
         <button type="submit"
                 class="px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black">
             Reenviar enlace para crear contrasena
@@ -38,26 +96,19 @@
     </div>
 @endif
 
-@if (session('stripe_payment_link'))
-    <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-        <div class="font-semibold text-emerald-900">Link de pago Stripe</div>
-        <div class="mt-2 rounded bg-white border border-emerald-200 px-3 py-2 text-sm text-gray-800 break-all">
-            {{ session('stripe_payment_link') }}
-        </div>
-        <div class="mt-2 text-sm text-emerald-800">
-            Copia este enlace y envialo al cliente para que pague su membresia.
-        </div>
-    </div>
-@endif
-
-
             <form method="POST"
       action="{{ route('coach.clients.update', $client) }}"
-      class="bg-white shadow rounded-lg p-6">
+      class="space-y-6">
     @csrf
     @method('PUT')
+    <input type="hidden" name="_tab" value="datos_generales">
 
-    <div class="grid grid-cols-12 gap-4 items-end">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-5 py-4 border-b">
+            <h2 class="text-base font-semibold text-gray-900">Datos generales</h2>
+            <p class="text-sm text-gray-600">Identidad, contacto y perfil básico del cliente.</p>
+        </div>
+    <div class="grid grid-cols-12 gap-4 items-end p-5">
 
         {{-- Nombre --}}
         <div class="col-span-12 lg:col-span-2">
@@ -124,34 +175,119 @@
             <span class="text-sm text-gray-700">Activo</span>
         </div>
 
-        {{-- Guardar --}}
-        <div class="col-span-6 lg:col-span-2 flex justify-end">
-            <button
-                class="h-10 px-5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
-                Guardar
-            </button>
+    @php $hp = $client->healthProfile; @endphp
+
+        <div class="col-span-12 mt-5 border-t pt-5 grid grid-cols-12 gap-4 items-end">
+
+            <div class="col-span-12 lg:col-span-2">
+                <label class="block text-xs font-medium text-gray-600">Estado</label>
+                <select name="state"
+                        class="mt-1 w-full rounded-md border-gray-300 text-sm">
+                    @php $selectedState = old('state', $hp?->state); @endphp
+                    <option value="">Selecciona estado</option>
+                    @foreach($mexicoStates as $state)
+                        <option value="{{ $state }}" {{ $selectedState === $state ? 'selected' : '' }}>
+                            {{ $state }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-span-12 lg:col-span-2">
+                <label class="block text-xs font-medium text-gray-600">Ciudad</label>
+                <input name="city"
+                       value="{{ old('city', $hp?->city) }}"
+                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
+            </div>
+
+            <div class="col-span-12 lg:col-span-2">
+                <label class="block text-xs font-medium text-gray-600">Código postal</label>
+                <input name="zip_code"
+                       value="{{ old('zip_code', $hp?->zip_code) }}"
+                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
+            </div>
+
+            <div class="col-span-12 lg:col-span-2">
+                <label class="block text-xs font-medium text-gray-600">Nacimiento</label>
+                <input type="date"
+                       name="birth_date"
+                       value="{{ old('birth_date', optional($hp?->birth_date)->format('Y-m-d')) }}"
+                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
+            </div>
+
+            <div class="col-span-12 lg:col-span-2">
+                <label class="block text-xs font-medium text-gray-600">Género</label>
+                <select name="gender"
+                        class="mt-1 w-full rounded-md border-gray-300 text-sm">
+                    @php $g = old('gender', $hp?->gender); @endphp
+                    <option value="">—</option>
+                    <option value="male"   {{ $g === 'male' ? 'selected' : '' }}>Hombre</option>
+                    <option value="female" {{ $g === 'female' ? 'selected' : '' }}>Mujer</option>
+                    <option value="other"  {{ $g === 'other' ? 'selected' : '' }}>otro</option>
+                </select>
+            </div>
+
+            <div class="col-span-12 lg:col-span-1">
+                <label class="block text-xs font-medium text-gray-600">Estatura (cm)</label>
+                <input name="height_cm"
+                       type="number"
+                       min="50"
+                       max="260"
+                       value="{{ old('height_cm', $hp?->height_cm) }}"
+                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
+            </div>
+
         </div>
 
+        {{-- Errores inline (opcional pero útil) --}}
+        @if ($errors->any())
+            <div class="col-span-12 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <ul class="list-disc ml-5">
+                    @foreach ($errors->all() as $e)
+                        <li>{{ $e }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+</div>
+
+    <div class="flex justify-end">
+        <button class="h-10 px-5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
+            Guardar
+        </button>
     </div>
 </form>
+</section>
 
 
 {{-- PERFIL DEL CLIENTE --}}
 {{-- <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6"> --}}
-    <div class="mt-8 space-y-6">
+    <div class="mt-6 space-y-6">
 
     {{-- Membresías --}}
+    <section x-show="activeTab === 'membresias'" x-cloak class="space-y-6">
+    @if (session('stripe_payment_link'))
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <div class="font-semibold text-emerald-900">Link de pago Stripe</div>
+            <div class="mt-2 rounded bg-white border border-emerald-200 px-3 py-2 text-sm text-gray-800 break-all">
+                {{ session('stripe_payment_link') }}
+            </div>
+            <div class="mt-2 text-sm text-emerald-800">
+                Copia este enlace y envialo al cliente para que pague su membresia.
+            </div>
+        </div>
+    @endif
+
     <div class="bg-white rounded-xl border shadow-sm">
         <div class="px-5 py-4 border-b flex items-center justify-between">
             <div>
                 <h2 class="text-base font-semibold text-gray-900">Membresías</h2>
                 <p class="text-sm text-gray-600">Historial de planes y vigencias.</p>
             </div>
-            {{-- <a href="{{ route('coach.clients.memberships.create', $client) }}" --}}
-            {{-- <a href="#"
+            <a href="{{ route('coach.client-memberships.create', $client) }}"
                class="text-sm px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-                Asignar plan
-            </a> --}}
+                Agregar membresía
+            </a>
         </div>
 
        <div class="p-5 overflow-x-auto">
@@ -265,6 +401,7 @@
                                         <form method="POST" action="{{ route('coach.client-memberships.stripe-checkout', $m) }}">
                                             @csrf
                                             <input type="hidden" name="return_link" value="1">
+                                            <input type="hidden" name="_tab" value="membresias">
                                             <button type="submit"
                                                     class="inline-flex items-center px-3 py-1 rounded bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">
                                                 Generar link
@@ -283,6 +420,7 @@
                                 onsubmit="return confirm('¿Eliminar esta membresía? Se anularán los pagos asociados.');">
                                 @csrf
                                 @method('DELETE')
+                                <input type="hidden" name="_tab" value="membresias">
                                 <button type="submit"
                                         class="inline-flex items-center px-3 py-1 rounded bg-red-600 text-white text-xs font-medium hover:bg-red-700">
                                     Eliminar
@@ -299,102 +437,262 @@
 </div>
 
         </div>
-        {{-- PERFIL DE SALUD (INLINE) --}}
-<div class="bg-white rounded-xl border shadow-sm">
-    <div class="px-5 py-4 border-b">
-        <h2 class="text-base font-semibold text-gray-900">Datos Generales</h2>
-        <p class="text-sm text-gray-600">Datos generales del cliente.</p>
-    </div>
-
-    @php $hp = $client->healthProfile; @endphp
-
-    <form method="POST"
-          action="{{ route('coach.clients.health-profile.update', $client) }}"
-          class="p-5">
-        @csrf
-        @method('PUT')
-
-        <div class="grid grid-cols-12 gap-4 items-end">
-
-            <div class="col-span-12 lg:col-span-2">
-                <label class="block text-xs font-medium text-gray-600">Estado</label>
-                <select name="state"
-                        class="mt-1 w-full rounded-md border-gray-300 text-sm">
-                    @php $selectedState = old('state', $hp?->state); @endphp
-                    <option value="">Selecciona estado</option>
-                    @foreach($mexicoStates as $state)
-                        <option value="{{ $state }}" {{ $selectedState === $state ? 'selected' : '' }}>
-                            {{ $state }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-span-12 lg:col-span-2">
-                <label class="block text-xs font-medium text-gray-600">Ciudad</label>
-                <input name="city"
-                       value="{{ old('city', $hp?->city) }}"
-                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
-            </div>
-
-            <div class="col-span-12 lg:col-span-2">
-                <label class="block text-xs font-medium text-gray-600">Código postal</label>
-                <input name="zip_code"
-                       value="{{ old('zip_code', $hp?->zip_code) }}"
-                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
-            </div>
-
-            <div class="col-span-12 lg:col-span-2">
-                <label class="block text-xs font-medium text-gray-600">Nacimiento</label>
-                <input type="date"
-                       name="birth_date"
-                       value="{{ old('birth_date', optional($hp?->birth_date)->format('Y-m-d')) }}"
-                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
-            </div>
-
-            <div class="col-span-12 lg:col-span-2">
-                <label class="block text-xs font-medium text-gray-600">Género</label>
-                <select name="gender"
-                        class="mt-1 w-full rounded-md border-gray-300 text-sm">
-                    @php $g = old('gender', $hp?->gender); @endphp
-                    <option value="">—</option>
-                    <option value="male"   {{ $g === 'male' ? 'selected' : '' }}>male</option>
-                    <option value="female" {{ $g === 'female' ? 'selected' : '' }}>female</option>
-                    <option value="other"  {{ $g === 'other' ? 'selected' : '' }}>other</option>
-                </select>
-            </div>
-
-            <div class="col-span-12 lg:col-span-1">
-                <label class="block text-xs font-medium text-gray-600">Estatura (cm)</label>
-                <input name="height_cm"
-                       type="number"
-                       min="50"
-                       max="260"
-                       value="{{ old('height_cm', $hp?->height_cm) }}"
-                       class="mt-1 w-full rounded-md border-gray-300 text-sm">
-            </div>
-
-            <div class="col-span-12 lg:col-span-1 flex justify-end">
-                <button class="h-10 px-5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
-                    Guardar
-                </button>
-            </div>
-
+    </section>
+{{-- PROGRESO --}}
+<section x-show="activeTab === 'progreso'" x-cloak>
+    <div class="bg-white rounded-xl border shadow-sm">
+        <div class="px-5 py-4 border-b">
+            <h2 class="text-base font-semibold text-gray-900">Progreso</h2>
+            <p class="text-sm text-gray-600">Dashboard de peso, métricas e historial del atleta.</p>
         </div>
+        <div class="p-5">
+            @php
+                $currentWeight = $weightSummary['current'] ?? null;
+                $previousWeight = $weightSummary['previous'] ?? null;
+                $weightChange = $weightSummary['change_kg'] ?? null;
+                $lastMetric = $latestProgressMetricRecord ?? null;
+                $lastMetricName = $lastMetric?->trainingMetric?->name ?? 'Sin métricas';
+                $lastMetricUnit = $lastMetric?->trainingMetric?->unit;
+            @endphp
 
-        {{-- Errores inline (opcional pero útil) --}}
-        @if ($errors->any())
-            <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                <ul class="list-disc ml-5">
-                    @foreach ($errors->all() as $e)
-                        <li>{{ $e }}</li>
-                    @endforeach
-                </ul>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase text-slate-500">Peso actual</div>
+                    <div class="mt-2 text-2xl font-bold text-slate-900">
+                        @if($currentWeight?->weight_kg)
+                            {{ number_format((float) $currentWeight->weight_kg, 2) }} kg
+                        @else
+                            —
+                        @endif
+                    </div>
+                    <div class="mt-1 text-xs text-slate-500">
+                        {{ $currentWeight?->recorded_at ? $currentWeight->recorded_at->format('d/m/Y') : 'Sin registros de peso' }}
+                    </div>
+                </div>
+
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase text-slate-500">Cambio de peso</div>
+                    <div class="mt-2 text-2xl font-bold {{ $weightChange === null ? 'text-slate-900' : ($weightChange > 0 ? 'text-amber-700' : ($weightChange < 0 ? 'text-emerald-700' : 'text-slate-900')) }}">
+                        @if($weightChange !== null)
+                            {{ $weightChange > 0 ? '+' : '' }}{{ number_format((float) $weightChange, 2) }} kg
+                        @else
+                            —
+                        @endif
+                    </div>
+                    <div class="mt-1 text-xs text-slate-500">
+                        {{ $previousWeight ? 'Vs. registro anterior' : 'Se necesitan 2 registros' }}
+                    </div>
+                </div>
+
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase text-slate-500">Métricas registradas</div>
+                    <div class="mt-2 text-2xl font-bold text-slate-900">
+                        {{ $metricSummaries->count() }}
+                    </div>
+                    <div class="mt-1 text-xs text-slate-500">
+                        {{ $progressMetricRecords->count() }} registros recientes
+                    </div>
+                </div>
+
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-semibold uppercase text-slate-500">Última métrica</div>
+                    <div class="mt-2 text-lg font-bold text-slate-900 truncate">
+                        {{ $lastMetricName }}
+                    </div>
+                    <div class="mt-1 text-xs text-slate-500">
+                        @if($lastMetric)
+                            {{ number_format((float) $lastMetric->value, 2) }}{{ $lastMetricUnit ? ' ' . $lastMetricUnit : '' }}
+                            · {{ optional($lastMetric->recorded_at)->format('d/m/Y') ?? 'Sin fecha' }}
+                        @else
+                            Sin registros todavía
+                        @endif
+                    </div>
+                </div>
             </div>
-        @endif
-    </form>
-</div>
+
+            <div class="mt-6 border-t pt-5">
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Historial de peso</h3>
+                        <p class="text-sm text-gray-600">Últimos registros capturados desde la app o por el coach.</p>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        {{ $bodyRecords->count() }} registros recientes
+                    </div>
+                </div>
+
+                @if($bodyRecords->isEmpty())
+                    <div class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
+                        Todavía no hay registros de peso para este atleta.
+                    </div>
+                @else
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-xs uppercase text-gray-500">
+                                <tr class="border-b">
+                                    <th class="py-2 text-left">Fecha</th>
+                                    <th class="py-2 text-left">Peso</th>
+                                    <th class="py-2 text-left">Cambio</th>
+                                    <th class="py-2 text-left">Origen</th>
+                                    <th class="py-2 text-left">Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                @foreach($bodyRecords->values() as $index => $record)
+                                    @php
+                                        $previousRecord = $bodyRecords->values()->get($index + 1);
+                                        $recordChange = ($record->weight_kg !== null && $previousRecord?->weight_kg !== null)
+                                            ? round((float) $record->weight_kg - (float) $previousRecord->weight_kg, 2)
+                                            : null;
+                                        $recordChangeClass = $recordChange === null
+                                            ? 'text-gray-500'
+                                            : ($recordChange > 0 ? 'text-amber-700' : ($recordChange < 0 ? 'text-emerald-700' : 'text-gray-700'));
+                                    @endphp
+                                    <tr>
+                                        <td class="py-3 text-gray-900">
+                                            {{ optional($record->recorded_at)->format('d/m/Y') ?? 'Sin fecha' }}
+                                        </td>
+                                        <td class="py-3 font-medium text-gray-900">
+                                            @if($record->weight_kg !== null)
+                                                {{ number_format((float) $record->weight_kg, 2) }} kg
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="py-3 font-medium {{ $recordChangeClass }}">
+                                            @if($recordChange !== null)
+                                                {{ $recordChange > 0 ? '+' : '' }}{{ number_format((float) $recordChange, 2) }} kg
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="py-3 text-gray-700">
+                                            {{ ucfirst((string) ($record->source ?: 'manual')) }}
+                                        </td>
+                                        <td class="py-3 text-gray-600">
+                                            {{ $record->notes ?: '—' }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
+            <div class="mt-6 border-t pt-5">
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Historial de métricas</h3>
+                        <p class="text-sm text-gray-600">Resumen y registros recientes de las mediciones del atleta.</p>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        {{ $progressMetricRecords->count() }} registros recientes
+                    </div>
+                </div>
+
+                @if($metricSummaries->isEmpty())
+                    <div class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
+                        Todavía no hay métricas registradas para este atleta.
+                    </div>
+                @else
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        @foreach($metricSummaries as $summary)
+                            @php
+                                $metric = $summary['metric'];
+                                $latestRecord = $summary['latest_record'];
+                                $metricUnit = $metric?->unit;
+                            @endphp
+                            <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <div class="truncate text-sm font-semibold text-gray-900">
+                                            {{ $metric?->name ?? 'Métrica sin nombre' }}
+                                        </div>
+                                        <div class="mt-1 text-xs text-gray-500">
+                                            {{ $summary['records_count'] }} registros
+                                        </div>
+                                    </div>
+                                    @if($metricUnit)
+                                        <span class="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-slate-200">
+                                            {{ $metricUnit }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="mt-4 grid grid-cols-3 gap-3 text-xs">
+                                    <div>
+                                        <div class="font-medium uppercase text-gray-500">Última</div>
+                                        <div class="mt-1 text-sm font-semibold text-gray-900">
+                                            {{ number_format((float) $latestRecord->value, 2) }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium uppercase text-gray-500">Máx.</div>
+                                        <div class="mt-1 text-sm font-semibold text-gray-900">
+                                            {{ number_format((float) $summary['max_value'], 2) }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium uppercase text-gray-500">Mín.</div>
+                                        <div class="mt-1 text-sm font-semibold text-gray-900">
+                                            {{ number_format((float) $summary['min_value'], 2) }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 text-xs text-gray-500">
+                                    Última captura: {{ optional($latestRecord->recorded_at)->format('d/m/Y') ?? 'Sin fecha' }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-5 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-xs uppercase text-gray-500">
+                                <tr class="border-b">
+                                    <th class="py-2 text-left">Fecha</th>
+                                    <th class="py-2 text-left">Métrica</th>
+                                    <th class="py-2 text-left">Valor</th>
+                                    <th class="py-2 text-left">Origen</th>
+                                    <th class="py-2 text-left">Notas</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                @foreach($progressMetricRecords as $record)
+                                    @php
+                                        $metric = $record->trainingMetric;
+                                        $unit = $metric?->unit;
+                                    @endphp
+                                    <tr>
+                                        <td class="py-3 text-gray-900">
+                                            {{ optional($record->recorded_at)->format('d/m/Y') ?? 'Sin fecha' }}
+                                        </td>
+                                        <td class="py-3 font-medium text-gray-900">
+                                            {{ $metric?->name ?? 'Métrica sin nombre' }}
+                                        </td>
+                                        <td class="py-3 text-gray-900">
+                                            {{ number_format((float) $record->value, 2) }}{{ $unit ? ' ' . $unit : '' }}
+                                        </td>
+                                        <td class="py-3 text-gray-700">
+                                            {{ ucfirst((string) ($record->source ?: 'manual')) }}
+                                        </td>
+                                        <td class="py-3 text-gray-600">
+                                            {{ $record->notes ?: '—' }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</section>
 {{-- MÉTRICAS (INLINE) --}}
+<section x-show="activeTab === 'metricas'" x-cloak>
 <div class="bg-white rounded-xl border shadow-sm">
     <div class="px-5 py-4 border-b">
         <h2 class="text-base font-semibold text-gray-900">Métricas</h2>
@@ -406,6 +704,7 @@
           action="{{ route('coach.clients.metric-records.store', $client) }}"
           class="p-5">
         @csrf
+        <input type="hidden" name="_tab" value="metricas">
 
         <div class="grid grid-cols-12 gap-4 items-end">
 
@@ -517,6 +816,7 @@
                                       onsubmit="return confirm('¿Eliminar esta métrica?')">
                                     @csrf
                                     @method('DELETE')
+                                    <input type="hidden" name="_tab" value="metricas">
                                     <button class="text-sm text-red-600 hover:text-red-800">
                                         Eliminar
                                     </button>
@@ -529,6 +829,7 @@
         @endif
     </div>
 </div>
+</section>
 
     </div>
 

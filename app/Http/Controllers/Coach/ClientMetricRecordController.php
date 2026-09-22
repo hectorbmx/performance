@@ -22,10 +22,9 @@ class ClientMetricRecordController extends Controller
             'notes'              => ['nullable','string','max:255'],
         ]);
 
-        // Validar que la métrica pertenezca al coach
+        // Validar que la métrica sea global o pertenezca al coach
         $metric = TrainingMetric::where('id', $data['training_metric_id'])
-            ->where('coach_id', auth()->id())
-            ->where('is_active', 1)
+            ->availableForCoach(auth()->id())
             ->firstOrFail();
 
         // Guardar (recorded_at lo guardamos como timestamp con hora actual)
@@ -37,7 +36,9 @@ class ClientMetricRecordController extends Controller
             'notes'              => $data['notes'] ?? null,
         ]);
 
-        return back()->with('success', 'Métrica registrada.');
+        return back()
+            ->with('success', 'Métrica registrada.')
+            ->with('active_client_tab', 'metricas');
     }
 
     public function destroy(Client $client, ClientMetricRecord $record)
@@ -47,6 +48,8 @@ class ClientMetricRecordController extends Controller
 
         $record->delete();
 
-        return back()->with('success', 'Métrica eliminada.');
+        return back()
+            ->with('success', 'Métrica eliminada.')
+            ->with('active_client_tab', 'metricas');
     }
 }

@@ -15,22 +15,29 @@ class ClientMembershipStripeCheckoutController extends Controller
         abort_unless((int) $membership->coach_id === (int) auth()->id(), 403);
 
         if ($membership->billing_status === 'paid') {
-            return back()->with('error', 'Esta membresía ya está pagada.');
+            return back()
+                ->with('error', 'Esta membresía ya está pagada.')
+                ->with('active_client_tab', 'membresias');
         }
 
         if (($membership->coachClientPlan?->payment_provider ?? 'manual') !== 'stripe') {
-            return back()->with('error', 'Este plan se cobra de forma manual.');
+            return back()
+                ->with('error', 'Este plan se cobra de forma manual.')
+                ->with('active_client_tab', 'membresias');
         }
 
         try {
             $session = $connect->createMembershipCheckout($membership);
         } catch (\Throwable $e) {
-            return back()->withErrors(['stripe' => $e->getMessage()]);
+            return back()
+                ->withErrors(['stripe' => $e->getMessage()])
+                ->with('active_client_tab', 'membresias');
         }
 
         if ($request->boolean('return_link')) {
             return back()
                 ->with('success', 'Link de pago generado correctamente.')
+                ->with('active_client_tab', 'membresias')
                 ->with('stripe_payment_link', $session->url)
                 ->with('stripe_payment_link_membership_id', $membership->id);
         }

@@ -3,9 +3,9 @@
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
 
             <div class="mb-6">
-                <a href="{{ route('coach.clients.index') }}"
+                <a href="{{ route('coach.clients.edit', $client) }}"
                    class="text-indigo-600 hover:text-indigo-900">
-                    ← Volver a clientes
+                    ← Volver al cliente
                 </a>
             </div>
 
@@ -139,7 +139,7 @@
 
                         {{-- Botones --}}
                         <div class="flex items-center justify-end gap-4">
-                            <a href="{{ route('coach.clients.index') }}"
+                            <a href="{{ route('coach.clients.edit', $client) }}"
                                class="px-4 py-2 text-gray-700 hover:text-gray-900">
                                 Cancelar
                             </a>

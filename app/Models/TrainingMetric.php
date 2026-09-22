@@ -50,15 +50,21 @@ class TrainingMetric extends Model
         return $query->where('is_active', true);
     }
     public function coach()
-        {
-            return $this->belongsTo(User::class, 'coach_id');
-        }
+    {
+        return $this->belongsTo(User::class, 'coach_id');
+    }
 
-        public function scopeVisibleToCoach($query, int $coachId)
-        {
-            return $query->whereNull('coach_id')
+    public function scopeVisibleToCoach($query, int $coachId)
+    {
+        return $query->where(function ($query) use ($coachId) {
+            $query->whereNull('coach_id')
                 ->orWhere('coach_id', $coachId);
-        }
+        });
+    }
+
+    public function scopeAvailableForCoach($query, int $coachId)
+    {
+        return $query->active()->visibleToCoach($coachId);
+    }
 
 }
-

@@ -30,6 +30,8 @@ class ClientHealthProfileController extends Controller
             $data
         );
 
-        return back()->with('success', 'Perfil de salud actualizado.');
+        return back()
+            ->with('success', 'Perfil de salud actualizado.')
+            ->with('active_client_tab', 'datos_generales');
     }
 }

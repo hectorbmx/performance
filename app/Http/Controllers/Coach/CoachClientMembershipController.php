@@ -105,8 +105,9 @@ public function store(Request $request, Client $client, StripeConnectService $co
     }
 
     return redirect()
-        ->route('coach.clients.index')
-        ->with('success', 'Membresía asignada correctamente (pendiente de pago).');
+        ->route('coach.clients.edit', $client)
+        ->with('success', 'Membresía asignada correctamente (pendiente de pago).')
+        ->with('active_client_tab', 'membresias');
 }
 
     public function destroy(ClientMembership $membership)
@@ -136,6 +137,8 @@ public function store(Request $request, Client $client, StripeConnectService $co
         $membership->delete(); // soft delete
     });
 
-    return back()->with('success', 'Membresía eliminada y pagos asociados anulados.');
+    return back()
+        ->with('success', 'Membresía eliminada y pagos asociados anulados.')
+        ->with('active_client_tab', 'membresias');
 }
 }
