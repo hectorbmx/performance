@@ -259,6 +259,7 @@
             </div>
         @endif
 </div>
+</div>
 
     <div class="flex justify-end">
         <button class="h-10 px-5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
@@ -1027,6 +1028,8 @@
 </div>
 </section>
 
+    </div>
+        </div>
     </div>
 
     @include('coach.clients.partials.contact-validation')
