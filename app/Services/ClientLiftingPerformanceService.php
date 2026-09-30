@@ -64,8 +64,18 @@ class ClientLiftingPerformanceService
                 'reps_prescribed',
                 'reps_executed',
                 'relative_volume',
+                'intensity_reps',
+                'estimated_tonnage',
             ] as $key) {
                 $summary[$key] += $assignmentSummary[$key] ?? 0;
+            }
+
+            foreach ($assignmentSummary['missing_max_metrics'] ?? [] as $metricCode) {
+                $summary['missing_max_metrics'][$metricCode] = $metricCode;
+            }
+
+            foreach ($assignmentSummary['unmapped_exercises'] ?? [] as $exerciseName) {
+                $summary['unmapped_exercises'][$this->exerciseKey($exerciseName)] = $exerciseName;
             }
 
             foreach ($assignmentSummary['zones'] ?? [] as $zone) {
@@ -95,9 +105,12 @@ class ClientLiftingPerformanceService
                         'sets_executed' => 0,
                         'reps_prescribed' => 0,
                         'reps_executed' => 0,
-                        'rep_adherence_pct' => 0,
-                        'relative_volume' => 0.0,
-                    ];
+                    'rep_adherence_pct' => 0,
+                    'relative_volume' => 0.0,
+                    'intensity_reps' => 0,
+                    'average_intensity_pct' => null,
+                    'estimated_tonnage' => 0.0,
+                ];
                 }
 
                 foreach ([
@@ -106,6 +119,8 @@ class ClientLiftingPerformanceService
                     'reps_prescribed',
                     'reps_executed',
                     'relative_volume',
+                    'intensity_reps',
+                    'estimated_tonnage',
                 ] as $key) {
                     $byExercise[$exerciseKey][$key] += $exercise[$key] ?? 0;
                 }
@@ -115,7 +130,13 @@ class ClientLiftingPerformanceService
         $summary['rep_adherence_pct'] = $summary['reps_prescribed'] > 0
             ? (int) round(($summary['reps_executed'] / $summary['reps_prescribed']) * 100)
             : 0;
+        $summary['average_intensity_pct'] = $summary['intensity_reps'] > 0
+            ? round($summary['relative_volume'] / $summary['intensity_reps'], 1)
+            : null;
         $summary['relative_volume'] = round($summary['relative_volume'], 2);
+        $summary['estimated_tonnage'] = round($summary['estimated_tonnage'], 2);
+        $summary['missing_max_metrics'] = array_values($summary['missing_max_metrics']);
+        $summary['unmapped_exercises'] = array_values($summary['unmapped_exercises']);
 
         return [
             'has_data' => $recentAssignments->isNotEmpty(),
@@ -140,6 +161,12 @@ class ClientLiftingPerformanceService
             'reps_executed' => 0,
             'rep_adherence_pct' => 0,
             'relative_volume' => 0.0,
+            'intensity_reps' => 0,
+            'average_intensity_pct' => null,
+            'estimated_tonnage' => 0.0,
+            'tonnage_unit' => 'kg',
+            'missing_max_metrics' => [],
+            'unmapped_exercises' => [],
         ];
     }
 
@@ -164,7 +191,11 @@ class ClientLiftingPerformanceService
                 $exercise['rep_adherence_pct'] = $exercise['reps_prescribed'] > 0
                     ? (int) round(($exercise['reps_executed'] / $exercise['reps_prescribed']) * 100)
                     : 0;
+                $exercise['average_intensity_pct'] = $exercise['intensity_reps'] > 0
+                    ? round($exercise['relative_volume'] / $exercise['intensity_reps'], 1)
+                    : null;
                 $exercise['relative_volume'] = round($exercise['relative_volume'], 2);
+                $exercise['estimated_tonnage'] = round($exercise['estimated_tonnage'], 2);
 
                 return $exercise;
             })

@@ -719,12 +719,35 @@
                     $liftingZones = collect($liftingPerformance['zones'] ?? [])->filter(fn ($zone) => ($zone['prescribed_reps'] ?? 0) > 0 || ($zone['executed_reps'] ?? 0) > 0);
                     $liftingExercises = collect($liftingPerformance['by_exercise'] ?? [])->take(8);
                     $recentLiftingAssignments = collect($liftingPerformance['recent_assignments'] ?? []);
+                    $missingMaxMetrics = collect($liftingSummary['missing_max_metrics'] ?? []);
+                    $unmappedExercises = collect($liftingSummary['unmapped_exercises'] ?? []);
                     $maxZoneReps = max(1, (int) $liftingZones->max('prescribed_reps'));
                 @endphp
 
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                @if($missingMaxMetrics->isNotEmpty() || $unmappedExercises->isNotEmpty())
+                    <div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <div class="font-semibold">Tonelaje estimado incompleto</div>
+                        <div class="mt-1 text-amber-800">
+                            Algunos ejercicios no tienen máximo registrado o no se pudieron asociar a una métrica.
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                            @foreach($missingMaxMetrics as $metricCode)
+                                <span class="rounded-full bg-white px-2 py-1 font-medium text-amber-800 ring-1 ring-amber-200">
+                                    Falta {{ $metricCode }}
+                                </span>
+                            @endforeach
+                            @foreach($unmappedExercises->take(8) as $exerciseName)
+                                <span class="rounded-full bg-white px-2 py-1 font-medium text-amber-800 ring-1 ring-amber-200">
+                                    Sin mapa: {{ $exerciseName }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                     <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-semibold uppercase text-slate-500">Entrenamientos lifting</div>
+                        <div class="text-xs font-semibold uppercase text-slate-500">Sesiones</div>
                         <div class="mt-2 text-2xl font-bold text-slate-900">
                             {{ $liftingSummary['assignments_count'] ?? 0 }}
                         </div>
@@ -740,6 +763,22 @@
                     </div>
 
                     <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase text-slate-500">Tonelaje</div>
+                        <div class="mt-2 text-2xl font-bold text-slate-900">
+                            {{ number_format((float) ($liftingSummary['estimated_tonnage'] ?? 0), 0) }} kg
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Estimado desde máximos registrados</div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase text-slate-500">Intensidad media</div>
+                        <div class="mt-2 text-2xl font-bold text-slate-900">
+                            {{ ($liftingSummary['average_intensity_pct'] ?? null) !== null ? number_format((float) $liftingSummary['average_intensity_pct'], 1) . '%' : '—' }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Promedio ponderado por reps</div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
                         <div class="text-xs font-semibold uppercase text-slate-500">Adherencia</div>
                         <div class="mt-2 text-2xl font-bold text-slate-900">
                             {{ $liftingSummary['rep_adherence_pct'] ?? 0 }}%
@@ -748,14 +787,6 @@
                             <div class="h-full rounded-full bg-indigo-600"
                                  style="width: {{ min(100, max(0, (int) ($liftingSummary['rep_adherence_pct'] ?? 0))) }}%"></div>
                         </div>
-                    </div>
-
-                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <div class="text-xs font-semibold uppercase text-slate-500">Volumen relativo</div>
-                        <div class="mt-2 text-2xl font-bold text-slate-900">
-                            {{ number_format((float) ($liftingSummary['relative_volume'] ?? 0), 0) }}
-                        </div>
-                        <div class="mt-1 text-xs text-slate-500">Suma de % x reps realizadas</div>
                     </div>
                 </div>
 
@@ -834,8 +865,9 @@
                                         <tr class="border-b">
                                             <th class="py-2 text-left">Ejercicio</th>
                                             <th class="py-2 text-right">Reps</th>
+                                            <th class="py-2 text-right">Tonelaje</th>
+                                            <th class="py-2 text-right">Int.</th>
                                             <th class="py-2 text-right">Adh.</th>
-                                            <th class="py-2 text-right">Vol.</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y">
@@ -843,8 +875,9 @@
                                             <tr>
                                                 <td class="py-3 font-medium text-gray-900">{{ $exercise['exercise_name'] }}</td>
                                                 <td class="py-3 text-right text-gray-700">{{ $exercise['reps_executed'] }} / {{ $exercise['reps_prescribed'] }}</td>
+                                                <td class="py-3 text-right text-gray-700">{{ number_format((float) ($exercise['estimated_tonnage'] ?? 0), 0) }} kg</td>
+                                                <td class="py-3 text-right text-gray-700">{{ ($exercise['average_intensity_pct'] ?? null) !== null ? number_format((float) $exercise['average_intensity_pct'], 1) . '%' : '—' }}</td>
                                                 <td class="py-3 text-right text-gray-700">{{ $exercise['rep_adherence_pct'] }}%</td>
-                                                <td class="py-3 text-right text-gray-700">{{ number_format((float) $exercise['relative_volume'], 0) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -877,7 +910,7 @@
                                     <div class="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-600">
                                         <div>Reps: <span class="font-medium text-slate-900">{{ $itemSummary['reps_executed'] ?? 0 }}/{{ $itemSummary['reps_prescribed'] ?? 0 }}</span></div>
                                         <div>Sets: <span class="font-medium text-slate-900">{{ $itemSummary['sets_executed'] ?? 0 }}/{{ $itemSummary['sets_prescribed'] ?? 0 }}</span></div>
-                                        <div>Vol: <span class="font-medium text-slate-900">{{ number_format((float) ($itemSummary['relative_volume'] ?? 0), 0) }}</span></div>
+                                        <div>Kg: <span class="font-medium text-slate-900">{{ number_format((float) ($itemSummary['estimated_tonnage'] ?? 0), 0) }}</span></div>
                                     </div>
                                 </div>
                             @endforeach
