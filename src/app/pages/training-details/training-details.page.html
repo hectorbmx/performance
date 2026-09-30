@@ -379,5 +379,121 @@
 
     </ng-container>
 
+    <button
+      *ngIf="!loading && detail"
+      type="button"
+      class="td-percentage-fab"
+      aria-label="Abrir calculadora de porcentajes"
+      (click)="openPercentageCalculator()"
+    >
+      <ion-icon name="calculator-outline"></ion-icon>
+    </button>
+
+    <div
+      *ngIf="isPercentageCalculatorOpen"
+      class="td-percent-modal-backdrop"
+      (click)="closePercentageCalculator()"
+    >
+      <section
+        class="td-percent-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="percentage-calculator-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="td-percent-modal-head">
+          <div>
+            <span class="td-percent-kicker">Porcentajes</span>
+            <h2 id="percentage-calculator-title">Calculadora de peso</h2>
+          </div>
+
+          <button
+            type="button"
+            class="td-percent-close"
+            aria-label="Cerrar calculadora"
+            (click)="closePercentageCalculator()"
+          >
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+
+        <div class="td-percent-empty" *ngIf="percentageMetricsLoading">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando tus máximos del perfil...</p>
+        </div>
+
+        <div class="td-percent-empty is-error" *ngIf="!percentageMetricsLoading && percentageMetricsError">
+          <ion-icon name="close-outline"></ion-icon>
+          <p>{{ percentageMetricsError }}</p>
+        </div>
+
+        <div class="td-percent-empty" *ngIf="!percentageMetricsLoading && !percentageMetricsError && percentageMetrics.length === 0">
+          <ion-icon name="barbell-outline"></ion-icon>
+          <p>No hay máximos registrados en tu perfil todavía.</p>
+        </div>
+
+        <div class="td-percent-metrics" *ngIf="!percentageMetricsLoading && !percentageMetricsError && percentageMetrics.length > 0">
+          <button
+            type="button"
+            class="td-percent-metric"
+            [class.is-selected]="metric.code === selectedPercentageMetricCode"
+            *ngFor="let metric of percentageMetrics"
+            (click)="selectPercentageMetric(metric)"
+          >
+            <span>
+              <strong>{{ metric.name }}</strong>
+              <small>{{ metric.code }}</small>
+            </span>
+
+            <span class="td-percent-metric-value" *ngIf="metric.last; else metricEmpty">
+              {{ metric.last.value }} {{ metric.unit || 'kg' }}
+            </span>
+
+            <ng-template #metricEmpty>
+              <span class="td-percent-metric-value is-empty">Sin registro</span>
+            </ng-template>
+          </button>
+
+          <div class="td-form-group">
+            <label class="td-form-label">
+              100%
+              <span class="td-form-hint" *ngIf="selectedPercentageMetric">{{ selectedPercentageMetric.name }}</span>
+            </label>
+            <input
+              class="td-form-input"
+              type="number"
+              min="0"
+              inputmode="decimal"
+              [(ngModel)]="percentageBaseValue"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Ej: 200"
+            />
+            <span class="td-form-hint">{{ percentageBaseSourceLabel }}</span>
+          </div>
+
+          <div class="td-form-group">
+            <label class="td-form-label">Redondeo</label>
+            <select
+              class="td-form-input"
+              [(ngModel)]="percentageRoundStep"
+              [ngModelOptions]="{ standalone: true }"
+            >
+              <option *ngFor="let option of percentageRoundOptions" [ngValue]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="td-percent-table">
+            <div class="td-percent-row" *ngFor="let row of percentageRows">
+              <span>{{ row.percentage }}%</span>
+              <strong *ngIf="row.weight !== null; else noWeight">{{ row.weight }} {{ selectedPercentageMetric?.unit || 'kg' }}</strong>
+              <ng-template #noWeight><strong>--</strong></ng-template>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
   </div>
 </ion-content>

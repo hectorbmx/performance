@@ -28,6 +28,7 @@ import {
   flashOutline,
   checkmarkOutline,
   closeOutline,
+  calculatorOutline,
   fitnessOutline, logoYoutube } from 'ionicons/icons';
 
 import {
@@ -37,6 +38,19 @@ import {
   TrainingLiftingSetStatusDTO,
   TrainingSectionDTO,
 } from '../../services/training-api.service';
+import { ProfileService } from '../../services/profile.service';
+
+type PercentageMetric = {
+  id: number | null;
+  code: string | null;
+  name: string;
+  unit: string | null;
+  type: string | null;
+  last: {
+    value: number;
+    recorded_at: string | null;
+  } | null;
+};
 
 @Component({
   selector: 'app-training-details',
@@ -82,16 +96,32 @@ export class TrainingDetailsPage implements OnInit {
   // Este es el que usa el HTML (detailed)
   detail: TrainingDetailDTO | null = null;
   fallbackCover = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80';
+  isPercentageCalculatorOpen = false;
+  percentageMetrics: PercentageMetric[] = [];
+  percentageMetricsLoading = false;
+  percentageMetricsLoaded = false;
+  percentageMetricsError: string | null = null;
+  selectedPercentageMetricCode: string | null = null;
+  percentageBaseValue: number | null = null;
+  percentageRoundStep = 1;
+  readonly percentageSteps = [100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50];
+  readonly percentageRoundOptions = [
+    { label: 'Exacto', value: 0 },
+    { label: '0.5 kg', value: 0.5 },
+    { label: '1 kg', value: 1 },
+    { label: '2.5 kg', value: 2.5 },
+  ];
 
   
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private trainingApi: TrainingApiService,
+    private profileService: ProfileService,
     private sanitizer: DomSanitizer,
     
   ) {
-    addIcons({timeOutline,barbellOutline,flashOutline,fitnessOutline,logoYoutube,arrowBack,playCircle,checkmarkOutline,closeOutline,});
+    addIcons({timeOutline,barbellOutline,flashOutline,fitnessOutline,logoYoutube,arrowBack,playCircle,checkmarkOutline,closeOutline,calculatorOutline,});
   }
 
 async ngOnInit() {
@@ -235,6 +265,126 @@ async loadFreeDetails() {
 
   isSectionSaving(sectionId: number): boolean {
     return this.savingSectionId === sectionId;
+  }
+
+  async openPercentageCalculator() {
+    this.isPercentageCalculatorOpen = true;
+
+    if (!this.percentageMetricsLoaded && !this.percentageMetricsLoading) {
+      await this.loadPercentageMetrics();
+    }
+  }
+
+  closePercentageCalculator() {
+    this.isPercentageCalculatorOpen = false;
+  }
+
+  get selectedPercentageMetric(): PercentageMetric | null {
+    return this.percentageMetrics.find((metric) => metric.code === this.selectedPercentageMetricCode) ?? null;
+  }
+
+  get percentageRows() {
+    const base = Number(this.percentageBaseValue);
+
+    return this.percentageSteps.map((percentage) => ({
+      percentage,
+      weight: Number.isFinite(base) && base > 0 ? this.roundPercentageWeight(base * (percentage / 100)) : null,
+    }));
+  }
+
+  get percentageBaseSourceLabel(): string {
+    const metric = this.selectedPercentageMetric;
+
+    if (!metric?.last) return 'Sin registro en perfil; usa este campo como base temporal.';
+
+    const base = Number(this.percentageBaseValue);
+    const profileValue = Number(metric.last.value);
+
+    return Number.isFinite(base) && Math.abs(base - profileValue) < 0.001
+      ? 'Tomado de tu perfil.'
+      : 'Ajuste temporal para esta consulta.';
+  }
+
+  selectPercentageMetric(metric: PercentageMetric) {
+    this.selectedPercentageMetricCode = metric.code;
+    this.percentageBaseValue = metric.last?.value ?? null;
+  }
+
+  private inferPercentageMetricCodeFromTraining(): string | null {
+    const exerciseNames: string[] = [];
+
+    for (const section of this.detail?.sections ?? []) {
+      for (const block of section.lifting_blocks ?? []) {
+        exerciseNames.push(this.normalizeExerciseName(block.exercise_name));
+      }
+    }
+
+    for (const name of exerciseNames) {
+      if (name.includes('back squat') || name.includes('backsquat')) return 'back_squat_1rm';
+      if (name.includes('snatch')) return 'snatch_1rm';
+      if (name.includes('clean')) return 'clean_1rm';
+    }
+
+    return null;
+  }
+
+  private normalizeExerciseName(value: string | null | undefined): string {
+    return (value ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private roundPercentageWeight(value: number): number {
+    const step = Number(this.percentageRoundStep);
+
+    if (!Number.isFinite(step) || step <= 0) {
+      return Math.round(value * 100) / 100;
+    }
+
+    return Math.round((Math.round(value / step) * step) * 100) / 100;
+  }
+
+  private async loadPercentageMetrics() {
+    this.percentageMetricsLoading = true;
+    this.percentageMetricsError = null;
+
+    try {
+      const res = await this.profileService.getMyProfile();
+      const metrics = Array.isArray(res?.metrics) ? res.metrics : [];
+
+      this.percentageMetrics = metrics.map((metric: any) => ({
+        id: metric.id ?? null,
+        code: metric.code ?? null,
+        name: metric.name ?? 'Metrica',
+        unit: metric.unit ?? null,
+        type: metric.type ?? null,
+        last: metric.last
+          ? {
+              value: Number(metric.last.value),
+              recorded_at: metric.last.recorded_at ?? null,
+            }
+          : null,
+      }));
+      const inferredCode = this.inferPercentageMetricCodeFromTraining();
+      const inferredMetric = inferredCode
+        ? this.percentageMetrics.find((metric) => metric.code === inferredCode) ?? null
+        : null;
+      const defaultMetric = inferredMetric ?? this.percentageMetrics.find((metric) => metric.last) ?? this.percentageMetrics[0] ?? null;
+
+      if (defaultMetric && !this.selectedPercentageMetricCode) {
+        this.selectPercentageMetric(defaultMetric);
+      }
+
+      this.percentageMetricsLoaded = true;
+    } catch (e: any) {
+      this.percentageMetricsError = e?.message ?? 'No se pudieron cargar tus metricas.';
+    } finally {
+      this.percentageMetricsLoading = false;
+    }
   }
 
   private applyProgress(progress: any) {

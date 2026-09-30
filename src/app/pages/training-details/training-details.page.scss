@@ -424,6 +424,153 @@
   }
 }
 
+.td-percentage-fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  z-index: 30;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #5B8DEF;
+  color: #ffffff;
+}
+
+.td-percentage-fab ion-icon {
+  font-size: 28px;
+}
+
+.td-percent-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+  background: rgba(3, 7, 18, 0.72);
+}
+
+.td-percent-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: 82vh;
+  overflow: auto;
+  border-radius: 18px;
+  background: #121923;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 18px;
+}
+
+.td-percent-modal-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.td-percent-kicker {
+  color: #8fb4ff;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.td-percent-modal h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 22px;
+}
+
+.td-percent-close {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.td-percent-close ion-icon {
+  font-size: 22px;
+}
+
+.td-percent-empty {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.td-percent-empty ion-icon {
+  font-size: 34px;
+  color: #8fb4ff;
+}
+
+.td-percent-empty ion-spinner {
+  --color: #8fb4ff;
+}
+
+.td-percent-empty.is-error ion-icon {
+  color: #fca5a5;
+}
+
+.td-percent-empty p {
+  margin: 0;
+}
+
+.td-percent-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.td-percent-metric {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #ffffff;
+  text-align: left;
+}
+
+.td-percent-metric strong,
+.td-percent-metric small {
+  display: block;
+}
+
+.td-percent-metric strong {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.td-percent-metric small {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 12px;
+}
+
+.td-percent-metric-value {
+  flex: 0 0 auto;
+  color: #8fb4ff;
+  font-size: 17px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.td-percent-metric-value.is-empty {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+}
+
 @media (min-width: 768px) {
   .td-shell {
     max-width: 800px;
@@ -436,6 +583,14 @@
 
   .td-title {
     font-size: 2.25rem;
+  }
+
+  .td-percentage-fab {
+    right: calc((100vw - 800px) / 2 + 20px);
+  }
+
+  .td-percent-modal-backdrop {
+    align-items: center;
   }
 
 }
