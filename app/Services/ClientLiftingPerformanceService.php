@@ -7,9 +7,12 @@ use App\Models\TrainingAssignment;
 
 class ClientLiftingPerformanceService
 {
+    private LiftingVolumeSummaryService $volumeSummaryService;
+
     public function __construct(
-        private readonly LiftingVolumeSummaryService $volumeSummaryService
+        LiftingVolumeSummaryService $volumeSummaryService
     ) {
+        $this->volumeSummaryService = $volumeSummaryService;
     }
 
     public function forClient(Client $client, int $limit = 8): array

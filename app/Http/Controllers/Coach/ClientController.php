@@ -12,6 +12,7 @@ use App\Support\MexicoStates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
@@ -175,7 +176,17 @@ class ClientController extends Controller
             ->values();
 
         $mexicoStates = MexicoStates::all();
-        $liftingPerformance = $liftingPerformanceService->forClient($client);
+        $liftingPerformance = $this->emptyLiftingPerformance();
+
+        try {
+            $liftingPerformance = $liftingPerformanceService->forClient($client);
+        } catch (\Throwable $e) {
+            Log::error('No se pudo calcular rendimiento lifting del atleta.', [
+                'client_id' => $client->id,
+                'coach_id' => auth()->id(),
+                'exception' => $e,
+            ]);
+        }
 
         return view('coach.clients.edit', compact(
             'client',
@@ -188,6 +199,29 @@ class ClientController extends Controller
             'metricSummaries',
             'liftingPerformance'
         ));
+    }
+
+    private function emptyLiftingPerformance(): array
+    {
+        return [
+            'has_data' => false,
+            'summary' => [
+                'assignments_count' => 0,
+                'sets_prescribed' => 0,
+                'sets_executed' => 0,
+                'sets_completed' => 0,
+                'sets_failed' => 0,
+                'sets_skipped' => 0,
+                'sets_pending' => 0,
+                'reps_prescribed' => 0,
+                'reps_executed' => 0,
+                'rep_adherence_pct' => 0,
+                'relative_volume' => 0.0,
+            ],
+            'recent_assignments' => [],
+            'zones' => [],
+            'by_exercise' => [],
+        ];
     }
 
     public function update(Request $request, Client $client)
