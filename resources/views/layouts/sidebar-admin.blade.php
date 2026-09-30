@@ -12,7 +12,7 @@
 
 <aside
     x-data="{ open: false }"
-    class="bg-gray-900 text-white min-h-screen transition-all duration-300"
+    class="bg-gray-900 text-white h-screen shrink-0 flex flex-col transition-all duration-300"
     :class="open ? 'w-64' : 'w-20'"
 >
 
@@ -30,7 +30,7 @@
     </div>
 
     <!-- Menu -->
-    <nav class="mt-4 space-y-1">
+    <nav class="mt-4 flex-1 space-y-1 overflow-y-auto pb-4">
 
         {{-- Dashboard --}}
         <a href="{{ route('admin.dashboard') }}"

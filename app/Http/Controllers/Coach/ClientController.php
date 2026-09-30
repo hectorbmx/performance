@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\ClientHealthProfile;
 use App\Models\TrainingMetric;
 use App\Models\UserApp;
+use App\Services\ClientLiftingPerformanceService;
 use App\Support\MexicoStates;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -110,7 +111,7 @@ class ClientController extends Controller
         //
     }
 
-    public function edit(Client $client)
+    public function edit(Client $client, ClientLiftingPerformanceService $liftingPerformanceService)
     {
         abort_unless($client->coach_id === auth()->id(), 403);
 
@@ -174,6 +175,7 @@ class ClientController extends Controller
             ->values();
 
         $mexicoStates = MexicoStates::all();
+        $liftingPerformance = $liftingPerformanceService->forClient($client);
 
         return view('coach.clients.edit', compact(
             'client',
@@ -183,7 +185,8 @@ class ClientController extends Controller
             'weightSummary',
             'progressMetricRecords',
             'latestProgressMetricRecord',
-            'metricSummaries'
+            'metricSummaries',
+            'liftingPerformance'
         ));
     }
 

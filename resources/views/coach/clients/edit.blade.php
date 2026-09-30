@@ -1,7 +1,7 @@
 <x-app-layout>
     @php
         $activeClientTab = old('_tab', session('active_client_tab', 'datos_generales'));
-        $validClientTabs = ['datos_generales', 'membresias', 'progreso', 'metricas'];
+        $validClientTabs = ['datos_generales', 'membresias', 'progreso', 'rendimiento', 'metricas'];
 
         if (! in_array($activeClientTab, $validClientTabs, true)) {
             $activeClientTab = 'datos_generales';
@@ -52,6 +52,15 @@
                             :aria-selected="activeTab === 'progreso'"
                             @click="activeTab = 'progreso'">
                         Progreso
+                    </button>
+                    <button type="button"
+                            class="rounded-t-lg border px-4 py-2 text-sm font-medium transition"
+                            :class="activeTab === 'rendimiento'
+                                ? 'border-slate-200 border-b-white bg-white text-indigo-700'
+                                : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900'"
+                            :aria-selected="activeTab === 'rendimiento'"
+                            @click="activeTab = 'rendimiento'">
+                        Rendimiento
                     </button>
                     <button type="button"
                             class="rounded-t-lg border px-4 py-2 text-sm font-medium transition"
@@ -688,6 +697,193 @@
                     </div>
                 @endif
             </div>
+        </div>
+    </div>
+</section>
+{{-- RENDIMIENTO LIFTING --}}
+<section x-show="activeTab === 'rendimiento'" x-cloak>
+    <div class="bg-white rounded-xl border shadow-sm">
+        <div class="px-5 py-4 border-b">
+            <h2 class="text-base font-semibold text-gray-900">Rendimiento lifting</h2>
+            <p class="text-sm text-gray-600">Resumen de reps, sets, zonas e intensidad a partir de entrenamientos con bloques lifting.</p>
+        </div>
+        <div class="p-5">
+            @if(empty($liftingPerformance['has_data']))
+                <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
+                    Todavía no hay entrenamientos lifting registrados para este atleta.
+                </div>
+            @else
+                @php
+                    $liftingSummary = $liftingPerformance['summary'] ?? [];
+                    $liftingZones = collect($liftingPerformance['zones'] ?? [])->filter(fn ($zone) => ($zone['prescribed_reps'] ?? 0) > 0 || ($zone['executed_reps'] ?? 0) > 0);
+                    $liftingExercises = collect($liftingPerformance['by_exercise'] ?? [])->take(8);
+                    $recentLiftingAssignments = collect($liftingPerformance['recent_assignments'] ?? []);
+                    $maxZoneReps = max(1, (int) $liftingZones->max('prescribed_reps'));
+                @endphp
+
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase text-slate-500">Entrenamientos lifting</div>
+                        <div class="mt-2 text-2xl font-bold text-slate-900">
+                            {{ $liftingSummary['assignments_count'] ?? 0 }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Últimos registros analizados</div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase text-slate-500">Reps realizadas</div>
+                        <div class="mt-2 text-2xl font-bold text-slate-900">
+                            {{ $liftingSummary['reps_executed'] ?? 0 }} / {{ $liftingSummary['reps_prescribed'] ?? 0 }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Realizadas vs programadas</div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase text-slate-500">Adherencia</div>
+                        <div class="mt-2 text-2xl font-bold text-slate-900">
+                            {{ $liftingSummary['rep_adherence_pct'] ?? 0 }}%
+                        </div>
+                        <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                            <div class="h-full rounded-full bg-indigo-600"
+                                 style="width: {{ min(100, max(0, (int) ($liftingSummary['rep_adherence_pct'] ?? 0))) }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="text-xs font-semibold uppercase text-slate-500">Volumen relativo</div>
+                        <div class="mt-2 text-2xl font-bold text-slate-900">
+                            {{ number_format((float) ($liftingSummary['relative_volume'] ?? 0), 0) }}
+                        </div>
+                        <div class="mt-1 text-xs text-slate-500">Suma de % x reps realizadas</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-5">
+                    <div class="rounded-lg border border-slate-200 bg-white p-4 xl:col-span-1">
+                        <h3 class="text-sm font-semibold text-gray-900">Sets</h3>
+                        <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div class="rounded-md bg-emerald-50 p-3">
+                                <div class="text-xs uppercase text-emerald-700">Completados</div>
+                                <div class="mt-1 text-xl font-bold text-emerald-900">{{ $liftingSummary['sets_completed'] ?? 0 }}</div>
+                            </div>
+                            <div class="rounded-md bg-amber-50 p-3">
+                                <div class="text-xs uppercase text-amber-700">Fallados</div>
+                                <div class="mt-1 text-xl font-bold text-amber-900">{{ $liftingSummary['sets_failed'] ?? 0 }}</div>
+                            </div>
+                            <div class="rounded-md bg-slate-100 p-3">
+                                <div class="text-xs uppercase text-slate-600">Saltados</div>
+                                <div class="mt-1 text-xl font-bold text-slate-900">{{ $liftingSummary['sets_skipped'] ?? 0 }}</div>
+                            </div>
+                            <div class="rounded-md bg-indigo-50 p-3">
+                                <div class="text-xs uppercase text-indigo-700">Pendientes</div>
+                                <div class="mt-1 text-xl font-bold text-indigo-900">{{ $liftingSummary['sets_pending'] ?? 0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-white p-4 xl:col-span-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-semibold text-gray-900">Zonas de intensidad</h3>
+                            <span class="text-xs text-slate-500">Reps programadas vs realizadas</span>
+                        </div>
+
+                        @if($liftingZones->isEmpty())
+                            <div class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
+                                Sin zonas con reps registradas.
+                            </div>
+                        @else
+                            <div class="mt-4 space-y-3">
+                                @foreach($liftingZones as $zone)
+                                    @php
+                                        $zonePrescribed = (int) ($zone['prescribed_reps'] ?? 0);
+                                        $zoneExecuted = (int) ($zone['executed_reps'] ?? 0);
+                                        $zoneWidth = ($zonePrescribed / $maxZoneReps) * 100;
+                                    @endphp
+                                    <div>
+                                        <div class="mb-1 flex items-center justify-between gap-3 text-xs">
+                                            <span class="font-medium text-slate-700">{{ $zone['label'] }}</span>
+                                            <span class="text-slate-500">{{ $zoneExecuted }} / {{ $zonePrescribed }} reps · {{ $zone['adherence_pct'] ?? 0 }}%</span>
+                                        </div>
+                                        <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full bg-slate-400"
+                                                 style="width: {{ max(4, min(100, $zoneWidth)) }}%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-5">
+                    <div class="rounded-lg border border-slate-200 bg-white p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-semibold text-gray-900">Ejercicios trabajados</h3>
+                            <span class="text-xs text-slate-500">{{ $liftingExercises->count() }} ejercicios</span>
+                        </div>
+
+                        @if($liftingExercises->isEmpty())
+                            <div class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
+                                Sin ejercicios agrupados todavía.
+                            </div>
+                        @else
+                            <div class="mt-4 overflow-x-auto">
+                                <table class="min-w-full text-sm">
+                                    <thead class="text-xs uppercase text-gray-500">
+                                        <tr class="border-b">
+                                            <th class="py-2 text-left">Ejercicio</th>
+                                            <th class="py-2 text-right">Reps</th>
+                                            <th class="py-2 text-right">Adh.</th>
+                                            <th class="py-2 text-right">Vol.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y">
+                                        @foreach($liftingExercises as $exercise)
+                                            <tr>
+                                                <td class="py-3 font-medium text-gray-900">{{ $exercise['exercise_name'] }}</td>
+                                                <td class="py-3 text-right text-gray-700">{{ $exercise['reps_executed'] }} / {{ $exercise['reps_prescribed'] }}</td>
+                                                <td class="py-3 text-right text-gray-700">{{ $exercise['rep_adherence_pct'] }}%</td>
+                                                <td class="py-3 text-right text-gray-700">{{ number_format((float) $exercise['relative_volume'], 0) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="rounded-lg border border-slate-200 bg-white p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-semibold text-gray-900">Últimos entrenamientos lifting</h3>
+                            <span class="text-xs text-slate-500">{{ $recentLiftingAssignments->count() }} registros</span>
+                        </div>
+
+                        <div class="mt-4 space-y-3">
+                            @foreach($recentLiftingAssignments as $item)
+                                @php $itemSummary = $item['summary']; @endphp
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm font-semibold text-gray-900">{{ $item['title'] }}</div>
+                                            <div class="mt-1 text-xs text-slate-500">
+                                                {{ $item['scheduled_for'] ?? 'Sin fecha' }} · {{ $item['status'] ?? 'sin estado' }}
+                                            </div>
+                                        </div>
+                                        <div class="shrink-0 text-right text-sm font-semibold text-indigo-700">
+                                            {{ $itemSummary['rep_adherence_pct'] ?? 0 }}%
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-600">
+                                        <div>Reps: <span class="font-medium text-slate-900">{{ $itemSummary['reps_executed'] ?? 0 }}/{{ $itemSummary['reps_prescribed'] ?? 0 }}</span></div>
+                                        <div>Sets: <span class="font-medium text-slate-900">{{ $itemSummary['sets_executed'] ?? 0 }}/{{ $itemSummary['sets_prescribed'] ?? 0 }}</span></div>
+                                        <div>Vol: <span class="font-medium text-slate-900">{{ number_format((float) ($itemSummary['relative_volume'] ?? 0), 0) }}</span></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </section>

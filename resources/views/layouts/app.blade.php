@@ -18,8 +18,8 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-  <body class="font-sans antialiased bg-gray-100">
-    <div class="flex">
+  <body class="font-sans antialiased bg-gray-100 overflow-hidden">
+    <div class="flex h-screen overflow-hidden">
 
         {{-- Sidebar --}}
         {{-- @include('layouts.sidebar') --}}
@@ -31,7 +31,7 @@
 
 
         {{-- Main --}}
-        <div class="flex-1 min-h-screen">
+        <div class="flex-1 min-w-0 h-screen overflow-y-auto">
             @include('layouts.navigation')
 
             <main class="p-6">

@@ -9,6 +9,7 @@ use App\Models\TrainingSection;
 use App\Models\TrainingSectionLiftingRow;
 use App\Models\TrainingSectionResult;
 use App\Models\TrainingSectionExerciseBlock;
+use App\Services\LiftingVolumeSummaryService;
 use App\Services\TrainingAssignmentProgressService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -114,6 +115,7 @@ class TrainingAssignmentsController extends Controller
 
         // 3. Calculos de progreso
         $progress = app(TrainingAssignmentProgressService::class)->snapshot($assignment);
+        $liftingVolumeSummary = app(LiftingVolumeSummaryService::class)->forAssignment($assignment);
 
         $coverUrl = $session?->cover_image ? url(Storage::disk('public')->url($session->cover_image)) : null;
 
@@ -138,6 +140,7 @@ class TrainingAssignmentsController extends Controller
                     'sections_with_results' => $progress['sections_with_results'],
                     'pct' => $progress['pct'],
                 ],
+                'lifting_volume_summary' => $liftingVolumeSummary,
             ],
         ]);
     }

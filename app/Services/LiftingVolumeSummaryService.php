@@ -1,0 +1,250 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\TrainingAssignment;
+use App\Models\TrainingLiftingSetLog;
+
+class LiftingVolumeSummaryService
+{
+    private const ZONES = [
+        'lt_60' => ['label' => '<60%', 'min' => null, 'max' => 59.999],
+        '60_69' => ['label' => '60-69%', 'min' => 60, 'max' => 69.999],
+        '70_79' => ['label' => '70-79%', 'min' => 70, 'max' => 79.999],
+        '80_89' => ['label' => '80-89%', 'min' => 80, 'max' => 89.999],
+        '90_94' => ['label' => '90-94%', 'min' => 90, 'max' => 94.999],
+        '95_plus' => ['label' => '95%+', 'min' => 95, 'max' => null],
+        'unknown' => ['label' => 'Sin %', 'min' => null, 'max' => null],
+    ];
+
+    public function forAssignment(TrainingAssignment $assignment): array
+    {
+        $assignment->loadMissing([
+            'trainingSession.sections.liftingBlocks.rows',
+            'liftingSetLogs',
+        ]);
+
+        $logsByRow = $assignment->liftingSetLogs
+            ->groupBy('lifting_row_id')
+            ->map(fn ($logs) => $logs->keyBy('set_number'));
+
+        $summary = $this->emptySummary();
+        $zones = $this->emptyZones();
+        $byExercise = [];
+
+        foreach ($assignment->trainingSession?->sections ?? [] as $section) {
+            foreach ($section->liftingBlocks as $block) {
+                $exerciseName = trim((string) $block->exercise_name);
+                $exerciseKey = $this->exerciseKey($exerciseName);
+
+                if (!isset($byExercise[$exerciseKey])) {
+                    $byExercise[$exerciseKey] = $this->emptyExerciseSummary($exerciseName);
+                }
+
+                foreach ($block->rows as $row) {
+                    $rowLogs = $logsByRow->get($row->id, collect());
+                    $sets = max(0, (int) $row->sets);
+                    $rowReps = max(0, (int) $row->reps);
+                    $percentage = $row->percentage !== null ? (float) $row->percentage : null;
+                    $zoneKey = $this->zoneKey($percentage);
+                    $prescribedReps = $rowReps * $sets;
+
+                    $summary['sets_prescribed'] += $sets;
+                    $summary['reps_prescribed'] += $prescribedReps;
+                    $zones[$zoneKey]['prescribed_reps'] += $prescribedReps;
+                    $byExercise[$exerciseKey]['sets_prescribed'] += $sets;
+                    $byExercise[$exerciseKey]['reps_prescribed'] += $prescribedReps;
+
+                    for ($setNumber = 1; $setNumber <= $sets; $setNumber++) {
+                        $log = $rowLogs->get($setNumber);
+
+                        if (!$log) {
+                            continue;
+                        }
+
+                        if (!in_array($log->status, [
+                            TrainingLiftingSetLog::STATUS_COMPLETED,
+                            TrainingLiftingSetLog::STATUS_FAILED,
+                            TrainingLiftingSetLog::STATUS_SKIPPED,
+                        ], true)) {
+                            continue;
+                        }
+
+                        $executedReps = $this->executedRepsForLog($log, $rowReps);
+
+                        $summary['sets_executed']++;
+                        $summary['reps_executed'] += $executedReps;
+                        $zones[$zoneKey]['executed_reps'] += $executedReps;
+                        $byExercise[$exerciseKey]['sets_executed']++;
+                        $byExercise[$exerciseKey]['reps_executed'] += $executedReps;
+
+                        if ($log->status === TrainingLiftingSetLog::STATUS_COMPLETED) {
+                            $summary['sets_completed']++;
+                        } elseif ($log->status === TrainingLiftingSetLog::STATUS_FAILED) {
+                            $summary['sets_failed']++;
+                        } elseif ($log->status === TrainingLiftingSetLog::STATUS_SKIPPED) {
+                            $summary['sets_skipped']++;
+                        }
+
+                        if ($percentage !== null) {
+                            $relativeVolume = $percentage * $executedReps;
+                            $summary['relative_volume'] += $relativeVolume;
+                            $byExercise[$exerciseKey]['relative_volume'] += $relativeVolume;
+                        }
+                    }
+                }
+            }
+        }
+
+        $summary['sets_pending'] = max(0, $summary['sets_prescribed'] - $summary['sets_executed']);
+        $summary['rep_adherence_pct'] = $summary['reps_prescribed'] > 0
+            ? (int) round(($summary['reps_executed'] / $summary['reps_prescribed']) * 100)
+            : 0;
+        $summary['relative_volume'] = round($summary['relative_volume'], 2);
+        $summary['chart'] = $this->chart($summary);
+        $summary['zones'] = $this->finalizeZones($zones);
+        $summary['by_exercise'] = $this->finalizeExercises($byExercise);
+
+        return $summary;
+    }
+
+    private function emptySummary(): array
+    {
+        return [
+            'sets_prescribed' => 0,
+            'sets_executed' => 0,
+            'sets_completed' => 0,
+            'sets_failed' => 0,
+            'sets_skipped' => 0,
+            'sets_pending' => 0,
+            'reps_prescribed' => 0,
+            'reps_executed' => 0,
+            'rep_adherence_pct' => 0,
+            'relative_volume' => 0.0,
+            'chart' => [
+                'reps' => [],
+                'sets' => [],
+            ],
+            'zones' => [],
+            'by_exercise' => [],
+        ];
+    }
+
+    private function executedRepsForLog(TrainingLiftingSetLog $log, int $rowReps): int
+    {
+        if ($log->status === TrainingLiftingSetLog::STATUS_COMPLETED) {
+            return $log->actual_reps ?? $rowReps;
+        }
+
+        if ($log->status === TrainingLiftingSetLog::STATUS_FAILED) {
+            return $log->actual_reps ?? 0;
+        }
+
+        return 0;
+    }
+
+    private function chart(array $summary): array
+    {
+        return [
+            'reps' => [
+                ['label' => 'Programadas', 'value' => $summary['reps_prescribed']],
+                ['label' => 'Realizadas', 'value' => $summary['reps_executed']],
+            ],
+            'sets' => [
+                ['label' => 'Completados', 'value' => $summary['sets_completed']],
+                ['label' => 'Fallados', 'value' => $summary['sets_failed']],
+                ['label' => 'Saltados', 'value' => $summary['sets_skipped']],
+                ['label' => 'Pendientes', 'value' => $summary['sets_pending']],
+            ],
+        ];
+    }
+
+    private function emptyZones(): array
+    {
+        $zones = [];
+
+        foreach (self::ZONES as $key => $zone) {
+            $zones[$key] = [
+                'key' => $key,
+                'label' => $zone['label'],
+                'prescribed_reps' => 0,
+                'executed_reps' => 0,
+                'adherence_pct' => 0,
+            ];
+        }
+
+        return $zones;
+    }
+
+    private function finalizeZones(array $zones): array
+    {
+        return collect($zones)
+            ->map(function (array $zone) {
+                $zone['adherence_pct'] = $zone['prescribed_reps'] > 0
+                    ? (int) round(($zone['executed_reps'] / $zone['prescribed_reps']) * 100)
+                    : 0;
+
+                return $zone;
+            })
+            ->values()
+            ->all();
+    }
+
+    private function zoneKey(?float $percentage): string
+    {
+        if ($percentage === null) {
+            return 'unknown';
+        }
+
+        foreach (self::ZONES as $key => $zone) {
+            if ($key === 'unknown') {
+                continue;
+            }
+
+            if (
+                ($zone['min'] === null || $percentage >= $zone['min'])
+                && ($zone['max'] === null || $percentage <= $zone['max'])
+            ) {
+                return $key;
+            }
+        }
+
+        return 'unknown';
+    }
+
+    private function exerciseKey(string $exerciseName): string
+    {
+        $normalized = strtolower(trim($exerciseName));
+        $normalized = preg_replace('/[^a-z0-9]+/', '_', $normalized) ?: 'unknown';
+
+        return trim($normalized, '_') ?: 'unknown';
+    }
+
+    private function emptyExerciseSummary(string $exerciseName): array
+    {
+        return [
+            'exercise_name' => $exerciseName !== '' ? $exerciseName : 'Sin ejercicio',
+            'sets_prescribed' => 0,
+            'sets_executed' => 0,
+            'reps_prescribed' => 0,
+            'reps_executed' => 0,
+            'rep_adherence_pct' => 0,
+            'relative_volume' => 0.0,
+        ];
+    }
+
+    private function finalizeExercises(array $exercises): array
+    {
+        return collect($exercises)
+            ->map(function (array $exercise) {
+                $exercise['rep_adherence_pct'] = $exercise['reps_prescribed'] > 0
+                    ? (int) round(($exercise['reps_executed'] / $exercise['reps_prescribed']) * 100)
+                    : 0;
+                $exercise['relative_volume'] = round($exercise['relative_volume'], 2);
+
+                return $exercise;
+            })
+            ->values()
+            ->all();
+    }
+}
