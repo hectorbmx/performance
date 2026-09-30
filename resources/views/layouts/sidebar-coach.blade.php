@@ -7,7 +7,7 @@
 
 <aside
     x-data="{ open: false }"
-    class="bg-gray-900 text-white h-screen shrink-0 flex flex-col transition-all duration-300"
+    class="sticky top-0 self-start bg-gray-900 text-white h-screen shrink-0 flex flex-col transition-all duration-300"
     :class="open ? 'w-64' : 'w-20'"
 >
     <div class="flex items-center justify-between px-4 py-4 border-b border-gray-700">
