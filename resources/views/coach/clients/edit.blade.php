@@ -745,45 +745,46 @@
                     </div>
                 @endif
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <div class="grid gap-2 overflow-x-auto"
+                     style="grid-template-columns: repeat(5, minmax(155px, 1fr));">
+                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5">
                         <div class="text-[11px] font-semibold uppercase text-slate-500">Sesiones</div>
-                        <div class="mt-1 text-xl font-bold leading-tight text-slate-900">
+                        <div class="text-lg font-bold leading-tight text-slate-900">
                             {{ $liftingSummary['assignments_count'] ?? 0 }}
                         </div>
-                        <div class="mt-0.5 text-[11px] text-slate-500">Registros analizados</div>
+                        <div class="text-[11px] leading-tight text-slate-500">Registros analizados</div>
                     </div>
 
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5">
                         <div class="text-[11px] font-semibold uppercase text-slate-500">Reps realizadas</div>
-                        <div class="mt-1 text-xl font-bold leading-tight text-slate-900">
+                        <div class="text-lg font-bold leading-tight text-slate-900">
                             {{ $liftingSummary['reps_executed'] ?? 0 }} / {{ $liftingSummary['reps_prescribed'] ?? 0 }}
                         </div>
-                        <div class="mt-0.5 text-[11px] text-slate-500">Vs programadas</div>
+                        <div class="text-[11px] leading-tight text-slate-500">Vs programadas</div>
                     </div>
 
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5">
                         <div class="text-[11px] font-semibold uppercase text-slate-500">Tonelaje</div>
-                        <div class="mt-1 text-xl font-bold leading-tight text-slate-900">
+                        <div class="text-lg font-bold leading-tight text-slate-900">
                             {{ number_format((float) ($liftingSummary['estimated_tonnage'] ?? 0), 0) }} kg
                         </div>
-                        <div class="mt-0.5 text-[11px] text-slate-500">Desde máximos</div>
+                        <div class="text-[11px] leading-tight text-slate-500">Desde máximos</div>
                     </div>
 
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5">
                         <div class="text-[11px] font-semibold uppercase text-slate-500">Intensidad media</div>
-                        <div class="mt-1 text-xl font-bold leading-tight text-slate-900">
+                        <div class="text-lg font-bold leading-tight text-slate-900">
                             {{ ($liftingSummary['average_intensity_pct'] ?? null) !== null ? number_format((float) $liftingSummary['average_intensity_pct'], 1) . '%' : '—' }}
                         </div>
-                        <div class="mt-0.5 text-[11px] text-slate-500">Ponderada por reps</div>
+                        <div class="text-[11px] leading-tight text-slate-500">Ponderada por reps</div>
                     </div>
 
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5">
                         <div class="text-[11px] font-semibold uppercase text-slate-500">Adherencia</div>
-                        <div class="mt-1 text-xl font-bold leading-tight text-slate-900">
+                        <div class="text-lg font-bold leading-tight text-slate-900">
                             {{ $liftingSummary['rep_adherence_pct'] ?? 0 }}%
                         </div>
-                        <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                        <div class="mt-1 h-1 overflow-hidden rounded-full bg-slate-200">
                             <div class="h-full rounded-full bg-indigo-600"
                                  style="width: {{ min(100, max(0, (int) ($liftingSummary['rep_adherence_pct'] ?? 0))) }}%"></div>
                         </div>
