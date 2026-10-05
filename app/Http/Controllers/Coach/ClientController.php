@@ -221,6 +221,7 @@ class ClientController extends Controller
             'recent_assignments' => [],
             'zones' => [],
             'by_exercise' => [],
+            'trends_by_exercise' => [],
         ];
     }
 

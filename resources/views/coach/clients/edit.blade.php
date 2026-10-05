@@ -6,6 +6,10 @@
         if (! in_array($activeClientTab, $validClientTabs, true)) {
             $activeClientTab = 'datos_generales';
         }
+
+        $liftingExerciseTrendsByKey = collect($liftingPerformance['trends_by_exercise'] ?? [])
+            ->keyBy('exercise_key')
+            ->all();
     @endphp
 
     <style>
@@ -14,7 +18,28 @@
 
     <div class="py-8">
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8"
-             x-data="{ activeTab: @js($activeClientTab) }">
+             x-data="{
+                activeTab: @js($activeClientTab),
+                liftingSelectedExerciseKey: null,
+                liftingSelectedExerciseName: null,
+                liftingTrendMode: 'weekly',
+                liftingTrendsByExercise: @js($liftingExerciseTrendsByKey),
+                selectedLiftingTrend() {
+                    return this.liftingSelectedExerciseKey
+                        ? (this.liftingTrendsByExercise[this.liftingSelectedExerciseKey] || null)
+                        : null;
+                },
+                selectedLiftingBuckets() {
+                    const trend = this.selectedLiftingTrend();
+                    return trend ? (trend[this.liftingTrendMode] || []) : [];
+                },
+                maxSelectedLiftingReps() {
+                    return Math.max(1, ...this.selectedLiftingBuckets().map((bucket) => Number(bucket.reps_executed || 0)));
+                },
+                liftingBarHeight(bucket) {
+                    return `${Math.max(8, (Number(bucket.reps_executed || 0) / this.maxSelectedLiftingReps()) * 100)}%`;
+                }
+             }">
 
             <div class="flex items-center justify-between mb-6">
                 <h1 class="text-2xl font-bold">Editar cliente</h1>
@@ -869,6 +894,9 @@
                             <h3 class="text-sm font-semibold text-gray-900">Ejercicios trabajados</h3>
                             <span class="text-xs text-slate-500">{{ $liftingExercises->count() }} ejercicios</span>
                         </div>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Haz click en un ejercicio para preparar su gráfica.
+                        </p>
 
                         @if($liftingExercises->isEmpty())
                             <div class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
@@ -888,8 +916,28 @@
                                     </thead>
                                     <tbody class="divide-y">
                                         @foreach($liftingExercises as $exercise)
-                                            <tr>
-                                                <td class="py-3 font-medium text-gray-900">{{ $exercise['exercise_name'] }}</td>
+                                            @php
+                                                $exerciseName = $exercise['exercise_name'] ?? 'Sin ejercicio';
+                                                $exerciseKey = $exercise['exercise_key']
+                                                    ?? trim(preg_replace('/[^a-z0-9]+/', '_', strtolower(trim($exerciseName))), '_');
+                                            @endphp
+                                            <tr role="button"
+                                                tabindex="0"
+                                                class="cursor-pointer transition"
+                                                :class="liftingSelectedExerciseKey === @js($exerciseKey) ? 'bg-indigo-50' : 'hover:bg-slate-50'"
+                                                @click="liftingSelectedExerciseKey = @js($exerciseKey); liftingSelectedExerciseName = @js($exerciseName)"
+                                                @keydown.enter.prevent="liftingSelectedExerciseKey = @js($exerciseKey); liftingSelectedExerciseName = @js($exerciseName)"
+                                                @keydown.space.prevent="liftingSelectedExerciseKey = @js($exerciseKey); liftingSelectedExerciseName = @js($exerciseName)">
+                                                <td class="py-3 font-medium text-gray-900">
+                                                    <span class="inline-flex items-center gap-2">
+                                                        <span>{{ $exerciseName }}</span>
+                                                        <span x-cloak
+                                                              x-show="liftingSelectedExerciseKey === @js($exerciseKey)"
+                                                              class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+                                                            Seleccionado
+                                                        </span>
+                                                    </span>
+                                                </td>
                                                 <td class="py-3 text-right text-gray-700">{{ $exercise['reps_executed'] }} / {{ $exercise['reps_prescribed'] }}</td>
                                                 <td class="py-3 text-right text-gray-700">{{ number_format((float) ($exercise['estimated_tonnage'] ?? 0), 0) }} kg</td>
                                                 <td class="py-3 text-right text-gray-700">{{ ($exercise['average_intensity_pct'] ?? null) !== null ? number_format((float) $exercise['average_intensity_pct'], 1) . '%' : '—' }}</td>
@@ -898,6 +946,70 @@
                                         @endforeach
                                     </tbody>
                                 </table>
+                            </div>
+                            <div x-cloak
+                                 x-show="liftingSelectedExerciseKey"
+                                 class="mt-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-indigo-950" x-text="liftingSelectedExerciseName"></h4>
+                                        <p class="mt-1 text-xs text-indigo-700">Reps ejecutadas agrupadas por periodo.</p>
+                                    </div>
+
+                                    <div class="inline-flex rounded-lg border border-indigo-200 bg-white p-1 text-xs font-semibold">
+                                        <button type="button"
+                                                class="rounded-md px-3 py-1 transition"
+                                                :class="liftingTrendMode === 'weekly' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 hover:bg-indigo-50'"
+                                                @click="liftingTrendMode = 'weekly'">
+                                            Semana
+                                        </button>
+                                        <button type="button"
+                                                class="rounded-md px-3 py-1 transition"
+                                                :class="liftingTrendMode === 'monthly' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-700 hover:bg-indigo-50'"
+                                                @click="liftingTrendMode = 'monthly'">
+                                            Mes
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 rounded-lg border border-indigo-100 bg-white p-3">
+                                    <div class="flex h-44 items-end gap-3 overflow-x-auto pb-8 pt-3">
+                                        <template x-if="selectedLiftingBuckets().length === 0">
+                                            <div class="flex h-full min-w-full items-center justify-center text-center text-sm text-slate-500">
+                                                Sin datos suficientes para graficar este ejercicio.
+                                            </div>
+                                        </template>
+
+                                        <template x-for="bucket in selectedLiftingBuckets()" :key="bucket.key">
+                                            <div class="flex h-full min-w-[58px] flex-col items-center justify-end gap-2">
+                                                <div class="text-[11px] font-semibold text-slate-600" x-text="bucket.reps_executed"></div>
+                                                <div class="relative flex w-full flex-1 items-end justify-center">
+                                                    <div class="w-8 rounded-t-md bg-indigo-500 shadow-sm"
+                                                         :style="{ height: liftingBarHeight(bucket) }"></div>
+                                                </div>
+                                                <div class="h-7 text-center text-[10px] font-semibold leading-tight text-slate-500" x-text="bucket.label"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div class="mt-3 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-xs">
+                                        <div class="rounded-md bg-slate-50 p-2">
+                                            <span class="block font-semibold uppercase text-slate-500">Realizadas</span>
+                                            <strong class="mt-1 block text-sm text-slate-900"
+                                                    x-text="selectedLiftingTrend()?.totals?.reps_executed ?? 0"></strong>
+                                        </div>
+                                        <div class="rounded-md bg-slate-50 p-2">
+                                            <span class="block font-semibold uppercase text-slate-500">Programadas</span>
+                                            <strong class="mt-1 block text-sm text-slate-900"
+                                                    x-text="selectedLiftingTrend()?.totals?.reps_prescribed ?? 0"></strong>
+                                        </div>
+                                        <div class="rounded-md bg-slate-50 p-2">
+                                            <span class="block font-semibold uppercase text-slate-500">Kg</span>
+                                            <strong class="mt-1 block text-sm text-slate-900"
+                                                    x-text="Number(selectedLiftingTrend()?.totals?.estimated_tonnage ?? 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })"></strong>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         @endif
                     </div>

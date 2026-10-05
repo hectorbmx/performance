@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Client;
 use App\Models\TrainingAssignment;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 
 class ClientLiftingPerformanceService
 {
@@ -101,6 +103,7 @@ class ClientLiftingPerformanceService
 
                 if (!isset($byExercise[$exerciseKey])) {
                     $byExercise[$exerciseKey] = [
+                        'exercise_key' => $exerciseKey,
                         'exercise_name' => $exercise['exercise_name'],
                         'sets_prescribed' => 0,
                         'sets_executed' => 0,
@@ -145,6 +148,7 @@ class ClientLiftingPerformanceService
             'recent_assignments' => $recentAssignments->all(),
             'zones' => $this->finalizeZones($zones, $summary['reps_executed']),
             'by_exercise' => $this->finalizeExercises($byExercise),
+            'trends_by_exercise' => $this->buildExerciseTrends($recentAssignments),
         ];
     }
 
@@ -192,6 +196,8 @@ class ClientLiftingPerformanceService
     {
         return collect($exercises)
             ->map(function (array $exercise) {
+                $exercise['exercise_key'] = $exercise['exercise_key']
+                    ?? $this->exerciseKey($exercise['exercise_name'] ?? 'unknown');
                 $exercise['rep_adherence_pct'] = $exercise['reps_prescribed'] > 0
                     ? (int) round(($exercise['reps_executed'] / $exercise['reps_prescribed']) * 100)
                     : 0;
@@ -204,6 +210,116 @@ class ClientLiftingPerformanceService
                 return $exercise;
             })
             ->sortByDesc('reps_executed')
+            ->values()
+            ->all();
+    }
+
+    private function buildExerciseTrends($recentAssignments): array
+    {
+        $trends = [];
+
+        foreach ($recentAssignments as $item) {
+            if (empty($item['scheduled_for'])) {
+                continue;
+            }
+
+            $date = Carbon::parse($item['scheduled_for']);
+            $weeklyKey = $date->copy()->startOfWeek(CarbonInterface::MONDAY)->format('Y-m-d');
+            $monthlyKey = $date->copy()->startOfMonth()->format('Y-m');
+
+            foreach ($item['summary']['by_exercise'] ?? [] as $exercise) {
+                $exerciseName = $exercise['exercise_name'] ?? 'Sin ejercicio';
+                $exerciseKey = $this->exerciseKey($exerciseName);
+
+                if (!isset($trends[$exerciseKey])) {
+                    $trends[$exerciseKey] = [
+                        'exercise_key' => $exerciseKey,
+                        'exercise_name' => $exerciseName,
+                        'weekly' => [],
+                        'monthly' => [],
+                    ];
+                }
+
+                $this->addExerciseTrendBucket(
+                    $trends[$exerciseKey]['weekly'],
+                    $weeklyKey,
+                    $date->copy()->startOfWeek(CarbonInterface::MONDAY)->format('d M'),
+                    $exercise
+                );
+
+                $this->addExerciseTrendBucket(
+                    $trends[$exerciseKey]['monthly'],
+                    $monthlyKey,
+                    $date->copy()->startOfMonth()->format('M Y'),
+                    $exercise
+                );
+            }
+        }
+
+        return collect($trends)
+            ->map(function (array $trend) {
+                $trend['weekly'] = $this->finalizeTrendBuckets($trend['weekly']);
+                $trend['monthly'] = $this->finalizeTrendBuckets($trend['monthly']);
+
+                $trend['totals'] = [
+                    'reps_prescribed' => collect($trend['weekly'])->sum('reps_prescribed'),
+                    'reps_executed' => collect($trend['weekly'])->sum('reps_executed'),
+                    'estimated_tonnage' => round((float) collect($trend['weekly'])->sum('estimated_tonnage'), 2),
+                ];
+
+                return $trend;
+            })
+            ->sortByDesc(fn (array $trend) => $trend['totals']['reps_executed'] ?? 0)
+            ->values()
+            ->all();
+    }
+
+    private function addExerciseTrendBucket(array &$buckets, string $key, string $label, array $exercise): void
+    {
+        if (!isset($buckets[$key])) {
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $label,
+                'sets_prescribed' => 0,
+                'sets_executed' => 0,
+                'reps_prescribed' => 0,
+                'reps_executed' => 0,
+                'relative_volume' => 0.0,
+                'intensity_reps' => 0,
+                'estimated_tonnage' => 0.0,
+            ];
+        }
+
+        foreach ([
+            'sets_prescribed',
+            'sets_executed',
+            'reps_prescribed',
+            'reps_executed',
+            'relative_volume',
+            'intensity_reps',
+            'estimated_tonnage',
+        ] as $field) {
+            $buckets[$key][$field] += $exercise[$field] ?? 0;
+        }
+    }
+
+    private function finalizeTrendBuckets(array $buckets): array
+    {
+        ksort($buckets);
+
+        return collect($buckets)
+            ->map(function (array $bucket) {
+                $bucket['rep_adherence_pct'] = $bucket['reps_prescribed'] > 0
+                    ? (int) round(($bucket['reps_executed'] / $bucket['reps_prescribed']) * 100)
+                    : 0;
+                $bucket['average_intensity_pct'] = $bucket['intensity_reps'] > 0
+                    ? round($bucket['relative_volume'] / $bucket['intensity_reps'], 1)
+                    : null;
+                $bucket['relative_volume'] = round($bucket['relative_volume'], 2);
+                $bucket['estimated_tonnage'] = round($bucket['estimated_tonnage'], 2);
+
+                return $bucket;
+            })
             ->values()
             ->all();
     }
