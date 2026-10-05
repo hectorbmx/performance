@@ -95,6 +95,8 @@ class TrainingsController extends Controller
                 DB::raw("'personal' as source"),
                 'ta.id as assignment_id',
                 'ta.status',
+                'ta.started_at',
+                'ta.completed_at',
                 DB::raw('DATE(COALESCE(ta.scheduled_for, ts.scheduled_at)) as scheduled_for'),
                 'ts.id as training_session_id',
                 'ts.coach_id',
@@ -132,6 +134,8 @@ class TrainingsController extends Controller
                     DB::raw("'group' as source"),
                     'ta.id as assignment_id',
                     'ta.status',
+                    'ta.started_at',
+                    'ta.completed_at',
                     DB::raw('DATE(ta.scheduled_for) as scheduled_for'),
                     'ts.id as training_session_id',
                     'ts.coach_id',
@@ -159,6 +163,8 @@ class TrainingsController extends Controller
                 DB::raw("'free' as source"),
                 DB::raw("NULL as assignment_id"),
                 DB::raw("NULL as status"),
+                DB::raw("NULL as started_at"),
+                DB::raw("NULL as completed_at"),
                 DB::raw("DATE(ts.scheduled_at) as scheduled_for"),
                 'ts.id as training_session_id',
                 'ts.coach_id',
@@ -229,6 +235,8 @@ class TrainingsController extends Controller
                 'assignment_id' => $r->assignment_id ? (int)$r->assignment_id : null,
                 'source' => $r->source,
                 'status' => $r->status,
+                'started_at' => $r->started_at,
+                'completed_at' => $r->completed_at,
                 'scheduled_for' => $r->scheduled_for,
                 'training_session' => [
                     'id' => (int)$r->training_session_id,
@@ -264,13 +272,24 @@ class TrainingsController extends Controller
 //CAMBIAR DE ESTATUS EL PROGRESO DEL ENTRENO
     public function updateStatus(Request $request, $id) {
     $status = $request->input('completed'); // p.ej. 'completed'
-    
+
+    $payload = [
+        'status' => $status,
+        'updated_at' => now(),
+    ];
+
+    if ($status === 'in_progress') {
+        $payload['started_at'] = DB::raw('COALESCE(started_at, CURRENT_TIMESTAMP)');
+    }
+
+    if ($status === 'completed') {
+        $payload['started_at'] = DB::raw('COALESCE(started_at, CURRENT_TIMESTAMP)');
+        $payload['completed_at'] = DB::raw('COALESCE(completed_at, CURRENT_TIMESTAMP)');
+    }
+
     DB::table('training_assignments')
         ->where('id', $id)
-        ->update([
-            'status' => $status,
-            'updated_at' => now()
-        ]);
+        ->update($payload);
 
     return response()->json(['ok' => true]);
 }

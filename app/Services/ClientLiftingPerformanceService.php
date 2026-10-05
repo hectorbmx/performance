@@ -88,6 +88,7 @@ class ClientLiftingPerformanceService
                         'prescribed_reps' => 0,
                         'executed_reps' => 0,
                         'adherence_pct' => 0,
+                        'distribution_pct' => 0,
                     ];
                 }
 
@@ -142,7 +143,7 @@ class ClientLiftingPerformanceService
             'has_data' => $recentAssignments->isNotEmpty(),
             'summary' => $summary,
             'recent_assignments' => $recentAssignments->all(),
-            'zones' => $this->finalizeZones($zones),
+            'zones' => $this->finalizeZones($zones, $summary['reps_executed']),
             'by_exercise' => $this->finalizeExercises($byExercise),
         ];
     }
@@ -170,12 +171,15 @@ class ClientLiftingPerformanceService
         ];
     }
 
-    private function finalizeZones(array $zones): array
+    private function finalizeZones(array $zones, int $totalExecutedReps): array
     {
         return collect($zones)
-            ->map(function (array $zone) {
+            ->map(function (array $zone) use ($totalExecutedReps) {
                 $zone['adherence_pct'] = $zone['prescribed_reps'] > 0
                     ? (int) round(($zone['executed_reps'] / $zone['prescribed_reps']) * 100)
+                    : 0;
+                $zone['distribution_pct'] = $totalExecutedReps > 0
+                    ? (int) round(($zone['executed_reps'] / $totalExecutedReps) * 100)
                     : 0;
 
                 return $zone;

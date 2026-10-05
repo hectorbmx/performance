@@ -168,11 +168,16 @@ class TrainingSessionsController extends Controller
                     'client_id' => $clientId,
                     'scheduled_for' => $scheduledFor,
                     'status' => 'in_progress', // o 'scheduled' si prefieres
+                    'started_at' => now(),
                 ]);
             } else {
                 // Si existe y estaba scheduled, opcionalmente lo pasas a in_progress
                 if ($assignment->status === 'scheduled') {
                     $assignment->status = 'in_progress';
+                    $assignment->started_at = $assignment->started_at ?? now();
+                    $assignment->save();
+                } elseif ($assignment->status === 'in_progress' && !$assignment->started_at) {
+                    $assignment->started_at = now();
                     $assignment->save();
                 }
             }
@@ -183,6 +188,8 @@ class TrainingSessionsController extends Controller
                     'assignment_id' => (int)$assignment->id,
                     'scheduled_for' => $assignment->scheduled_for?->format('Y-m-d') ?? $scheduledFor,
                     'status' => $assignment->status,
+                    'started_at' => $assignment->started_at?->toIso8601String(),
+                    'completed_at' => $assignment->completed_at?->toIso8601String(),
                 ],
             ]);
         }
@@ -270,6 +277,8 @@ class TrainingSessionsController extends Controller
                 'training_session_id' => (int) $trainingSession->id,
                 'scheduled_for' => optional($assignment->scheduled_for)->format('Y-m-d'),
                 'status' => $assignment->status,
+                'started_at' => $assignment->started_at?->toIso8601String(),
+                'completed_at' => $assignment->completed_at?->toIso8601String(),
             ],
         ]);
     }

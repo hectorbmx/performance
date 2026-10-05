@@ -12,10 +12,14 @@ class TrainingAssignment extends Model
         'client_id',
         'scheduled_for',
         'status',
+        'started_at',
+        'completed_at',
     ];
     protected $casts = [
-    'scheduled_for' => 'date:Y-m-d',
-];
+        'scheduled_for' => 'date:Y-m-d',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
 
 
     public function training()

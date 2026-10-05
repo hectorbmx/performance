@@ -32,6 +32,59 @@
 
         {{-- NOTA: MVP read-only, no hay botón + Nuevo aquí --}}
 
+        <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Asignados del mes</p>
+                        <div class="mt-2 text-3xl font-bold text-slate-950">
+                            {{ number_format((int) ($clientTrainingKpis['assigned_this_month'] ?? 0)) }}
+                        </div>
+                    </div>
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                        <i class="fa-regular fa-calendar-check"></i>
+                    </span>
+                </div>
+                <p class="mt-3 text-sm text-slate-600">
+                    Entrenamientos asignados en {{ $currentMonth->translatedFormat('F Y') }}.
+                </p>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Ejecutados por atleta</p>
+                        <div class="mt-2 text-3xl font-bold text-slate-950">
+                            {{ number_format((int) ($clientTrainingKpis['completed_this_month'] ?? 0)) }}
+                        </div>
+                    </div>
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </div>
+                <p class="mt-3 text-sm text-slate-600">
+                    Entrenamientos completados en {{ $currentMonth->translatedFormat('F Y') }}.
+                </p>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tiempo entrenando</p>
+                        <div class="mt-2 text-3xl font-bold text-slate-950">
+                            {{ number_format((float) ($clientTrainingKpis['training_hours'] ?? 0), 1) }} h
+                        </div>
+                    </div>
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                        <i class="fa-regular fa-clock"></i>
+                    </span>
+                </div>
+                <p class="mt-3 text-sm text-slate-600">
+                    Tiempo real entre inicio y finalizacion en {{ $currentMonth->translatedFormat('F Y') }}.
+                </p>
+            </div>
+        </div>
+
         @if($viewMode === 'calendar')
             @php
                 // Para reusar tu diseño, necesitamos construir el mismo set de variables:
@@ -105,7 +158,9 @@
                             $items = $byDate[$key] ?? collect();
                         @endphp
 
-                        <div class="aspect-square border-r border-b last:border-r-0 p-2 {{ $isOutside ? 'bg-gray-50 text-gray-400' : 'bg-white' }}">
+                        <div class="calendar-day aspect-square border-r border-b last:border-r-0 p-2 {{ $isOutside ? 'bg-gray-50 text-gray-400' : 'bg-white' }}"
+                             data-calendar-date="{{ $key }}"
+                             data-calendar-month="{{ $currentMonth->format('Y-m') }}">
                             <div class="flex items-start justify-between">
                                 <div class="text-sm font-semibold {{ $isOutside ? 'text-gray-400' : 'text-gray-900' }}">
                                     {{ $d->day }}
@@ -124,7 +179,15 @@
                                 @foreach($items->take(2) as $t)
                                     @php $hasColor = filled($t->tag_color); @endphp
 
-                                    <div class="group/training rounded-md border px-2 py-1 text-xs hover:opacity-90"
+                                    <div class="calendar-training-card group/training cursor-grab rounded-md border px-2 py-1 text-xs hover:opacity-90 active:cursor-grabbing"
+                                         draggable="true"
+                                         data-draggable-training
+                                         data-copy-id="{{ $t->id }}"
+                                         data-copy-action="{{ route('coach.trainings.copy', $t) }}"
+                                         data-copy-title="{{ e($t->title) }}"
+                                         data-copy-color="{{ $t->tag_color ?: '#2563eb' }}"
+                                         data-copy-visibility="{{ $t->visibility }}"
+                                         data-copy-date="{{ optional($t->scheduled_at)->toDateString() }}"
                                          style="
                                             background-color: {{ $hasColor ? $t->tag_color : 'transparent' }};
                                             border-color: {{ $hasColor ? $t->tag_color : '#e5e7eb' }};
@@ -404,6 +467,7 @@
                 const groupOptions = @js($copyGroupOptions);
                 let selectedClients = [];
                 let selectedGroups = [];
+                let draggedTraining = null;
                 const closeButtons = [
                     document.getElementById('closeCopyTrainingModal'),
                     document.getElementById('cancelCopyTrainingModal'),
@@ -483,14 +547,14 @@
                     fillPicker(groupPicker, groupOptions, selectedGroups, 'Seleccionar grupo');
                 };
 
-                const openModal = (button) => {
+                const openModal = (button, targetDate = null) => {
                     const trainingId = button.dataset.copyId;
                     const assignments = trainingAssignments[trainingId] || { clients: [], groups: [] };
                     form.action = button.dataset.copyAction || '';
                     title.textContent = button.dataset.copyTitle || 'Entrenamiento seleccionado';
                     nameInput.value = button.dataset.copyTitle || '';
                     colorInput.value = button.dataset.copyColor || '#2563eb';
-                    dateInput.value = button.dataset.copyDate || '';
+                    dateInput.value = targetDate || button.dataset.copyDate || '';
                     selectedClients = [...(assignments.clients || [])];
                     selectedGroups = [...(assignments.groups || [])];
                     assignmentEditor.classList.toggle('hidden', button.dataset.copyVisibility !== 'assigned');
@@ -531,6 +595,65 @@
 
                 document.querySelectorAll('[data-copy-training]').forEach((button) => {
                     button.addEventListener('click', () => openModal(button));
+                });
+
+                document.querySelectorAll('[data-draggable-training]').forEach((card) => {
+                    card.addEventListener('dragstart', (event) => {
+                        draggedTraining = {
+                            id: card.dataset.copyId || '',
+                            action: card.dataset.copyAction || '',
+                            title: card.dataset.copyTitle || '',
+                            color: card.dataset.copyColor || '#2563eb',
+                            visibility: card.dataset.copyVisibility || '',
+                            date: card.dataset.copyDate || '',
+                        };
+
+                        card.classList.add('opacity-60', 'ring-2', 'ring-blue-500', 'ring-offset-1');
+
+                        if (event.dataTransfer) {
+                            event.dataTransfer.effectAllowed = 'copy';
+                            event.dataTransfer.setData('text/plain', draggedTraining.title || 'Entrenamiento');
+                            event.dataTransfer.setData('application/json', JSON.stringify(draggedTraining));
+                        }
+                    });
+
+                    card.addEventListener('dragend', () => {
+                        draggedTraining = null;
+                        card.classList.remove('opacity-60', 'ring-2', 'ring-blue-500', 'ring-offset-1');
+                    });
+                });
+
+                document.querySelectorAll('.calendar-day[data-calendar-date]').forEach((day) => {
+                    day.addEventListener('dragover', (event) => {
+                        if (!draggedTraining) return;
+
+                        event.preventDefault();
+                        day.classList.add('ring-2', 'ring-blue-500', 'ring-inset', 'bg-blue-50');
+
+                        if (event.dataTransfer) {
+                            event.dataTransfer.dropEffect = 'copy';
+                        }
+                    });
+
+                    day.addEventListener('dragleave', () => {
+                        day.classList.remove('ring-2', 'ring-blue-500', 'ring-inset', 'bg-blue-50');
+                    });
+
+                    day.addEventListener('drop', (event) => {
+                        if (!draggedTraining) return;
+
+                        event.preventDefault();
+                        document.querySelectorAll('.calendar-day[data-calendar-date]').forEach((calendarDay) => {
+                            calendarDay.classList.remove('ring-2', 'ring-blue-500', 'ring-inset', 'bg-blue-50');
+                        });
+
+                        const targetDate = day.dataset.calendarDate || '';
+                        const sourceCard = document.querySelector(`[data-draggable-training][data-copy-id="${draggedTraining.id}"]`);
+
+                        if (!targetDate || !sourceCard) return;
+
+                        openModal(sourceCard, targetDate);
+                    });
                 });
 
                 closeButtons.forEach((button) => {

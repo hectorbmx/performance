@@ -126,6 +126,8 @@ class TrainingAssignmentsController extends Controller
                     'id' => $assignment->id,
                     'status' => $assignment->status,
                     'scheduled_for' => $assignment->scheduled_for?->format('Y-m-d'),
+                    'started_at' => $assignment->started_at?->toIso8601String(),
+                    'completed_at' => $assignment->completed_at?->toIso8601String(),
                 ],
                 'training_session' => $session ? [
                     'id' => $session->id,
@@ -201,9 +203,21 @@ class TrainingAssignmentsController extends Controller
             return response()->json(['ok' => false, 'message' => 'No se puede iniciar este entrenamiento.'], 422);
         }
 
-        $assignment->update(['status' => 'in_progress']);
+        $assignment->update([
+            'status' => 'in_progress',
+            'started_at' => $assignment->started_at ?? now(),
+        ]);
 
-        return response()->json(['ok' => true, 'data' => ['status' => $assignment->status]]);
+        $assignment->refresh();
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'status' => $assignment->status,
+                'started_at' => $assignment->started_at?->toIso8601String(),
+                'completed_at' => $assignment->completed_at?->toIso8601String(),
+            ],
+        ]);
     }
 
     public function complete(Request $request, TrainingAssignment $assignment)
@@ -223,9 +237,24 @@ class TrainingAssignmentsController extends Controller
             return response()->json(['ok' => false, 'message' => 'No se puede completar un entrenamiento cancelado.'], 422);
         }
 
-        $assignment->update(['status' => 'completed']);
+        $now = now();
 
-        return response()->json(['ok' => true, 'data' => ['status' => $assignment->status]]);
+        $assignment->update([
+            'status' => 'completed',
+            'started_at' => $assignment->started_at ?? $now,
+            'completed_at' => $assignment->completed_at ?? $now,
+        ]);
+
+        $assignment->refresh();
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'status' => $assignment->status,
+                'started_at' => $assignment->started_at?->toIso8601String(),
+                'completed_at' => $assignment->completed_at?->toIso8601String(),
+            ],
+        ]);
     }
 
     public function saveLiftingSet(Request $request, TrainingAssignment $assignment)

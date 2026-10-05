@@ -721,6 +721,13 @@
                     $recentLiftingAssignments = collect($liftingPerformance['recent_assignments'] ?? []);
                     $missingMaxMetrics = collect($liftingSummary['missing_max_metrics'] ?? []);
                     $unmappedExercises = collect($liftingSummary['unmapped_exercises'] ?? []);
+                    $metricLabels = [
+                        'back_squat_1rm' => 'Back Squat 1RM',
+                        'front_squat_1rm' => 'Front Squat 1RM',
+                        'snatch_1rm' => 'Snatch 1RM',
+                        'clean_1rm' => 'Clean 1RM',
+                        'jerk_1rm' => 'Jerk 1RM',
+                    ];
                     $maxZoneReps = max(1, (int) $liftingZones->max('prescribed_reps'));
                 @endphp
 
@@ -733,12 +740,12 @@
                         <div class="mt-3 flex flex-wrap gap-2 text-xs">
                             @foreach($missingMaxMetrics as $metricCode)
                                 <span class="rounded-full bg-white px-2 py-1 font-medium text-amber-800 ring-1 ring-amber-200">
-                                    Falta {{ $metricCode }}
+                                    Falta máximo: {{ $metricLabels[$metricCode] ?? $metricCode }}
                                 </span>
                             @endforeach
                             @foreach($unmappedExercises->take(8) as $exerciseName)
                                 <span class="rounded-full bg-white px-2 py-1 font-medium text-amber-800 ring-1 ring-amber-200">
-                                    Sin mapa: {{ $exerciseName }}
+                                    Ejercicio sin métrica: {{ $exerciseName }}
                                 </span>
                             @endforeach
                         </div>
@@ -830,15 +837,23 @@
                                     @php
                                         $zonePrescribed = (int) ($zone['prescribed_reps'] ?? 0);
                                         $zoneExecuted = (int) ($zone['executed_reps'] ?? 0);
-                                        $zoneWidth = ($zonePrescribed / $maxZoneReps) * 100;
+                                        $zoneWidth = ($zoneExecuted / $maxZoneReps) * 100;
                                     @endphp
                                     <div>
-                                        <div class="mb-1 flex items-center justify-between gap-3 text-xs">
+                                        <div class="mb-1 grid grid-cols-12 items-center gap-2 text-xs">
                                             <span class="font-medium text-slate-700">{{ $zone['label'] }}</span>
-                                            <span class="text-slate-500">{{ $zoneExecuted }} / {{ $zonePrescribed }} reps · {{ $zone['adherence_pct'] ?? 0 }}%</span>
+                                            <span class="col-span-5 text-right text-slate-500">
+                                                {{ $zoneExecuted }} / {{ $zonePrescribed }} reps
+                                            </span>
+                                            <span class="col-span-3 text-right text-slate-500">
+                                                {{ $zone['adherence_pct'] ?? 0 }}% adh.
+                                            </span>
+                                            <span class="col-span-3 text-right font-medium text-slate-700">
+                                                {{ $zone['distribution_pct'] ?? 0 }}% del total
+                                            </span>
                                         </div>
                                         <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                                            <div class="h-full rounded-full bg-slate-400"
+                                            <div class="h-full rounded-full bg-indigo-500"
                                                  style="width: {{ max(4, min(100, $zoneWidth)) }}%"></div>
                                         </div>
                                     </div>

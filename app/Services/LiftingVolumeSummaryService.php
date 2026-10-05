@@ -12,10 +12,15 @@ class LiftingVolumeSummaryService
         'back_squat_1rm' => [
             'back squat',
             'backsquat',
+            'box back squat',
+            'box bak squat',
+            'box squat',
+            'recuperaciones back squat',
         ],
         'front_squat_1rm' => [
             'front squat',
             'frontsquat',
+            'recuperaciones front squat',
         ],
         'snatch_1rm' => [
             'snatch',
@@ -39,6 +44,12 @@ class LiftingVolumeSummaryService
             'split jerk',
             'power jerk',
         ],
+    ];
+
+    private const SILENT_UNMAPPED_ALIASES = [
+        'recuperaciones',
+        'recovery',
+        'recoveries',
     ];
 
     private const ZONES = [
@@ -138,7 +149,7 @@ class LiftingVolumeSummaryService
                                 $byExercise[$exerciseKey]['estimated_tonnage'] += $tonnage;
                             } elseif ($metricCode && $executedReps > 0) {
                                 $summary['missing_max_metrics'][$metricCode] = $metricCode;
-                            } elseif (!$metricCode && $executedReps > 0) {
+                            } elseif (!$metricCode && $executedReps > 0 && !$this->isSilentUnmappedExercise($exerciseName)) {
                                 $summary['unmapped_exercises'][$exerciseKey] = $exerciseName !== '' ? $exerciseName : 'Sin ejercicio';
                             }
                         }
@@ -159,7 +170,7 @@ class LiftingVolumeSummaryService
         $summary['missing_max_metrics'] = array_values($summary['missing_max_metrics']);
         $summary['unmapped_exercises'] = array_values($summary['unmapped_exercises']);
         $summary['chart'] = $this->chart($summary);
-        $summary['zones'] = $this->finalizeZones($zones);
+        $summary['zones'] = $this->finalizeZones($zones, $summary['reps_executed']);
         $summary['by_exercise'] = $this->finalizeExercises($byExercise);
 
         return $summary;
@@ -255,18 +266,22 @@ class LiftingVolumeSummaryService
                 'prescribed_reps' => 0,
                 'executed_reps' => 0,
                 'adherence_pct' => 0,
+                'distribution_pct' => 0,
             ];
         }
 
         return $zones;
     }
 
-    private function finalizeZones(array $zones): array
+    private function finalizeZones(array $zones, int $totalExecutedReps): array
     {
         return collect($zones)
-            ->map(function (array $zone) {
+            ->map(function (array $zone) use ($totalExecutedReps) {
                 $zone['adherence_pct'] = $zone['prescribed_reps'] > 0
                     ? (int) round(($zone['executed_reps'] / $zone['prescribed_reps']) * 100)
+                    : 0;
+                $zone['distribution_pct'] = $totalExecutedReps > 0
+                    ? (int) round(($zone['executed_reps'] / $totalExecutedReps) * 100)
                     : 0;
 
                 return $zone;
@@ -318,6 +333,19 @@ class LiftingVolumeSummaryService
         }
 
         return null;
+    }
+
+    private function isSilentUnmappedExercise(string $exerciseName): bool
+    {
+        $normalized = $this->normalizeExerciseName($exerciseName);
+
+        foreach (self::SILENT_UNMAPPED_ALIASES as $alias) {
+            if ($normalized === $this->normalizeExerciseName($alias)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalizeExerciseName(string $exerciseName): string

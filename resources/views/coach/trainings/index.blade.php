@@ -122,7 +122,9 @@
                             $items = $byDate[$key] ?? collect();
                         @endphp
 
-                        <div class="min-h-[150px] border-r border-b border-slate-200 p-3 last:border-r-0 {{ $isOutside ? 'bg-slate-50 text-gray-400' : 'bg-white' }}">
+                        <div class="calendar-day min-h-[150px] border-r border-b border-slate-200 p-3 last:border-r-0 {{ $isOutside ? 'bg-slate-50 text-gray-400' : 'bg-white' }}"
+                             data-calendar-date="{{ $key }}"
+                             data-calendar-month="{{ $currentMonth->format('Y-m') }}">
                             <div class="mb-3 flex items-start justify-between">
                                 <div class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold {{ $isToday ? 'bg-blue-700 text-white' : ($isOutside ? 'text-gray-400' : 'text-gray-950') }}">
                                     {{ $d->day }}
@@ -138,7 +140,15 @@
                             <div class="space-y-2">
                                 @foreach($items->take(3) as $t)
                                     @php $hasColor = filled($t->tag_color); @endphp
-                                    <div class="group/training rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm hover:opacity-95"
+                                    <div class="calendar-training-card group/training cursor-grab rounded-lg border px-2 py-2 text-xs font-semibold shadow-sm hover:opacity-95 active:cursor-grabbing"
+                                         draggable="true"
+                                         data-draggable-training
+                                         data-copy-id="{{ $t->id }}"
+                                         data-copy-action="{{ route('coach.trainings.copy', $t) }}"
+                                         data-copy-title="{{ e($t->title) }}"
+                                         data-copy-color="{{ $t->tag_color ?: '#2563eb' }}"
+                                         data-copy-visibility="{{ $t->visibility }}"
+                                         data-copy-date="{{ optional($t->scheduled_at)->toDateString() }}"
                                          style="background-color: {{ $hasColor ? $t->tag_color : '#ffffff' }}; border-color: {{ $hasColor ? $t->tag_color : '#dbe3f0' }};">
                                         <div class="flex items-start gap-2">
                                             <a href="{{ route('coach.trainings.edit', $t) }}" class="min-w-0 flex-1">
@@ -407,6 +417,7 @@
                 const groupOptions = @js($copyGroupOptions);
                 let selectedClients = [];
                 let selectedGroups = [];
+                let draggedTraining = null;
                 const closeButtons = [
                     document.getElementById('closeCopyTrainingModal'),
                     document.getElementById('cancelCopyTrainingModal'),
@@ -486,14 +497,14 @@
                     fillPicker(groupPicker, groupOptions, selectedGroups, 'Seleccionar grupo');
                 };
 
-                const openModal = (button) => {
+                const openModal = (button, targetDate = null) => {
                     const trainingId = button.dataset.copyId;
                     const assignments = trainingAssignments[trainingId] || { clients: [], groups: [] };
                     form.action = button.dataset.copyAction || '';
                     title.textContent = button.dataset.copyTitle || 'Entrenamiento seleccionado';
                     nameInput.value = button.dataset.copyTitle || '';
                     colorInput.value = button.dataset.copyColor || '#2563eb';
-                    dateInput.value = button.dataset.copyDate || '';
+                    dateInput.value = targetDate || button.dataset.copyDate || '';
                     selectedClients = [...(assignments.clients || [])];
                     selectedGroups = [...(assignments.groups || [])];
                     assignmentEditor.classList.toggle('hidden', button.dataset.copyVisibility !== 'assigned');
@@ -534,6 +545,65 @@
 
                 document.querySelectorAll('[data-copy-training]').forEach((button) => {
                     button.addEventListener('click', () => openModal(button));
+                });
+
+                document.querySelectorAll('[data-draggable-training]').forEach((card) => {
+                    card.addEventListener('dragstart', (event) => {
+                        draggedTraining = {
+                            id: card.dataset.copyId || '',
+                            action: card.dataset.copyAction || '',
+                            title: card.dataset.copyTitle || '',
+                            color: card.dataset.copyColor || '#2563eb',
+                            visibility: card.dataset.copyVisibility || '',
+                            date: card.dataset.copyDate || '',
+                        };
+
+                        card.classList.add('opacity-60', 'ring-2', 'ring-blue-500', 'ring-offset-1');
+
+                        if (event.dataTransfer) {
+                            event.dataTransfer.effectAllowed = 'copy';
+                            event.dataTransfer.setData('text/plain', draggedTraining.title || 'Entrenamiento');
+                            event.dataTransfer.setData('application/json', JSON.stringify(draggedTraining));
+                        }
+                    });
+
+                    card.addEventListener('dragend', () => {
+                        draggedTraining = null;
+                        card.classList.remove('opacity-60', 'ring-2', 'ring-blue-500', 'ring-offset-1');
+                    });
+                });
+
+                document.querySelectorAll('.calendar-day[data-calendar-date]').forEach((day) => {
+                    day.addEventListener('dragover', (event) => {
+                        if (!draggedTraining) return;
+
+                        event.preventDefault();
+                        day.classList.add('ring-2', 'ring-blue-500', 'ring-inset', 'bg-blue-50');
+
+                        if (event.dataTransfer) {
+                            event.dataTransfer.dropEffect = 'copy';
+                        }
+                    });
+
+                    day.addEventListener('dragleave', () => {
+                        day.classList.remove('ring-2', 'ring-blue-500', 'ring-inset', 'bg-blue-50');
+                    });
+
+                    day.addEventListener('drop', (event) => {
+                        if (!draggedTraining) return;
+
+                        event.preventDefault();
+                        document.querySelectorAll('.calendar-day[data-calendar-date]').forEach((calendarDay) => {
+                            calendarDay.classList.remove('ring-2', 'ring-blue-500', 'ring-inset', 'bg-blue-50');
+                        });
+
+                        const targetDate = day.dataset.calendarDate || '';
+                        const sourceCard = document.querySelector(`[data-draggable-training][data-copy-id="${draggedTraining.id}"]`);
+
+                        if (!targetDate || !sourceCard) return;
+
+                        openModal(sourceCard, targetDate);
+                    });
                 });
 
                 closeButtons.forEach((button) => {

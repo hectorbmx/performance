@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Group;
 use App\Models\GroupTrainingAssignment;
+use App\Models\TrainingAssignment;
 use App\Models\TrainingSession;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -69,6 +70,36 @@ class CoachClientTrainingController extends Controller
 
         $month = $request->get('month', now()->format('Y-m'));
         $currentMonth = Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfMonth();
+        $monthStart = $currentMonth->copy()->startOfMonth();
+        $monthEnd = $currentMonth->copy()->endOfMonth();
+        $completedAssignmentsThisMonth = TrainingAssignment::query()
+            ->select('training_assignments.*')
+            ->join('training_sessions', 'training_sessions.id', '=', 'training_assignments.training_session_id')
+            ->where('training_sessions.coach_id', $request->user()->id)
+            ->where('training_assignments.client_id', $client->id)
+            ->where('training_assignments.status', 'completed')
+            ->where(function ($completedQuery) use ($monthStart, $monthEnd) {
+                $completedQuery
+                    ->whereBetween('training_assignments.scheduled_for', [$monthStart->toDateString(), $monthEnd->toDateString()])
+                    ->orWhere(function ($fallbackQuery) use ($monthStart, $monthEnd) {
+                        $fallbackQuery
+                            ->whereNull('training_assignments.scheduled_for')
+                            ->whereBetween('training_sessions.scheduled_at', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+                    });
+            })
+            ->get();
+
+        $trainingSecondsThisMonth = $completedAssignmentsThisMonth
+            ->filter(fn ($assignment) => $assignment->started_at && $assignment->completed_at && $assignment->completed_at->gte($assignment->started_at))
+            ->sum(fn ($assignment) => $assignment->started_at->diffInSeconds($assignment->completed_at));
+
+        $clientTrainingKpis = [
+            'assigned_this_month' => $trainings
+                ->filter(fn ($training) => $training->scheduled_at?->betweenIncluded($monthStart, $monthEnd))
+                ->count(),
+            'completed_this_month' => $completedAssignmentsThisMonth->count(),
+            'training_hours' => round($trainingSecondsThisMonth / 3600, 1),
+        ];
 
         return view('coach.clients.trainings.index', [
             'client' => $client,
@@ -80,6 +111,7 @@ class CoachClientTrainingController extends Controller
             'groupAssignments' => $groupAssignments,
             'copyClients' => $copyClients,
             'copyGroups' => $copyGroups,
+            'clientTrainingKpis' => $clientTrainingKpis,
         ]);
     }
 }

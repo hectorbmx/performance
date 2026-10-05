@@ -89,14 +89,23 @@ class TrainingAssignmentProgressService
             && $progress['sections_completed'] >= $progress['sections_total']
             && !in_array($assignment->status, ['completed', 'cancelled', 'skipped'], true)
         ) {
-            $assignment->update(['status' => 'completed']);
+            $now = now();
+
+            $assignment->update([
+                'status' => 'completed',
+                'started_at' => $assignment->started_at ?? $now,
+                'completed_at' => $assignment->completed_at ?? $now,
+            ]);
             $assignment->refresh();
 
             return $progress;
         }
 
         if ($assignment->status === 'scheduled' && $progress['sections_completed'] > 0) {
-            $assignment->update(['status' => 'in_progress']);
+            $assignment->update([
+                'status' => 'in_progress',
+                'started_at' => $assignment->started_at ?? now(),
+            ]);
             $assignment->refresh();
         }
 
