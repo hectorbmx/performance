@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\App\Client\ProfileController;
 use App\Http\Controllers\Api\V1\App\Client\MembershipController;
 use App\Http\Controllers\Api\V1\App\Client\HealthMetricController;
 use App\Http\Controllers\Api\V1\App\Client\StreakController;
+use App\Http\Controllers\Api\V1\App\Client\LiftingPerformanceController;
 use App\Http\Controllers\Api\V1\App\Client\TipController as AppTipController;
 use App\Http\Controllers\Api\V1\App\Client\ActivityCalendarController;
 use App\Http\Controllers\Api\V1\BillingController;
@@ -102,6 +103,7 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/app/streak', [StreakController::class, 'show']);
             Route::get('/app/activity-calendar', [ActivityCalendarController::class, 'index']);
+            Route::get('/app/lifting-performance', [LiftingPerformanceController::class, 'show']);
             Route::get('/app/health-metrics', [HealthMetricController::class, 'index']);
             Route::post('/app/health-metrics/sync', [HealthMetricController::class, 'sync']);
 
