@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="relative w-full px-0 py-2" data-athlete-page>
         <div class="flex items-start justify-between gap-4">
             <div>
                 <div class="flex items-center gap-3">
@@ -32,55 +32,98 @@
 
         {{-- NOTA: MVP read-only, no hay botón + Nuevo aquí --}}
 
-        <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        @php
+            $athleteSwitcherQuery = array_merge([
+                'view' => $viewMode,
+                'month' => $currentMonth->format('Y-m'),
+            ], request()->only('date'));
+            $currentMonthLabel = $currentMonth->copy()->locale('es');
+        @endphp
+
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:items-start">
+            <aside class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm lg:col-span-1 lg:sticky lg:top-6">
+                <div class="flex justify-end px-2 pb-1">
+                    <span class="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-indigo-50 px-2 text-xs font-semibold text-indigo-700">
+                        {{ $copyClients->count() }}
+                    </span>
+                </div>
+
+                <div class="mt-2 max-h-[28rem] space-y-1 overflow-y-auto pr-1">
+                    @forelse($copyClients as $athlete)
+                        @php $isCurrentAthlete = (int) $athlete->id === (int) $client->id; @endphp
+                        <a href="{{ route('coach.clients.trainings.index', ['client' => $athlete->id] + $athleteSwitcherQuery) }}"
+                           data-athlete-switch
+                           class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition {{ $isCurrentAthlete ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50' }}"
+                           @if($isCurrentAthlete) aria-current="page" @endif>
+                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $isCurrentAthlete ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600' }} font-semibold">
+                                {{ strtoupper(substr($athlete->first_name, 0, 1) . substr($athlete->last_name, 0, 1)) }}
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate font-medium">{{ $athlete->full_name }}</span>
+                                @if($athlete->email)
+                                    <span class="block truncate text-xs {{ $isCurrentAthlete ? 'text-indigo-100' : 'text-slate-500' }}">{{ $athlete->email }}</span>
+                                @endif
+                            </span>
+                            @if($isCurrentAthlete)
+                                <i class="fa-solid fa-check text-xs" aria-hidden="true"></i>
+                            @endif
+                        </a>
+                    @empty
+                        <p class="px-2 py-4 text-sm text-slate-500">No hay atletas activos.</p>
+                    @endforelse
+                </div>
+            </aside>
+
+            <div class="min-w-0 lg:col-span-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Asignados del mes</p>
-                        <div class="mt-2 text-3xl font-bold text-slate-950">
+                        <div class="mt-1 text-2xl font-bold leading-7 text-slate-950">
                             {{ number_format((int) ($clientTrainingKpis['assigned_this_month'] ?? 0)) }}
                         </div>
                     </div>
-                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
                         <i class="fa-regular fa-calendar-check"></i>
                     </span>
                 </div>
-                <p class="mt-3 text-sm text-slate-600">
-                    Entrenamientos asignados en {{ $currentMonth->translatedFormat('F Y') }}.
+                <p class="mt-1 text-xs leading-4 text-slate-600">
+                    Entrenamientos asignados en {{ $currentMonthLabel->translatedFormat('F Y') }}.
                 </p>
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Ejecutados por atleta</p>
-                        <div class="mt-2 text-3xl font-bold text-slate-950">
+                        <div class="mt-1 text-2xl font-bold leading-7 text-slate-950">
                             {{ number_format((int) ($clientTrainingKpis['completed_this_month'] ?? 0)) }}
                         </div>
                     </div>
-                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
                         <i class="fa-solid fa-check"></i>
                     </span>
                 </div>
-                <p class="mt-3 text-sm text-slate-600">
-                    Entrenamientos completados en {{ $currentMonth->translatedFormat('F Y') }}.
+                <p class="mt-1 text-xs leading-4 text-slate-600">
+                    Entrenamientos completados en {{ $currentMonthLabel->translatedFormat('F Y') }}.
                 </p>
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tiempo entrenando</p>
-                        <div class="mt-2 text-3xl font-bold text-slate-950">
+                        <div class="mt-1 text-2xl font-bold leading-7 text-slate-950">
                             {{ number_format((float) ($clientTrainingKpis['training_hours'] ?? 0), 1) }} h
                         </div>
                     </div>
-                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
                         <i class="fa-regular fa-clock"></i>
                     </span>
                 </div>
-                <p class="mt-3 text-sm text-slate-600">
-                    Tiempo real entre inicio y finalizacion en {{ $currentMonth->translatedFormat('F Y') }}.
+                <p class="mt-1 text-xs leading-4 text-slate-600">
+                    Tiempo real entre inicio y finalizacion en {{ $currentMonthLabel->translatedFormat('F Y') }}.
                 </p>
             </div>
         </div>
@@ -115,7 +158,7 @@
                 $useAspectSquare = true;
             @endphp
 
-            <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+            <div class="mt-4 bg-white border rounded-xl overflow-hidden">
                 {{-- Barra superior --}}
                 <div class="px-4 py-4 bg-indigo-600 text-white flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -125,7 +168,7 @@
                         </a>
 
                         <div class="text-lg font-semibold">
-                            {{ $currentMonth->translatedFormat('F Y') }}
+                            {{ $currentMonthLabel->translatedFormat('F Y') }}
                         </div>
 
                         <a href="{{ route('coach.clients.trainings.index', ['client' => $client->id, 'view' => 'calendar', 'month' => $nextMonth]) }}"
@@ -158,28 +201,28 @@
                             $items = $byDate[$key] ?? collect();
                         @endphp
 
-                        <div class="calendar-day aspect-square border-r border-b last:border-r-0 p-2 {{ $isOutside ? 'bg-gray-50 text-gray-400' : 'bg-white' }}"
+                        <div class="calendar-day min-h-[96px] border-r border-b last:border-r-0 p-1.5 {{ $isOutside ? 'bg-gray-50 text-gray-400' : 'bg-white' }}"
                              data-calendar-date="{{ $key }}"
                              data-calendar-month="{{ $currentMonth->format('Y-m') }}">
                             <div class="flex items-start justify-between">
-                                <div class="text-sm font-semibold {{ $isOutside ? 'text-gray-400' : 'text-gray-900' }}">
+                                <div class="text-xs font-semibold {{ $isOutside ? 'text-gray-400' : 'text-gray-900' }}">
                                     {{ $d->day }}
                                 </div>
 
                                 {{-- MVP: read-only, ocultamos el + --}}
-                                <div class="w-7 h-7">
+                                <div class="h-6 w-6">
                                     <a href="{{ route('coach.trainings.create', ['date' => $key, 'client_id' => $client->id]) }}"
-                                       class="w-7 h-7 inline-flex items-center justify-center rounded-md border text-gray-700 hover:bg-gray-100">
+                                       class="inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs text-gray-700 hover:bg-gray-100">
                                         +
                                     </a>
                                 </div>
                             </div>
 
-                            <div class="mt-2 space-y-1">
+                            <div class="mt-1 space-y-1">
                                 @foreach($items->take(2) as $t)
                                     @php $hasColor = filled($t->tag_color); @endphp
 
-                                    <div class="calendar-training-card group/training cursor-grab rounded-md border px-2 py-1 text-xs hover:opacity-90 active:cursor-grabbing"
+                                    <div class="calendar-training-card group/training cursor-grab rounded-md border px-1.5 py-0.5 text-[11px] leading-4 hover:opacity-90 active:cursor-grabbing"
                                          draggable="true"
                                          data-draggable-training
                                          data-copy-id="{{ $t->id }}"
@@ -323,6 +366,19 @@
                 </div>
             </div>
         @endif
+            </div>
+        </div>
+
+        <div id="athleteSwitchLoading"
+             class="pointer-events-none absolute inset-0 z-30 hidden items-center justify-center rounded-xl bg-white/65 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 motion-reduce:transition-none"
+             aria-hidden="true"
+             role="status"
+             aria-live="polite">
+            <div class="inline-flex items-center gap-3 rounded-xl border border-indigo-100 bg-white/95 px-4 py-3 text-sm font-semibold text-indigo-800 shadow-lg">
+                <span class="h-5 w-5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600 motion-reduce:animate-none" aria-hidden="true"></span>
+                <span>Cargando atleta...</span>
+            </div>
+        </div>
     </div>
 
     @if($viewMode === 'calendar')
@@ -672,4 +728,46 @@
             });
         </script>
     @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const page = document.querySelector('[data-athlete-page]');
+            const loading = document.getElementById('athleteSwitchLoading');
+            const athleteLinks = document.querySelectorAll('[data-athlete-switch]');
+
+            if (!page || !loading || athleteLinks.length === 0) return;
+
+            let switching = false;
+
+            athleteLinks.forEach((link) => {
+                link.addEventListener('click', (event) => {
+                    if (
+                        switching ||
+                        event.defaultPrevented ||
+                        event.button !== 0 ||
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey ||
+                        link.hasAttribute('aria-current')
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    switching = true;
+                    page.setAttribute('aria-busy', 'true');
+                    link.setAttribute('aria-disabled', 'true');
+                    loading.classList.remove('hidden', 'pointer-events-none');
+                    loading.classList.add('flex', 'pointer-events-auto');
+                    loading.setAttribute('aria-hidden', 'false');
+
+                    requestAnimationFrame(() => {
+                        loading.classList.remove('opacity-0');
+                        requestAnimationFrame(() => window.location.assign(link.href));
+                    });
+                });
+            });
+        });
+    </script>
 </x-app-layout>

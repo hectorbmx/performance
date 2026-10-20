@@ -57,7 +57,10 @@ class CoachClientTrainingController extends Controller
 
         $copyClients = Client::query()
             ->where('coach_id', $request->user()->id)
-            ->where('is_active', true)
+            ->where(function ($query) use ($client) {
+                $query->where('is_active', true)
+                    ->orWhere('id', $client->id);
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'email']);

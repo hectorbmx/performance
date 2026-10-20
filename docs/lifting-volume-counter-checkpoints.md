@@ -291,6 +291,7 @@ La primera version de la pestana usara un arreglo `$liftingPerformance` con:
 - `recent_assignments`: ultimos entrenamientos con lifting y su resumen por assignment.
 - `zones`: suma de reps programadas/realizadas por zona de intensidad.
 - `by_exercise`: suma por ejercicio para revisar si el agrupamiento por nombre es util.
+- `trends_by_exercise`: series por ejercicio para graficas simples, con buckets `weekly` y `monthly`.
 
 Resumen sugerido:
 
@@ -313,8 +314,17 @@ Resumen sugerido:
     'recent_assignments' => [],
     'zones' => [],
     'by_exercise' => [],
+    'trends_by_exercise' => [],
 ]
 ```
+
+### Estado Actual Y Siguientes Pasos
+
+- La tabla `Ejercicios trabajados` ya permite seleccionar un ejercicio.
+- Debajo de la tabla ya existe una grafica MVP con barras HTML/CSS sin libreria externa.
+- La grafica puede alternar entre `Semana` y `Mes` usando `trends_by_exercise`.
+- Pendiente: en la app movil, la seccion `Ejercicios trabajados` de `/activity-calendar` muestra el resumen general de los ultimos entrenamientos lifting, no el mes visible del calendario. Siguiente ajuste sugerido: permitir `GET /api/v1/app/lifting-performance?month=YYYY-MM` y filtrar el servicio por el rango mensual.
+- Pendiente: evaluar Chart.js solo si se requieren tooltips ricos, multiples series comparables, zoom/rangos interactivos, leyendas avanzadas o export de imagen. Para el MVP actual, las barras HTML/CSS son preferibles por simplicidad, cero dependencia nueva y menor costo de mantenimiento.
 
 ### Validacion
 
