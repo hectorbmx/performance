@@ -5,8 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Athlete Core Coach</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Keep the complete login flow visible on short laptop screens. */
+        @media (max-height: 850px) and (min-width: 1024px) {
+            .login-panel {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+
+            .login-brand {
+                margin-bottom: 1rem;
+            }
+
+            .login-logo {
+                width: 6rem;
+                height: 6rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .login-title {
+                font-size: 1.875rem;
+                line-height: 2.25rem;
+            }
+
+            .login-card {
+                padding: 1.25rem;
+            }
+
+            .login-field {
+                margin-bottom: 1rem;
+            }
+
+            .login-input {
+                padding-top: 0.625rem;
+                padding-bottom: 0.625rem;
+                font-size: 0.875rem;
+            }
+
+            .login-options {
+                margin-bottom: 1.25rem;
+            }
+
+            .login-submit {
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+
+            .login-footer {
+                margin-top: 1rem;
+            }
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gray-900">
+<body class="min-h-screen bg-gray-900 lg:overflow-hidden">
     <!-- Main Container - Split Screen -->
     <div class="min-h-screen flex">
         
@@ -36,7 +87,7 @@
         </div>
 
         <!-- Right Side - Login Form Section -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 bg-gradient-to-br from-gray-900 via-[#1a2332] to-gray-900 relative">
+        <div class="login-panel w-full lg:w-1/2 lg:h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-gray-900 via-[#1a2332] to-gray-900 relative">
             
             <!-- Decorative Elements -->
             <div class="absolute top-20 right-1/2 transform translate-x-1/2 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
@@ -45,22 +96,22 @@
             <div class="w-full max-w-md relative z-10">
                 
                 <!-- Logo and Title Section -->
-                <div class="text-center mb-10">
+                <div class="login-brand text-center mb-10">
                     <div class="mb-6">
                         <!-- Icon/Logo -->
                         <!-- w-20 = 80px -->
 <!-- w-24 = 96px -->
 <!-- Prueba con w-24 que es el siguiente tamaño disponible -->
-<div class="w-40 h-40 mx-auto bg-white-500/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-blue-500/30">
+<div class="login-logo w-40 h-40 mx-auto bg-white-500/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-blue-500/30">
                        
                             <img
                                 src="{{ asset('images/L2.png') }}"
                                 alt="Coach"
+                                class="max-w-[80%] max-h-[80%] object-contain"
                             >
                         </div>
                     </div>
-                    <h1 class="text-4xl font-bold text-white mb-2 tracking-tight">ATHLETE PERFORMANCE COACH</h1>
-                    <p class="text-gray-400 text-sm tracking-widest uppercase">Admin Portal</p>
+                    <h1 class="login-title text-4xl font-bold text-white mb-2 tracking-tight">ATHLETE PERFORMANCE COACH</h1>
                 </div>
 
                 <!-- Session Status -->
@@ -71,12 +122,12 @@
                 @endif
 
                 <!-- Login Form Card -->
-                <div class="bg-gray-800/30 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-2xl">
+                <div class="login-card bg-gray-800/30 backdrop-blur-xl rounded-2xl p-8 border border-gray-700/50 shadow-2xl">
                     <form method="POST" action="{{ route('login') }}">
                         @csrf
 
                         <!-- Email Address -->
-                        <div class="mb-6">
+                        <div class="login-field mb-6">
                             <label for="email" class="block text-white text-sm font-medium mb-2">
                                 Correo electronico
                             </label>
@@ -89,7 +140,7 @@
                                 autofocus 
                                 autocomplete="username"
                                 placeholder="coach@athletecore.com"
-                                class="w-full px-4 py-3.5 bg-gray-900/50 border border-gray-600/50 rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                class="login-input w-full px-4 py-3.5 bg-gray-900/50 border border-gray-600/50 rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                             />
                             @error('email')
                                 <p class="mt-2 text-sm text-red-400">{{ $message }}</p>
@@ -97,7 +148,7 @@
                         </div>
 
                         <!-- Password -->
-                        <div class="mb-6">
+                        <div class="login-field mb-6">
                             <label for="password" class="block text-white text-sm font-medium mb-2">
                                 Contrasena
                             </label>
@@ -109,7 +160,7 @@
                                     required 
                                     autocomplete="current-password"
                                     placeholder="••••••••"
-                                    class="w-full px-4 py-3.5 bg-gray-900/50 border border-gray-600/50 rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                    class="login-input w-full px-4 py-3.5 bg-gray-900/50 border border-gray-600/50 rounded-xl text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                                 />
                                 <!-- Eye icon -->
                                 <button type="button" id="togglePassword" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors">
@@ -128,7 +179,7 @@
                         </div>
 
                         <!-- Remember Me & Forgot Password -->
-                        <div class="flex items-center justify-between mb-8">
+                        <div class="login-options flex items-center justify-between mb-8">
                             <label class="flex items-center cursor-pointer">
                                 <input 
                                     id="remember_me" 
@@ -149,7 +200,7 @@
                         <!-- Submit Button -->
                         <button 
                             type="submit"
-                            class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                            class="login-submit w-full py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                         >
                             Iniciar sesion
                         </button>
@@ -157,7 +208,7 @@
                 </div>
 
                 <!-- Footer Link -->
-                <div class="mt-8 text-center">
+                <div class="login-footer mt-8 text-center">
                     <p class="text-gray-500 text-sm">
                         New to the platform? 
                         <a href="{{ route('register') }}" class="text-blue-400 hover:text-blue-300 transition-colors font-medium">

@@ -35,6 +35,7 @@ use App\Http\Controllers\Coach\ClientHealthProfileController;
 use App\Http\Controllers\Coach\ClientMetricRecordController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\AppPasswordSetupController;
+use App\Http\Controllers\StripeMembershipReturnController;
 
 
 
@@ -74,6 +75,9 @@ Route::get('/app/setup-password/{token}', [AppPasswordSetupController::class, 's
     ->name('app.password-setup.show');
 Route::post('/app/setup-password', [AppPasswordSetupController::class, 'store'])
     ->name('app.password-setup.store');
+
+Route::get('/app/stripe/membership-return', StripeMembershipReturnController::class)
+    ->name('stripe.membership.return');
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')

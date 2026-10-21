@@ -70,6 +70,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('/app/memberships', [MembershipController::class, 'index']);
         Route::post('/app/memberships/future', [MembershipController::class, 'storeFuture']);
+        Route::post('/app/memberships/renewal-checkout', [MembershipController::class, 'storeRenewal']);
         Route::get('/app/tips/categories', [AppTipController::class, 'categories'])->name('app.tips.categories');
         Route::get('/app/tips', [AppTipController::class, 'index'])->name('app.tips.index');
         Route::get('/app/tips/{tip}', [AppTipController::class, 'show'])->whereNumber('tip')->name('app.tips.show');

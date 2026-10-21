@@ -24,6 +24,11 @@ class ClientMembershipAccessResult
         return $this->state === ClientMembershipAccessService::STATE_GRACE;
     }
 
+    public function isPendingPayment(): bool
+    {
+        return $this->state === ClientMembershipAccessService::STATE_PENDING_PAYMENT;
+    }
+
     public function toArray(): array
     {
         return [

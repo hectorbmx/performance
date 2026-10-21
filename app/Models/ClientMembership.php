@@ -9,6 +9,8 @@ class ClientMembership extends Model
 {
     use SoftDeletes;
 
+    public const STATUS_PENDING_PAYMENT = 'pending_payment';
+
     protected $fillable = [
         'coach_id',
         'client_id',

@@ -148,6 +148,10 @@ class StripeConnectService
                 throw new \RuntimeException('Esta membresía ya está pagada.');
             }
 
+            if ($membership->stripe_subscription_id) {
+                throw new \RuntimeException('Esta membresía ya tiene una suscripción Stripe; espera la confirmación del webhook.');
+            }
+
             $membership->loadMissing(['coach.coachProfile', 'client.userApp', 'coachClientPlan']);
 
             $profile = $membership->coach->coachProfile;
@@ -155,13 +159,23 @@ class StripeConnectService
                 throw new \RuntimeException('El coach debe completar Stripe Connect antes de cobrar con Stripe.');
             }
 
-            $existingSession = $this->retrieveOpenCheckoutSession(
+            $existingSession = $this->retrieveCheckoutSession(
                 $membership->stripe_checkout_session_id,
                 $profile->stripe_account_id
             );
 
             if ($existingSession) {
-                return $existingSession;
+                if (($existingSession->status ?? null) === 'open' && !empty($existingSession->url)) {
+                    return $existingSession;
+                }
+
+                if (($existingSession->status ?? null) === 'complete') {
+                    throw new \RuntimeException('El checkout ya fue completado; espera la confirmación de Stripe.');
+                }
+
+                // Stripe marca como expired una sesión que ya no puede reabrirse.
+                // Se limpia el vínculo para permitir un nuevo checkout con otra clave idempotente.
+                $membership->update(['stripe_checkout_session_id' => null]);
             }
 
             $plan = $this->ensurePlanPrice($membership->coachClientPlan);
@@ -180,8 +194,8 @@ class StripeConnectService
                     'price' => $plan->stripe_price_id,
                     'quantity' => 1,
                 ]],
-                'success_url' => route('coach.clients.index') . '?stripe=success&session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('coach.client-payments.create', $membership) . '?stripe=cancel',
+                'success_url' => route('stripe.membership.return') . '?stripe=success&session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('stripe.membership.return') . '?stripe=cancel',
                 'metadata' => [
                     'context' => 'client_membership',
                     'client_membership_id' => (string) $membership->id,
@@ -250,7 +264,7 @@ class StripeConnectService
         return ['interval' => 'day', 'interval_count' => max(1, $days)];
     }
 
-    private function retrieveOpenCheckoutSession(?string $sessionId, string $connectedAccountId): ?CheckoutSession
+    private function retrieveCheckoutSession(?string $sessionId, string $connectedAccountId): ?CheckoutSession
     {
         if (!$sessionId) {
             return null;
@@ -261,10 +275,6 @@ class StripeConnectService
                 'stripe_account' => $connectedAccountId,
             ]);
         } catch (\Throwable) {
-            return null;
-        }
-
-        if (($session->status ?? null) !== 'open' || empty($session->url)) {
             return null;
         }
 

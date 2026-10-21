@@ -10,6 +10,7 @@ class ClientMembershipAccessService
 {
     public const STATE_ACTIVE = 'active';
     public const STATE_GRACE = 'grace';
+    public const STATE_PENDING_PAYMENT = 'pending_payment';
     public const STATE_EXPIRED = 'expired';
     public const STATE_NO_MEMBERSHIP = 'no_membership';
     public const STATE_INACTIVE_USER = 'inactive_user';
@@ -35,6 +36,17 @@ class ClientMembershipAccessService
                 true,
                 $membership,
                 null
+            );
+        }
+
+        $pending = $this->pendingMembershipFor($userApp);
+
+        if ($pending) {
+            return new ClientMembershipAccessResult(
+                self::STATE_PENDING_PAYMENT,
+                false,
+                $pending,
+                'Tienes una membresia pendiente de pago. Completa el pago para continuar.'
             );
         }
 
@@ -105,6 +117,24 @@ class ClientMembershipAccessService
             ->whereNull('deleted_at')
             ->orderByDesc('starts_at')
             ->orderByDesc('ends_at')
+            ->first();
+    }
+
+    public function pendingMembershipFor(UserApp $userApp): ?ClientMembership
+    {
+        $userApp->loadMissing('client');
+
+        if (!$userApp->client) {
+            return null;
+        }
+
+        return ClientMembership::query()
+            ->with('coachClientPlan:id,name,price,currency,billing_cycle_days,reminder_days_before,grace_days')
+            ->where('client_id', $userApp->client_id)
+            ->where('coach_id', $userApp->client->coach_id)
+            ->whereNull('deleted_at')
+            ->where('status', ClientMembership::STATUS_PENDING_PAYMENT)
+            ->orderByDesc('created_at')
             ->first();
     }
 

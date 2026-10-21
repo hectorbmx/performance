@@ -30,8 +30,8 @@ class StripeWebhookController extends Controller
 
         match ($event->type) {
             'checkout.session.completed' => $this->handleCheckoutCompleted($event->data->object, $connectedAccountId, $connect),
-            'customer.subscription.updated',
-            'customer.subscription.deleted' => $this->handleSubscriptionChanged($event->data->object, $connectedAccountId),
+            'customer.subscription.updated' => $this->handleSubscriptionChanged($event->data->object, $connectedAccountId),
+            'customer.subscription.deleted' => $this->handleSubscriptionChanged($event->data->object, $connectedAccountId, true),
             default => null,
         };
 
@@ -55,7 +55,11 @@ class StripeWebhookController extends Controller
         );
     }
 
-    private function handleSubscriptionChanged(object $subscription, ?string $connectedAccountId): void
+    private function handleSubscriptionChanged(
+        object $subscription,
+        ?string $connectedAccountId,
+        bool $deleted = false
+    ): void
     {
         $membershipId = $subscription->metadata->client_membership_id ?? null;
         if (!$membershipId || !$connectedAccountId) {
@@ -65,7 +69,9 @@ class StripeWebhookController extends Controller
         $this->updateMembershipFromSubscription(
             ClientMembership::find($membershipId),
             $subscription,
-            $connectedAccountId
+            $connectedAccountId,
+            null,
+            $deleted
         );
     }
 
@@ -73,27 +79,55 @@ class StripeWebhookController extends Controller
         ?ClientMembership $membership,
         object $subscription,
         string $connectedAccountId,
-        ?string $checkoutSessionId = null
+        ?string $checkoutSessionId = null,
+        bool $deleted = false
     ): void {
         if (!$membership) {
             return;
         }
 
-        $isPaidLike = in_array($subscription->status, ['active', 'trialing'], true);
+        $stripeStatus = $deleted ? 'canceled' : (string) ($subscription->status ?? '');
+        $isPaidLike = in_array($stripeStatus, ['active', 'trialing'], true);
+        $isCanceled = $stripeStatus === 'canceled';
+        $isPendingPayment = in_array($stripeStatus, ['incomplete', 'incomplete_expired'], true);
+        $isPastDue = in_array($stripeStatus, ['past_due', 'unpaid', 'paused'], true);
         $periodEnd = isset($subscription->current_period_end)
             ? Carbon::createFromTimestamp($subscription->current_period_end)
             : null;
 
+        if ($isPaidLike) {
+            $membershipStatus = 'active';
+            $billingStatus = 'paid';
+        } elseif ($isCanceled) {
+            $membershipStatus = 'cancelled';
+            $billingStatus = 'canceled';
+        } elseif ($isPendingPayment && $stripeStatus === 'incomplete') {
+            $membershipStatus = $membership->status === ClientMembership::STATUS_PENDING_PAYMENT
+                ? ClientMembership::STATUS_PENDING_PAYMENT
+                : 'past_due';
+            $billingStatus = 'unpaid';
+        } elseif ($isPastDue) {
+            $membershipStatus = 'past_due';
+            $billingStatus = 'past_due';
+        } elseif ($stripeStatus === 'incomplete_expired') {
+            $membershipStatus = 'expired';
+            $billingStatus = 'unpaid';
+        } else {
+            // No activar una membresía por un estado Stripe desconocido.
+            $membershipStatus = $membership->status;
+            $billingStatus = $membership->billing_status;
+        }
+
         $membership->update([
-            'billing_status' => $isPaidLike ? 'paid' : ($subscription->status === 'canceled' ? 'canceled' : 'past_due'),
-            'status' => $subscription->status === 'canceled' ? 'cancelled' : 'active',
+            'billing_status' => $billingStatus,
+            'status' => $membershipStatus,
             'paid_at' => $isPaidLike ? ($membership->paid_at ?? now()->toDateString()) : $membership->paid_at,
             'ends_at' => $periodEnd?->toDateString() ?? $membership->ends_at,
             'next_renewal_at' => $periodEnd?->toDateString() ?? $membership->next_renewal_at,
             'stripe_connected_account_id' => $connectedAccountId,
             'stripe_checkout_session_id' => $checkoutSessionId ?? $membership->stripe_checkout_session_id,
             'stripe_subscription_id' => $subscription->id,
-            'stripe_status' => $subscription->status,
+            'stripe_status' => $stripeStatus,
             'stripe_current_period_end' => $periodEnd,
         ]);
     }

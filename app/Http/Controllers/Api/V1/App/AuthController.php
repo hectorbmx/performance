@@ -126,7 +126,13 @@ public function login(Request $request, ClientMembershipAccessService $membershi
 
     $access = $membershipAccess->forUserApp($userApp);
 
-    if (!$access->canAccessService) {
+    $canOpenMembershipManagement = in_array($access->state, [
+        ClientMembershipAccessService::STATE_EXPIRED,
+        ClientMembershipAccessService::STATE_PENDING_PAYMENT,
+        ClientMembershipAccessService::STATE_NO_MEMBERSHIP,
+    ], true);
+
+    if (!$access->canAccessService && !$canOpenMembershipManagement) {
         return response()->json([
             'ok' => false,
             'code' => 'membership_expired',
@@ -152,16 +158,17 @@ public function login(Request $request, ClientMembershipAccessService $membershi
             'coach_id'    => $userApp->client->coach_id,
 
             // ✅ info mínima de membresía
-            'membership' => [
+            'membership' => $validMembership ? [
                 'id'            => $validMembership->id,
-                'status'        => $validMembership->status,        // active
-                'billing_status'=> $validMembership->billing_status, // unpaid/paid/past_due/canceled
+                'status'        => $validMembership->status,
+                'billing_status'=> $validMembership->billing_status,
                 'starts_at'     => $validMembership->starts_at,
                 'ends_at'       => $validMembership->ends_at,
                 'grace_until'   => $validMembership->grace_until,
                 'access_state'  => $access->state,
-            ],
+            ] : null,
         ],
+    'access' => $access->toArray(),
     'user' => [
         'id' => $userApp->id,
         'email' => $userApp->email,
