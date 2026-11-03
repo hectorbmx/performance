@@ -5,7 +5,7 @@
     </ion-buttons>
     <ion-title>Actividad</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+      <ion-button fill="clear" (click)="refreshAll()" [disabled]="loading || performanceLoading">
         <ion-icon name="refresh-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -105,6 +105,119 @@
           <span *ngIf="selectedDay.status === 'free_completed'">
             Cuenta como dia positivo aunque no hubiera entrenamiento asignado.
           </span>
+        </div>
+      </section>
+
+      <section class="lifting-panel">
+        <div class="lifting-panel-header">
+          <h3>Ejercicios trabajados</h3>
+          <span>{{ liftingExercises.length }} ejercicios</span>
+        </div>
+
+        <div class="lifting-loading" *ngIf="performanceLoading">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
+        <div class="lifting-empty" *ngIf="!performanceLoading && liftingExercises.length === 0">
+          <p *ngIf="!performanceErrorMsg">Aún no hay ejercicios lifting registrados.</p>
+          <p *ngIf="performanceErrorMsg">{{ performanceErrorMsg }}</p>
+        </div>
+
+        <div class="lifting-selector" *ngIf="!performanceLoading && liftingExercises.length > 0">
+          <label for="lifting-exercise-select">Ejercicio</label>
+          <ion-select
+            id="lifting-exercise-select"
+            interface="action-sheet"
+            aria-label="Seleccionar ejercicio"
+            [value]="selectedLiftingExerciseKey"
+            (ionChange)="selectLiftingExerciseByKey($event.detail.value)">
+            <ion-select-option *ngFor="let exercise of liftingExercises" [value]="exercise.exercise_key">
+              {{ exercise.exercise_name }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+
+        <article class="lifting-card selected-lifting-card" *ngIf="selectedLiftingExercise() as exercise">
+            <div class="lifting-main">
+              <div>
+                <h4>{{ exercise.exercise_name }}</h4>
+                <p>{{ exercise.reps_executed }} / {{ exercise.reps_prescribed }} reps</p>
+              </div>
+            </div>
+            <div class="lifting-stats">
+              <div>
+                <span>Tonelaje</span>
+                <strong>{{ formatKg(exercise.estimated_tonnage) }} kg</strong>
+              </div>
+              <div>
+                <span>Int.</span>
+                <strong>{{ formatIntensity(exercise.average_intensity_pct) }}</strong>
+              </div>
+              <div>
+                <span>Adh.</span>
+                <strong>{{ exercise.rep_adherence_pct }}%</strong>
+              </div>
+            </div>
+        </article>
+
+        <div class="lifting-chart-panel" *ngIf="selectedLiftingTrend() as trend">
+          <div class="lifting-chart-head">
+            <div>
+              <h4>{{ selectedLiftingExerciseName }}</h4>
+              <p>Reps ejecutadas agrupadas por periodo.</p>
+            </div>
+            <div class="lifting-chart-toggle">
+              <button
+                type="button"
+                [class.is-active]="liftingTrendMode === 'weekly'"
+                (click)="setLiftingTrendMode('weekly')"
+              >
+                Semana
+              </button>
+              <button
+                type="button"
+                [class.is-active]="liftingTrendMode === 'monthly'"
+                (click)="setLiftingTrendMode('monthly')"
+              >
+                Mes
+              </button>
+            </div>
+          </div>
+
+          <div class="lifting-chart">
+            <div class="lifting-chart-empty" *ngIf="selectedLiftingBuckets().length === 0">
+              Sin datos suficientes para graficar este ejercicio.
+            </div>
+
+            <div
+              class="lifting-bar-item"
+              *ngFor="let bucket of selectedLiftingBuckets()"
+            >
+              <span class="lifting-bar-value">{{ bucket.reps_executed }}</span>
+              <div class="lifting-bar-track">
+                <div
+                  class="lifting-bar"
+                  [style.height]="liftingBarHeight(bucket)"
+                ></div>
+              </div>
+              <span class="lifting-bar-label">{{ bucket.label }}</span>
+            </div>
+          </div>
+
+          <div class="lifting-chart-summary">
+            <div>
+              <span>Realizadas</span>
+              <strong>{{ trend.totals.reps_executed }}</strong>
+            </div>
+            <div>
+              <span>Programadas</span>
+              <strong>{{ trend.totals.reps_prescribed }}</strong>
+            </div>
+            <div>
+              <span>Kg</span>
+              <strong>{{ formatKg(trend.totals.estimated_tonnage) }}</strong>
+            </div>
+          </div>
         </div>
       </section>
     </ng-container>

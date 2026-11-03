@@ -41,6 +41,53 @@ export interface ActivityCalendarResponse {
   days: ActivityCalendarDayDTO[];
 }
 
+export interface LiftingPerformanceExerciseDTO {
+  exercise_key: string;
+  exercise_name: string;
+  sets_prescribed: number;
+  sets_executed: number;
+  reps_prescribed: number;
+  reps_executed: number;
+  rep_adherence_pct: number;
+  average_intensity_pct: number | null;
+  estimated_tonnage: number;
+}
+
+export interface LiftingTrendBucketDTO {
+  key: string;
+  label: string;
+  sets_prescribed: number;
+  sets_executed: number;
+  reps_prescribed: number;
+  reps_executed: number;
+  relative_volume: number;
+  intensity_reps: number;
+  estimated_tonnage: number;
+  rep_adherence_pct: number;
+  average_intensity_pct: number | null;
+}
+
+export interface LiftingExerciseTrendDTO {
+  exercise_key: string;
+  exercise_name: string;
+  weekly: LiftingTrendBucketDTO[];
+  monthly: LiftingTrendBucketDTO[];
+  totals: {
+    reps_prescribed: number;
+    reps_executed: number;
+    estimated_tonnage: number;
+  };
+}
+
+export interface LiftingPerformanceResponse {
+  ok: boolean;
+  data: {
+    has_data: boolean;
+    by_exercise: LiftingPerformanceExerciseDTO[];
+    trends_by_exercise: LiftingExerciseTrendDTO[];
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class AthleteActivityCalendarService {
   private readonly api = inject(ApiService);
@@ -50,6 +97,10 @@ export class AthleteActivityCalendarService {
       'app/activity-calendar',
       this.params(month)
     );
+  }
+
+  async liftingPerformance(): Promise<LiftingPerformanceResponse> {
+    return this.api.get<LiftingPerformanceResponse>('app/lifting-performance');
   }
 
   private params(month?: string | null): Record<string, string> | undefined {

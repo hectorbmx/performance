@@ -40,8 +40,33 @@
       </div>
     </section>
 
-    <section class="state-card" *ngIf="!loading && !currentMembership">
+    <section class="state-card" *ngIf="!loading && !currentMembership && !pendingMembership && !expiredMembership">
       No tienes una membresia activa en este momento.
+    </section>
+
+    <section class="state-card expired-card" *ngIf="!loading && expiredMembership && !pendingMembership">
+      <div>
+        <h2>Membresia vencida</h2>
+        <p>{{ expiredMembership.plan_name }} · vencio {{ formatDate(expiredMembership.ends_at) }}</p>
+        <strong>Renueva para recuperar el acceso a tus entrenamientos.</strong>
+      </div>
+    </section>
+
+    <section class="future-card pending-card" *ngIf="!loading && pendingMembership">
+      <div class="card-icon">
+        <ion-icon name="card-outline"></ion-icon>
+      </div>
+      <div>
+        <h2>Pago pendiente</h2>
+        <p>{{ pendingMembership.plan_name }}</p>
+        <strong>Completa el pago para activar tu membresia.</strong>
+      </div>
+      <ion-button
+        size="small"
+        [disabled]="creatingPlanId === pendingMembership.plan_id"
+        (click)="continuePendingPayment()">
+        {{ creatingPlanId === pendingMembership.plan_id ? 'Abriendo...' : 'Continuar pago' }}
+      </ion-button>
     </section>
 
     <section class="future-card" *ngIf="!loading && futureMembership">
@@ -57,16 +82,17 @@
       </div>
     </section>
 
-    <section class="state-card plan-entry" *ngIf="!loading && !futureMembership && !showPlans">
+    <section class="state-card plan-entry" *ngIf="!loading && !futureMembership && !pendingMembership && !showPlans">
       <div>
-        <h2>Comprar membresia futura</h2>
-        <p>Elige un plan de tu coach. La nueva membresia iniciara justo despues de que termine tu plan actual.</p>
+        <h2>{{ isRenewalFlow() ? 'Renovar membresia' : 'Comprar membresia futura' }}</h2>
+        <p *ngIf="isRenewalFlow()">Elige un plan de tu coach para recuperar el acceso.</p>
+        <p *ngIf="!isRenewalFlow()">Elige un plan de tu coach. La nueva membresia iniciara justo despues de que termine tu plan actual.</p>
       </div>
-      <ion-button size="small" (click)="openPlans()">Ver planes</ion-button>
+      <ion-button size="small" (click)="openPlans()">{{ isRenewalFlow() ? 'Renovar ahora' : 'Ver planes' }}</ion-button>
     </section>
 
-    <section *ngIf="!loading && !futureMembership && showPlans">
-      <div class="section-title">CONTRATAR SIGUIENTE PLAN</div>
+    <section *ngIf="!loading && !futureMembership && !pendingMembership && showPlans">
+      <div class="section-title">{{ isRenewalFlow() ? 'RENOVAR MEMBRESIA' : 'CONTRATAR SIGUIENTE PLAN' }}</div>
 
       <div class="plan-card" *ngFor="let plan of availablePlans">
         <div class="plan-main">
@@ -83,11 +109,15 @@
         <div class="plan-action">
           <span>{{ formatMoney(plan.price, plan.currency) }}</span>
           <ion-button
+            *ngIf="plan.can_checkout"
             size="small"
-            [disabled]="!plan.can_checkout || creatingPlanId === plan.id"
-            (click)="buyFuture(plan)">
-            {{ creatingPlanId === plan.id ? 'Creando...' : 'Comprar futura' }}
+            [disabled]="creatingPlanId === plan.id"
+            (click)="isRenewalFlow() ? renewMembership(plan) : buyFuture(plan)">
+            {{ creatingPlanId === plan.id ? 'Creando...' : planActionLabel() }}
           </ion-button>
+          <span class="plan-unavailable" *ngIf="!plan.can_checkout">
+            {{ planAvailabilityLabel(plan) }}
+          </span>
         </div>
       </div>
 
@@ -111,3 +141,17 @@
     </section>
   </main>
 </ion-content>
+
+<ion-footer class="logout-footer ion-no-border">
+  <ion-toolbar class="logout-toolbar">
+    <ion-button
+      class="logout-button"
+      fill="clear"
+      expand="block"
+      [disabled]="loggingOut"
+      (click)="logout()">
+      <ion-icon slot="start" name="log-out-outline"></ion-icon>
+      {{ loggingOut ? 'Saliendo...' : 'Cerrar sesion' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

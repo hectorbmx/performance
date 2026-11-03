@@ -48,22 +48,36 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
       await Preferences.set({ key: 'login_email', value: target.email });
     }
 
+    if (target.path === 'subscription-history') {
+      if (target.stripe) {
+        await Preferences.set({ key: 'membership_checkout_result', value: target.stripe });
+      }
+
+      await this.router.navigateByUrl('/subscription-history', { replaceUrl: true });
+      return;
+    }
+
     await this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
-  private parseDeepLink(url: string): { email?: string } | null {
+  private parseDeepLink(url: string): { email?: string; path?: string; stripe?: string } | null {
     try {
       const parsed = new URL(url);
       const opensLogin =
         parsed.protocol === 'com.app33performance:' &&
         (parsed.hostname === 'login' || parsed.pathname.replace('/', '') === 'login');
+      const opensMembershipHistory =
+        parsed.protocol === 'com.app33performance:' &&
+        (parsed.hostname === 'subscription-history' || parsed.pathname.replace('/', '') === 'subscription-history');
 
-      if (!opensLogin) {
+      if (!opensLogin && !opensMembershipHistory) {
         return null;
       }
 
       return {
         email: parsed.searchParams.get('email') || undefined,
+        path: opensMembershipHistory ? 'subscription-history' : 'login',
+        stripe: opensMembershipHistory ? parsed.searchParams.get('stripe') || undefined : undefined,
       };
     } catch {
       return null;

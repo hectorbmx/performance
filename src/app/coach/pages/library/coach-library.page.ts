@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import {
   IonButton,
   IonButtons,
@@ -65,10 +66,13 @@ export class CoachLibraryPage {
   isFormOpen = false;
   searchTerm = '';
   selectedFileName = '';
+  selectedVideo: CoachLibraryVideoDTO | null = null;
+  isPlayerOpen = false;
   form: CoachLibraryPayload = this.emptyForm();
 
   constructor(
     private libraryApi: CoachLibraryService,
+    private sanitizer: DomSanitizer,
     private toastCtrl: ToastController,
   ) {
     addIcons({
@@ -178,9 +182,31 @@ export class CoachLibraryPage {
 
   openVideo(video: CoachLibraryVideoDTO, event?: Event) {
     event?.stopPropagation();
-    const url = video.playback_url || video.youtube_url;
-    if (!url) return;
-    window.open(url, '_blank');
+    if (!video.playback_url && !video.youtube_id && !video.youtube_url) return;
+
+    this.selectedVideo = video;
+    this.isPlayerOpen = true;
+  }
+
+  closeVideo(): void {
+    this.isPlayerOpen = false;
+    this.selectedVideo = null;
+  }
+
+  youtubeEmbedUrl(video: CoachLibraryVideoDTO | null): SafeResourceUrl | null {
+    const id = video?.youtube_id || this.youtubeIdFromUrl(video?.youtube_url);
+    if (!id || !/^[A-Za-z0-9_-]{6,}$/.test(id)) return null;
+
+    return this.sanitizer.bypassSecurityTrustResourceUrl(
+      `https://www.youtube.com/embed/${id}?rel=0`,
+    );
+  }
+
+  private youtubeIdFromUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^?&#/]+)/i);
+    return match?.[1] ?? null;
   }
 
   sourceLabel(video: CoachLibraryVideoDTO): string {

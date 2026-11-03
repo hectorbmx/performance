@@ -191,68 +191,63 @@
       </article>
     </div>
 
-    <!-- Daily Progress -->
+    <!-- Athlete Performance -->
     <div class="section-header">
-      <h3 class="section-title">Daily Progress</h3>
-      <a class="view-details" (click)="openMetric('steps')">View Details</a>
+      <h3 class="section-title">Tu rendimiento</h3>
+      <a class="view-details" (click)="openActivityCalendar()">Ver calendario</a>
     </div>
 
-    <div class="progress-cards">
-      <div class="progress-card" (click)="openMetric('steps')">
+    <div class="performance-carousel">
+      <div class="performance-card" (click)="openActivityCalendar()">
         <div class="progress-circle">
           <svg viewBox="0 0 100 100" class="progress-svg">
             <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
-            <!-- <circle cx="50" cy="50" r="40" class="progress-bar" [style.strokeDashoffset]="100"></circle> -->
              <circle
                 cx="50" cy="50" r="40"
                 class="progress-bar"
                 [style.strokeDasharray]="CIRC"
-                [style.strokeDashoffset]="dashOffset(healthToday.steps, goals.steps)"
+                [style.strokeDashoffset]="dashOffset(streak.current, streak.best || 7)"
               ></circle>
           </svg>
           <div class="progress-icon">
-            <ion-icon name="walk-outline"></ion-icon>
+            <ion-icon name="calendar-outline"></ion-icon>
           </div>
         </div>
-        <!-- <div class="progress-value">8,432</div> -->
-         <div class="progress-value">{{ healthToday.steps | number }}</div>
-
-        <div class="progress-label">STEPS</div>
+        <div class="progress-value">{{ streak.current }}</div>
+        <div class="progress-label">DÍAS DE RACHA</div>
+        <p class="performance-copy">Sin perder entrenos</p>
       </div>
 
-      <div class="progress-card" (click)="openMetric('calories')">
+      <div class="performance-card" (click)="openActivityCalendar()">
         <div class="progress-circle">
           <svg viewBox="0 0 100 100" class="progress-svg">
             <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
-            <!-- <circle cx="50" cy="50" r="40" class="progress-bar" [style.strokeDashoffset]="80"></circle> -->
             <circle
                 cx="50" cy="50" r="40"
                 class="progress-bar"
                 [style.strokeDasharray]="CIRC"
-                [style.strokeDashoffset]="dashOffset(healthToday.kcal, goals.kcal)"
+                [style.strokeDashoffset]="dashOffset(streak.today.completed, streak.today.assigned || 1)"
               ></circle>
 
           </svg>
           <div class="progress-icon">
-            <ion-icon name="flame-outline"></ion-icon>
+            <ion-icon name="barbell-outline"></ion-icon>
           </div>
         </div>
-        <!-- <div class="progress-value">540 kcal</div> -->
-         <div class="progress-value">{{ healthToday.kcal | number }} kcal</div>
-
-        <div class="progress-label">BURNED</div>
+        <div class="progress-value">{{ streak.today.completed }} / {{ streak.today.assigned }}</div>
+        <div class="progress-label">HOY</div>
+        <p class="performance-copy">Entrenos completados</p>
       </div>
 
-      <div class="progress-card" (click)="openMetric('active_minutes')">
+      <div class="performance-card" (click)="openActivityCalendar()">
         <div class="progress-circle">
           <svg viewBox="0 0 100 100" class="progress-svg">
             <circle cx="50" cy="50" r="40" class="progress-bg"></circle>
-            <!-- <circle cx="50" cy="50" r="40" class="progress-bar" [style.strokeDashoffset]="60"></circle> -->
              <circle
                 cx="50" cy="50" r="40"
                 class="progress-bar"
                 [style.strokeDasharray]="CIRC"
-                [style.strokeDashoffset]="dashOffset(healthToday.activeMin, goals.activeMin)"
+                [style.strokeDashoffset]="dashOffset(streak.best, streak.best || 1)"
               ></circle>
 
           </svg>
@@ -260,10 +255,9 @@
             <ion-icon name="flash-outline"></ion-icon>
           </div>
         </div>
-        <!-- <div class="progress-value">42m</div> -->
-         <div class="progress-value">{{ healthToday.activeMin }}m</div>
-
-        <div class="progress-label">ACTIVE</div>
+        <div class="progress-value">{{ streak.best }}</div>
+        <div class="progress-label">MEJOR RACHA</div>
+        <p class="performance-copy">Tu récord actual</p>
       </div>
     </div>
 

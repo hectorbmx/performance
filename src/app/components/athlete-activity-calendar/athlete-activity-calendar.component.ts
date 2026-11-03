@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IonIcon, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { calendarOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+import { calendarOutline, chevronBackOutline, chevronForwardOutline, flashOutline } from 'ionicons/icons';
 import {
   ActivityCalendarDayDTO,
   ActivityCalendarDayStatus,
@@ -42,6 +42,7 @@ export class AthleteActivityCalendarComponent {
       calendarOutline,
       chevronBackOutline,
       chevronForwardOutline,
+      flashOutline,
     });
   }
 

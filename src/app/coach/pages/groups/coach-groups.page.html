@@ -122,7 +122,8 @@
           </ion-item>
 
           <ion-button expand="block" (click)="saveGroup()" [disabled]="saving">
-            <ion-icon slot="start" name="save-outline"></ion-icon>
+            <ion-spinner *ngIf="saving" slot="start" name="crescent"></ion-spinner>
+            <ion-icon *ngIf="!saving" slot="start" name="save-outline"></ion-icon>
             {{ saving ? 'Guardando...' : 'Guardar grupo' }}
           </ion-button>
         </section>
@@ -156,7 +157,8 @@
               <p>{{ client.email || 'Sin correo' }}</p>
             </div>
             <ion-button fill="clear" color="danger" (click)="removeMember(client.id)" [disabled]="updatingMember">
-              <ion-icon slot="icon-only" name="remove-circle-outline"></ion-icon>
+              <ion-spinner *ngIf="updatingMember" name="crescent"></ion-spinner>
+              <ion-icon *ngIf="!updatingMember" slot="icon-only" name="remove-circle-outline"></ion-icon>
             </ion-button>
           </article>
 
@@ -170,8 +172,9 @@
               </ion-select>
             </ion-item>
             <ion-button expand="block" fill="outline" (click)="addMember()" [disabled]="!selectedClientId || updatingMember">
-              <ion-icon slot="start" name="people-outline"></ion-icon>
-              Agregar al grupo
+              <ion-spinner *ngIf="updatingMember" slot="start" name="crescent"></ion-spinner>
+              <ion-icon *ngIf="!updatingMember" slot="start" name="people-outline"></ion-icon>
+              {{ updatingMember ? 'Actualizando miembros...' : 'Agregar al grupo' }}
             </ion-button>
           </div>
         </section>

@@ -37,6 +37,11 @@ export interface LoginResponse {
   client?: ClientDTO;
   coach?: any;
   subscription?: any;
+  access?: {
+    access_state: string;
+    can_access_service: boolean;
+    message?: string | null;
+  };
 }
 
 export interface AppNotificationDTO {

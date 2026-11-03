@@ -39,7 +39,8 @@
 
     <ion-menu-toggle auto-hide="true">
       <button class="logout-button" type="button" (click)="logout()" [disabled]="loggingOut">
-        <ion-icon name="log-out-outline"></ion-icon>
+        <ion-spinner *ngIf="loggingOut" name="crescent"></ion-spinner>
+        <ion-icon *ngIf="!loggingOut" name="log-out-outline"></ion-icon>
         <span>{{ loggingOut ? 'Cerrando sesion...' : 'Cerrar sesion' }}</span>
       </button>
     </ion-menu-toggle>

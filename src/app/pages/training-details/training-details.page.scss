@@ -529,46 +529,48 @@
   margin-top: 14px;
 }
 
-.td-percent-metric {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.055);
+.td-exercise-selector {
+  margin-bottom: 14px;
+}
+
+.td-exercise-selector .td-form-input {
+  background: #202934;
+  border-color: rgba(143, 180, 255, 0.28);
   color: #ffffff;
-  text-align: left;
-}
-
-.td-percent-metric strong,
-.td-percent-metric small {
-  display: block;
-}
-
-.td-percent-metric strong {
-  font-size: 15px;
   font-weight: 800;
-  line-height: 1.2;
 }
 
-.td-percent-metric small {
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 12px;
+.td-exercise-selector .td-form-input option {
+  background: #202934;
+  color: #ffffff;
 }
 
-.td-percent-metric-value {
-  flex: 0 0 auto;
-  color: #8fb4ff;
-  font-size: 17px;
-  font-weight: 900;
-  white-space: nowrap;
+.td-percent-table {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
 }
 
-.td-percent-metric-value.is-empty {
-  color: rgba(255, 255, 255, 0.45);
+.td-percent-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid rgba(143, 180, 255, 0.16);
+  border-radius: 9px;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.18), rgba(255, 255, 255, 0.055));
+}
+
+.td-percent-row span {
+  color: #bfdbfe;
   font-size: 13px;
+  font-weight: 800;
+}
+
+.td-percent-row strong {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
 }
 
 @media (min-width: 768px) {

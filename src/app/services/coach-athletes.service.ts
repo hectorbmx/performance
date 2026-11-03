@@ -64,6 +64,36 @@ export interface CoachAthleteTrainingDTO {
   };
 }
 
+export interface CoachAthleteTrainingRecordsDTO {
+  assignment: {
+    id: number;
+    status: string;
+    scheduled_for: string | null;
+    completed_at: string | null;
+  };
+  training: { id: number; title: string };
+  sections: Array<{
+    id: number;
+    name: string;
+    result: { value: any; unit: string | null; notes: string | null; recorded_at: string | null } | null;
+    lifting_blocks: Array<{
+      exercise_name: string;
+      rows: Array<{
+        percentage: number | null;
+        reps: number;
+        sets: number;
+        set_statuses: Array<{
+          set_number: number;
+          status: string | null;
+          actual_reps: number | null;
+          failure_reason: string | null;
+          notes: string | null;
+        }>;
+      }>;
+    }>;
+  }>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CoachAthletesService {
   constructor(private api: ApiService) {}
@@ -93,6 +123,11 @@ export class CoachAthletesService {
   async trainings(id: number): Promise<CoachAthleteTrainingDTO[]> {
     const res = await this.api.get<any>(`coach/clients/${id}/trainings`);
     return res?.data?.data ?? res?.data ?? [];
+  }
+
+  async trainingRecords(clientId: number, assignmentId: number): Promise<CoachAthleteTrainingRecordsDTO> {
+    const res = await this.api.get<any>(`coach/clients/${clientId}/trainings/${assignmentId}/records`);
+    return res.data;
   }
 
   async store(payload: CoachAthletePayload): Promise<CoachAthleteStoreResult> {

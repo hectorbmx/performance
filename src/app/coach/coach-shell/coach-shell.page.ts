@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
@@ -9,6 +10,7 @@ import {
   IonList,
   IonMenu,
   IonMenuToggle,
+  IonSpinner,
   IonTabBar,
   IonTabButton,
   IonTabs,
@@ -33,6 +35,7 @@ import { AuthService } from 'src/app/services/auth.service';
   templateUrl: './coach-shell.page.html',
   styleUrls: ['./coach-shell.page.scss'],
   imports: [
+    CommonModule,
     IonBadge,
     IonContent,
     IonIcon,
@@ -41,6 +44,7 @@ import { AuthService } from 'src/app/services/auth.service';
     IonList,
     IonMenu,
     IonMenuToggle,
+    IonSpinner,
     IonTabBar,
     IonTabButton,
     IonTabs,

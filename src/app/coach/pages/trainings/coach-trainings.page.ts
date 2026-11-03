@@ -20,12 +20,14 @@ import {
   addCircleOutline,
   barbellOutline,
   calendarOutline,
+  createOutline,
   peopleOutline,
   personCircleOutline,
   refreshOutline,
 } from 'ionicons/icons';
 import {
   CoachTrainingDTO,
+  CoachTrainingPayload,
   CoachTrainingsService,
 } from 'src/app/services/coach-trainings.service';
 import { TrainingFormModalComponent } from '../../components/training-form-modal/training-form-modal.component';
@@ -57,7 +59,9 @@ type TrainingFilter = 'week' | 'free' | 'assigned';
 export class CoachTrainingsPage {
   trainings: CoachTrainingDTO[] = [];
   loading = false;
+  loadingDetails = false;
   isCreateOpen = false;
+  selectedTraining: CoachTrainingPayload | null = null;
   filter: TrainingFilter = 'week';
 
   constructor(
@@ -68,6 +72,7 @@ export class CoachTrainingsPage {
       addCircleOutline,
       barbellOutline,
       calendarOutline,
+      createOutline,
       peopleOutline,
       personCircleOutline,
       refreshOutline,
@@ -98,16 +103,35 @@ export class CoachTrainingsPage {
   }
 
   openCreate() {
+    this.selectedTraining = null;
     this.isCreateOpen = true;
   }
 
   closeCreate() {
     this.isCreateOpen = false;
+    this.selectedTraining = null;
   }
 
   onTrainingCreated(training: CoachTrainingDTO) {
-    this.trainings = [training, ...this.trainings];
+    this.trainings = this.selectedTraining
+      ? this.trainings.map((item) => item.id === training.id ? training : item)
+      : [training, ...this.trainings];
     this.isCreateOpen = false;
+    this.selectedTraining = null;
+  }
+
+  async openEdit(training: CoachTrainingDTO): Promise<void> {
+    if (this.loadingDetails) return;
+
+    this.loadingDetails = true;
+    try {
+      this.selectedTraining = await this.trainingsApi.show(training.id);
+      this.isCreateOpen = true;
+    } catch (err: any) {
+      await this.toast(err?.message ?? 'No se pudo cargar el entrenamiento.', 'danger');
+    } finally {
+      this.loadingDetails = false;
+    }
   }
 
   visibilityLabel(training: CoachTrainingDTO): string {

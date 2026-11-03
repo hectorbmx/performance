@@ -1,0 +1,96 @@
+<ion-header translucent="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/coach/athletes/' + athleteId"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Calendario del atleta</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="coach-athlete-calendar-content">
+  <section class="calendar-hero">
+    <ion-icon name="calendar-outline"></ion-icon>
+    <div>
+      <p>Programación</p>
+      <h1>Calendario de entrenamientos</h1>
+      <span>Consulta las sesiones asignadas por fecha.</span>
+    </div>
+  </section>
+
+  <section class="calendar-panel">
+    <app-athlete-activity-calendar
+      [days]="calendarDays()"
+      [month]="calendarMonth"
+      [loading]="loading"
+      [selectedDate]="selectedCalendarDate"
+      (monthChange)="changeCalendarMonth($event)"
+      (daySelected)="selectCalendarDay($event)">
+    </app-athlete-activity-calendar>
+
+    <div class="selected-calendar-day" *ngIf="selectedCalendarDate">
+      <h2>Entrenamientos del {{ selectedCalendarDate }}</h2>
+      <article class="calendar-training-row" *ngFor="let item of selectedCalendarTrainings()" (click)="openTrainingRecords(item)">
+        <div>
+          <strong>{{ trainingTitle(item) }}</strong>
+          <span>{{ trainingMeta(item) }}</span>
+        </div>
+        <span class="status">{{ item.status_label }}</span>
+      </article>
+    </div>
+  </section>
+
+  <section class="empty-calendar" *ngIf="!loading && trainings.length === 0">
+    <ion-spinner name="crescent" *ngIf="loading"></ion-spinner>
+    <p>No hay entrenamientos asignados para mostrar.</p>
+  </section>
+
+  <ion-modal [isOpen]="!!selectedTraining" (didDismiss)="closeTrainingRecords()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ selectedTraining ? trainingTitle(selectedTraining) : 'Registro' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closeTrainingRecords()">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="records-content">
+        <div class="records-loading" *ngIf="recordsLoading">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Cargando registro...</span>
+        </div>
+
+        <section class="records-section" *ngFor="let section of selectedRecords?.sections">
+          <div class="records-section-head">
+            <h2>{{ section.name }}</h2>
+            <span *ngIf="section.result">
+              Resultado: {{ section.result.value }} {{ section.result.unit || '' }}
+            </span>
+          </div>
+          <p class="records-note" *ngIf="section.result?.notes">{{ section.result?.notes }}</p>
+
+          <article class="records-block" *ngFor="let block of section.lifting_blocks">
+            <h3>{{ block.exercise_name }}</h3>
+            <div class="records-row" *ngFor="let row of block.rows">
+              <div class="records-prescription">
+                <strong>{{ row.percentage !== null ? row.percentage + '%' : 'Sin %' }}</strong>
+                <span>{{ row.sets }} sets × {{ row.reps }} reps</span>
+              </div>
+              <div class="set-results">
+                <span class="set-result" *ngFor="let set of row.set_statuses" [class.done]="set.status === 'completed'" [class.failed]="set.status === 'failed'">
+                  S{{ set.set_number }} · {{ set.actual_reps ?? '-' }}<small>{{ setStatusLabel(set.status) }}</small>
+                </span>
+              </div>
+            </div>
+          </article>
+        </section>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

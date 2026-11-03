@@ -17,6 +17,7 @@ import {
   IonButton,
   IonSpinner,
   IonIcon,
+  ToastController,
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
@@ -92,6 +93,7 @@ export class TrainingDetailsPage implements OnInit {
   savingLiftingKey: string | null = null;
   data: any;
   savingSectionId: number | null = null;
+  private activeSuccessToast: HTMLIonToastElement | null = null;
 
   // Este es el que usa el HTML (detailed)
   detail: TrainingDetailDTO | null = null;
@@ -119,6 +121,7 @@ export class TrainingDetailsPage implements OnInit {
     private trainingApi: TrainingApiService,
     private profileService: ProfileService,
     private sanitizer: DomSanitizer,
+    private toastCtrl: ToastController,
     
   ) {
     addIcons({timeOutline,barbellOutline,flashOutline,fitnessOutline,logoYoutube,arrowBack,playCircle,checkmarkOutline,closeOutline,calculatorOutline,});
@@ -310,6 +313,13 @@ async loadFreeDetails() {
     this.percentageBaseValue = metric.last?.value ?? null;
   }
 
+  selectPercentageMetricByCode(code: string | null): void {
+    const metric = this.percentageMetrics.find((item) => item.code === code);
+    if (metric) {
+      this.selectPercentageMetric(metric);
+    }
+  }
+
   private inferPercentageMetricCodeFromTraining(): string | null {
     const exerciseNames: string[] = [];
 
@@ -424,6 +434,30 @@ async loadFreeDetails() {
     this.refreshProgressFromSections();
   }
 
+  private async showSuccessToast(message: string) {
+    if (this.activeSuccessToast) {
+      await this.activeSuccessToast.dismiss().catch(() => undefined);
+      this.activeSuccessToast = null;
+    }
+
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 1400,
+      position: 'bottom',
+      color: 'success',
+      cssClass: 'td-success-toast',
+    });
+
+    this.activeSuccessToast = toast;
+    await toast.present();
+
+    toast.onDidDismiss().then(() => {
+      if (this.activeSuccessToast === toast) {
+        this.activeSuccessToast = null;
+      }
+    });
+  }
+
   async saveLiftingSetStatus(row: TrainingLiftingRowDTO, set: TrainingLiftingSetStatusDTO, status: 'completed' | 'failed') {
     if (!this.assignmentId) return;
 
@@ -469,6 +503,7 @@ async loadFreeDetails() {
 
       this.applyProgress(res.data?.progress);
       this.applyAssignmentStatus(res.data?.assignment?.status);
+      await this.showSuccessToast(status === 'completed' ? 'Set completado' : 'Set actualizado');
     } catch (e: any) {
       set.status = previousStatus;
       set.actual_reps = previousActualReps;
@@ -621,6 +656,7 @@ private buildYoutubeEmbedUrl(id: string): string {
       this.syncSectionCompletion(section, true);
       this.applyProgress(res.data?.progress);
       this.applyAssignmentStatus(res.data?.status);
+      await this.showSuccessToast('Sección completada');
       return;
     }
 
@@ -696,6 +732,7 @@ async saveSectionResult(section: TrainingSectionDTO) {
     }
 
     this.cancelResultEdit();
+    await this.showSuccessToast('Resultado guardado');
   } catch (e: any) {
     console.error('[saveSectionResult] ERROR', e);
     this.errorMsg = e?.message ?? 'Error guardando resultado';

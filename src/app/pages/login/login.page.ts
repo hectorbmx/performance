@@ -182,7 +182,9 @@ export class LoginPage {
 
 
       // Login exitoso → área privada
-      const redirectUrl = await this.getRedirectUrl();
+      const redirectUrl = res.access?.can_access_service === false
+        ? '/subscription-history'
+        : await this.getRedirectUrl();
       console.log('Navegando a:', redirectUrl);
       const navigated = await this.router.navigateByUrl(redirectUrl, { replaceUrl: true });
       console.log('Navegación exitosa:', navigated);

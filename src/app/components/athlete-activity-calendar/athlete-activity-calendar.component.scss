@@ -133,6 +133,15 @@
   background: currentColor;
 }
 
+.completed-icon {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 1;
+  font-size: 13px;
+  color: #15803d;
+}
+
 .status-completed {
   background: #dcfce7;
   color: #15803d;

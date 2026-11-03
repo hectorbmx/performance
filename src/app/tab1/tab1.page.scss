@@ -402,14 +402,21 @@
 /* ================================
    PROGRESS CARDS
 ================================ */
-.progress-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.performance-carousel {
+  display: flex;
   gap: 12px;
-  margin-bottom: 30px;
+  margin: 0 -20px 30px;
+  padding: 0 20px 4px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.progress-card {
+.performance-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 20px 12px;
@@ -419,13 +426,18 @@
   gap: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 
   &:active {
     background: rgba(91, 156, 255, 0.12);
     border-color: rgba(91, 156, 255, 0.28);
     transform: scale(0.98);
   }
+}
+
+.performance-card {
+  flex: 0 0 132px;
+  min-height: 178px;
+  scroll-snap-align: start;
 }
 
 .progress-circle {
@@ -483,6 +495,16 @@
   letter-spacing: 1px;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
+  text-align: center;
+}
+
+.performance-copy {
+  margin: -4px 0 0;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
 }
 
 .tips-preview-loading,
@@ -713,12 +735,12 @@
    RESPONSIVE
 ================================ */
 @media (max-width: 380px) {
-  .progress-cards {
-    gap: 8px;
+  .performance-card {
+    padding: 16px 8px;
   }
 
-  .progress-card {
-    padding: 16px 8px;
+  .performance-card {
+    flex-basis: 124px;
   }
 
   .progress-circle {

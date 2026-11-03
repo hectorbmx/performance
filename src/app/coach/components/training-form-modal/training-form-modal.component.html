@@ -2,7 +2,7 @@
   <ng-template>
     <ion-header>
       <ion-toolbar>
-        <ion-title>Nuevo entrenamiento</ion-title>
+        <ion-title>{{ modalTitle }}</ion-title>
         <ion-buttons slot="end">
           <ion-button fill="clear" (click)="close()">
             <ion-icon slot="icon-only" name="close-outline"></ion-icon>
@@ -23,7 +23,7 @@
           <ion-input [(ngModel)]="form.title" autocomplete="off"></ion-input>
         </ion-item>
 
-        <div class="two-col">
+        <div class="two-col general-inline-row">
           <ion-item>
             <ion-label position="stacked">Fecha</ion-label>
             <ion-input type="date" [(ngModel)]="form.scheduled_at"></ion-input>
@@ -35,7 +35,7 @@
           </ion-item>
         </div>
 
-        <div class="two-col">
+        <div class="two-col general-select-row">
           <ion-item>
             <ion-label position="stacked">Nivel</ion-label>
             <ion-select [(ngModel)]="form.level" interface="popover">
@@ -54,7 +54,7 @@
           </ion-item>
         </div>
 
-        <div class="two-col">
+        <div class="two-col general-select-row">
           <ion-item>
             <ion-label position="stacked">Objetivo</ion-label>
             <ion-select [(ngModel)]="form.training_goal_catalog_id" interface="popover" placeholder="Opcional">
@@ -85,19 +85,52 @@
             <ion-icon slot="icon-only" name="mic-outline"></ion-icon>
           </ion-button>
         </div>
+
+        <div class="cover-image-picker">
+          <label for="training-cover-image">Imagen de portada</label>
+          <input
+            id="training-cover-image"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            (change)="setCoverImage($event)" />
+          <span *ngIf="form.cover_image">{{ form.cover_image.name }}</span>
+          <small>JPG, PNG o WEBP · máximo 4 MB.</small>
+        </div>
       </section>
 
       <section class="form-panel" *ngIf="form.visibility === 'assigned'">
         <div class="panel-title">
           <h2>Asignacion</h2>
-          <ion-icon name="people-outline"></ion-icon>
+          <ion-button
+            *ngIf="lockClientAssignment"
+            fill="clear"
+            size="small"
+            (click)="openAssignmentPicker()"
+            aria-label="Agregar atletas a la asignacion">
+            <ion-icon slot="icon-only" name="people-outline"></ion-icon>
+          </ion-button>
+          <ion-icon *ngIf="!lockClientAssignment" name="people-outline"></ion-icon>
         </div>
 
         <p class="assignment-note" *ngIf="lockClientAssignment">{{ assignmentLabel() }}</p>
 
+        <div class="assignment-field" *ngIf="selectedAssignmentClients().length > 0">
+          <span class="assignment-field-label">Atletas</span>
+          <div class="assignment-pills">
+            <span class="assignment-pill" *ngFor="let client of selectedAssignmentClients()">
+              {{ client.label }}
+              <button
+                type="button"
+                [disabled]="client.id === presetClientId"
+                (click)="removeClientAssignment(client.id)"
+                [attr.aria-label]="'Quitar a ' + client.label">×</button>
+            </span>
+          </div>
+        </div>
+
         <ng-container *ngIf="shouldShowAssignmentSelectors()">
           <ion-item>
-            <ion-label position="stacked">Atletas</ion-label>
+            <ion-label position="stacked">Agregar atletas</ion-label>
             <ion-select multiple="true" [(ngModel)]="form.assigned_client_ids" interface="popover" placeholder="Seleccionar atletas">
               <ion-select-option *ngFor="let client of meta?.clients" [value]="client.id">
                 {{ client.label }}
@@ -106,38 +139,92 @@
           </ion-item>
 
           <ion-item>
-            <ion-label position="stacked">Grupos</ion-label>
+            <ion-label position="stacked">Agregar grupos</ion-label>
             <ion-select multiple="true" [(ngModel)]="form.assigned_group_ids" interface="popover" placeholder="Seleccionar grupos">
               <ion-select-option *ngFor="let group of meta?.groups" [value]="group.id">
                 {{ group.label }}
               </ion-select-option>
             </ion-select>
           </ion-item>
+
+          <div class="assignment-field" *ngIf="selectedAssignmentGroups().length > 0">
+            <span class="assignment-field-label">Grupos</span>
+            <div class="assignment-pills">
+              <span class="assignment-pill" *ngFor="let group of selectedAssignmentGroups()">
+                {{ group.label }}
+                <button
+                  type="button"
+                  (click)="removeGroupAssignment(group.id)"
+                  [attr.aria-label]="'Quitar grupo ' + group.label">×</button>
+              </span>
+            </div>
+          </div>
         </ng-container>
       </section>
+
+      <ion-modal [isOpen]="assignmentPickerOpen" (didDismiss)="closeAssignmentPicker()">
+        <ng-template>
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>Agregar atletas</ion-title>
+              <ion-buttons slot="end">
+                <ion-button fill="clear" (click)="closeAssignmentPicker()">
+                  <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+                </ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="assignment-picker-content">
+            <ion-input
+              class="assignment-search"
+              [(ngModel)]="assignmentSearch"
+              placeholder="Buscar por nombre o correo"
+              type="search"></ion-input>
+
+            <label class="assignment-client-option" *ngFor="let client of filteredAssignmentClients()">
+              <input
+                type="checkbox"
+                [checked]="isClientAssigned(client.id)"
+                [disabled]="client.id === presetClientId"
+                (change)="toggleClientAssignment(client.id, $any($event.target).checked)" />
+              <span>
+                <strong>{{ client.label }}</strong>
+                <small *ngIf="client.email">{{ client.email }}</small>
+              </span>
+            </label>
+
+            <p class="assignment-empty" *ngIf="filteredAssignmentClients().length === 0">
+              No hay atletas que coincidan con la búsqueda.
+            </p>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
 
       <section class="form-panel">
         <div class="panel-title">
           <h2>Secciones</h2>
-          <ion-button fill="clear" size="small" (click)="addSection()">
-            <ion-icon slot="start" name="add-circle-outline"></ion-icon>
-            Agregar
-          </ion-button>
         </div>
 
         <article class="section-card" *ngFor="let section of form.sections; let i = index">
           <div class="section-card-head">
             <h3>Seccion {{ i + 1 }}</h3>
             <div class="section-card-actions">
-              <ion-button fill="clear" size="small" (click)="addSection()">
-                <ion-icon slot="start" name="add-circle-outline"></ion-icon>
-                Agregar
+              <ion-button fill="clear" size="small" (click)="addSection()" aria-label="Agregar sección">
+                <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
               </ion-button>
               <ion-button fill="clear" color="danger" size="small" (click)="removeSection(i)" [disabled]="form.sections.length <= 1">
                 <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
               </ion-button>
             </div>
           </div>
+
+          <label class="lifting-toggle">
+            <input
+              type="checkbox"
+              [checked]="isLiftingEnabled(section)"
+              (change)="setLiftingEnabled(section, $any($event.target).checked)" />
+            <span>Usar esquema lifting en esta sección</span>
+          </label>
 
           <ion-item>
             <ion-label position="stacked">Nombre</ion-label>
@@ -158,6 +245,43 @@
             <ion-label position="stacked">Video URL</ion-label>
             <ion-input [(ngModel)]="section.video_url" placeholder="https://..."></ion-input>
           </ion-item>
+
+          <div class="section-video-file">
+            <label for="section-video-{{ i }}">Video MP4 (máximo 10 MB)</label>
+            <input
+              [id]="'section-video-' + i"
+              type="file"
+              accept="video/mp4"
+              (change)="setSectionVideoFile(section, $event)" />
+            <span *ngIf="section.video_file">{{ section.video_file.name }}</span>
+            <small>Si seleccionas un archivo, Laravel lo usará como video principal.</small>
+          </div>
+
+          <div class="library-picker">
+            <div class="library-picker-head">
+              <div>
+                <h4>Videos de biblioteca</h4>
+                <p>Selecciona videos reutilizables para esta sección.</p>
+              </div>
+              <span>{{ section.library_video_ids?.length ?? 0 }} seleccionados</span>
+            </div>
+            <ion-input
+              class="library-search"
+              [(ngModel)]="librarySearch"
+              placeholder="Buscar video por nombre"></ion-input>
+            <ion-select
+              multiple="true"
+              [(ngModel)]="section.library_video_ids"
+              interface="popover"
+              placeholder="Seleccionar videos">
+              <ion-select-option *ngFor="let video of filteredLibraryVideos()" [value]="video.id">
+                {{ video.name }} · {{ video.source === 'upload' ? 'Dispositivo' : 'YouTube' }}
+              </ion-select-option>
+            </ion-select>
+            <p class="library-empty" *ngIf="libraryVideos.length === 0">
+              No hay videos disponibles en la biblioteca.
+            </p>
+          </div>
 
           <div class="two-col">
             <ion-item>
@@ -181,10 +305,85 @@
             </ion-item>
           </div>
 
+          <div class="lifting-builder" *ngIf="isLiftingEnabled(section)">
+            <div class="lifting-builder-head">
+              <div>
+                <h4>Esquema lifting</h4>
+                <p>Define ejercicios, series, porcentajes y descansos.</p>
+              </div>
+              <ion-button fill="outline" size="small" (click)="addLiftingBlock(section)">
+                <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                Ejercicio
+              </ion-button>
+            </div>
+
+            <article class="lifting-block" *ngFor="let block of section.lifting_blocks; let blockIndex = index">
+              <div class="lifting-block-head">
+                <strong>Ejercicio {{ blockIndex + 1 }}</strong>
+                <ion-button fill="clear" color="danger" size="small" (click)="removeLiftingBlock(section, blockIndex)">
+                  <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                </ion-button>
+              </div>
+
+              <div class="two-col">
+                <ion-item>
+                  <ion-label position="stacked">Nombre del ejercicio</ion-label>
+                  <ion-input [(ngModel)]="block.exercise_name" placeholder="Back squat"></ion-input>
+                </ion-item>
+
+                <ion-item>
+                  <ion-label position="stacked">Notas del ejercicio</ion-label>
+                  <ion-input [(ngModel)]="block.notes" placeholder="Indicaciones opcionales"></ion-input>
+                </ion-item>
+              </div>
+
+              <div class="lifting-rows-head">
+                <span>Series de trabajo</span>
+                <ion-button fill="clear" size="small" (click)="addLiftingRow(block)">
+                  <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                  Serie
+                </ion-button>
+              </div>
+
+              <div class="lifting-row" *ngFor="let row of block.rows; let rowIndex = index">
+                <ion-item>
+                  <ion-label position="stacked">%</ion-label>
+                  <ion-input type="number" min="0" max="100" step="0.01" [(ngModel)]="row.percentage" placeholder="Opcional"></ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-label position="stacked">Reps</ion-label>
+                  <ion-input type="number" min="1" step="1" [(ngModel)]="row.reps"></ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-label position="stacked">Sets</ion-label>
+                  <ion-input type="number" min="1" step="1" [(ngModel)]="row.sets"></ion-input>
+                </ion-item>
+                <ion-item>
+                  <ion-label position="stacked">Descanso (s)</ion-label>
+                  <ion-input type="number" min="0" step="1" [(ngModel)]="row.rest_seconds" placeholder="Opcional"></ion-input>
+                </ion-item>
+                <ion-item class="lifting-row-notes">
+                  <ion-label position="stacked">Notas</ion-label>
+                  <ion-input [(ngModel)]="row.notes" placeholder="Opcional"></ion-input>
+                </ion-item>
+                <ion-button fill="clear" color="danger" size="small" (click)="removeLiftingRow(block, rowIndex)" [disabled]="(block.rows?.length ?? 0) <= 1">
+                  <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </article>
+          </div>
+
         </article>
 
+        <div class="floating-add-section">
+          <ion-button fill="solid" shape="round" (click)="addSection()" aria-label="Agregar sección">
+            <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
+          </ion-button>
+        </div>
+
         <ion-button expand="block" (click)="createTraining()" [disabled]="saving">
-          <ion-icon slot="start" name="save-outline"></ion-icon>
+          <ion-spinner *ngIf="saving" slot="start" name="crescent"></ion-spinner>
+          <ion-icon *ngIf="!saving" slot="start" name="save-outline"></ion-icon>
           {{ saving ? 'Guardando...' : 'Guardar entrenamiento' }}
         </ion-button>
       </section>

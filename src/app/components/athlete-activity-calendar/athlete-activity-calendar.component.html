@@ -45,6 +45,7 @@
     >
       <span class="day-number" *ngIf="cell.dayNumber">{{ cell.dayNumber }}</span>
       <span class="status-dot" *ngIf="cell.item"></span>
+      <ion-icon class="completed-icon" *ngIf="cell.item?.status === 'completed'" name="flash-outline"></ion-icon>
     </button>
   </div>
 

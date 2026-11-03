@@ -40,6 +40,10 @@
       <ion-icon name="card-outline"></ion-icon>
       <span>Asignar plan</span>
     </button>
+    <button type="button" (click)="openCalendar()">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span>Calendario</span>
+    </button>
   </section>
 
   <section class="panel trainings-panel" *ngIf="!loading">
@@ -159,7 +163,8 @@
           </p>
 
           <ion-button expand="block" (click)="assignPlan()" [disabled]="assigningPlan || loadingPlans || plans.length === 0">
-            <ion-icon name="save-outline" slot="start"></ion-icon>
+            <ion-spinner *ngIf="assigningPlan" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!assigningPlan" name="save-outline" slot="start"></ion-icon>
             {{ assigningPlan ? 'Asignando...' : 'Asignar pendiente de pago' }}
           </ion-button>
         </section>
@@ -213,7 +218,8 @@
           </ion-item>
 
           <ion-button expand="block" (click)="save()" [disabled]="saving">
-            <ion-icon name="save-outline" slot="start"></ion-icon>
+            <ion-spinner *ngIf="saving" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!saving" name="save-outline" slot="start"></ion-icon>
             {{ saving ? 'Guardando...' : 'Guardar cambios' }}
           </ion-button>
         </section>

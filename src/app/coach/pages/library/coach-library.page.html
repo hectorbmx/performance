@@ -73,7 +73,8 @@
           <ion-icon slot="icon-only" name="open-outline"></ion-icon>
         </ion-button>
         <ion-button fill="clear" color="danger" (click)="deleteVideo(video, $event)" [disabled]="deletingId === video.id">
-          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          <ion-spinner *ngIf="deletingId === video.id" name="crescent"></ion-spinner>
+          <ion-icon *ngIf="deletingId !== video.id" slot="icon-only" name="trash-outline"></ion-icon>
         </ion-button>
       </div>
     </article>
@@ -132,10 +133,49 @@
           </ion-item>
 
           <ion-button expand="block" (click)="saveVideo()" [disabled]="saving">
-            <ion-icon slot="start" name="save-outline"></ion-icon>
+            <ion-spinner *ngIf="saving" slot="start" name="crescent"></ion-spinner>
+            <ion-icon *ngIf="!saving" slot="start" name="save-outline"></ion-icon>
             {{ saving ? 'Guardando...' : 'Guardar video' }}
           </ion-button>
         </section>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <ion-modal [isOpen]="isPlayerOpen" (didDismiss)="closeVideo()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ selectedVideo?.name || 'Reproducir video' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closeVideo()">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="player-content">
+        <div class="video-player" *ngIf="selectedVideo?.playback_url; else youtubePlayer">
+          <video controls playsinline [src]="selectedVideo?.playback_url"></video>
+        </div>
+
+        <ng-template #youtubePlayer>
+          <div class="video-player youtube-player" *ngIf="youtubeEmbedUrl(selectedVideo) as embedUrl; else unavailablePlayer">
+            <iframe
+              [src]="embedUrl"
+              title="Reproductor de YouTube"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen></iframe>
+          </div>
+        </ng-template>
+
+        <ng-template #unavailablePlayer>
+          <section class="player-empty">
+            <ion-icon name="videocam-outline"></ion-icon>
+            <p>Este video no tiene una fuente reproducible.</p>
+          </section>
+        </ng-template>
       </ion-content>
     </ng-template>
   </ion-modal>

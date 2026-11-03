@@ -24,12 +24,18 @@
       <ion-icon name="add-outline"></ion-icon>
       <span>Crear plan</span>
     </button>
-    <button type="button" class="ghost-action" (click)="load()">
+      <button type="button" class="ghost-action" (click)="load()" [disabled]="loading">
       <ion-icon name="refresh-outline"></ion-icon>
     </button>
   </section>
 
   <section class="cards">
+    <article class="empty-card" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <h2>Cargando planes</h2>
+      <p>Consultando planes configurados.</p>
+    </article>
+
     <article class="card" *ngFor="let plan of plans">
       <div class="icon-box">
         <ion-icon name="card-outline"></ion-icon>
@@ -116,6 +122,7 @@
           </ion-item>
 
           <button class="submit-btn" type="submit" [disabled]="saving">
+            <ion-spinner *ngIf="saving" name="crescent"></ion-spinner>
             {{ saving ? 'Guardando...' : 'Guardar plan' }}
           </button>
         </form>

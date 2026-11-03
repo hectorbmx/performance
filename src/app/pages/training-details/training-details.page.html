@@ -210,40 +210,42 @@
             </div>
 
             <!-- Result -->
-<div class="td-result" *ngIf="section.result; else noResult">
-  <div class="td-result-main">
-    <div class="td-result-value">{{ section.result.value }}</div>
+            <ng-container *ngIf="section.accepts_results">
+              <div class="td-result" *ngIf="section.result; else noResult">
+                <div class="td-result-main">
+                  <div class="td-result-value">{{ section.result.value }}</div>
 
-    <!-- 1) unit desde el resultado (si viene) -->
-    <div class="td-result-unit" *ngIf="section.result.unit">
-      {{ section.result.unit }}
-    </div>
+                  <!-- 1) unit desde el resultado (si viene) -->
+                  <div class="td-result-unit" *ngIf="section.result.unit">
+                    {{ section.result.unit }}
+                  </div>
 
-    <!-- 2) fallback: unit desde la sección -->
-    <div class="td-result-unit" *ngIf="!section.result.unit && section.unit">
-      {{ section.unit }}
-    </div>
+                  <!-- 2) fallback: unit desde la sección -->
+                  <div class="td-result-unit" *ngIf="!section.result.unit && section.unit">
+                    {{ section.unit }}
+                  </div>
 
-    <!-- 3) último fallback: tipo -->
-    <div class="td-result-unit" *ngIf="!section.result.unit && !section.unit && section.result_type">
-      {{ section.result_type }}
-    </div>
-  </div>
+                  <!-- 3) último fallback: tipo -->
+                  <div class="td-result-unit" *ngIf="!section.result.unit && !section.unit && section.result_type">
+                    {{ section.result_type }}
+                  </div>
+                </div>
 
-  <div class="td-result-notes" *ngIf="section.result.notes">
-    {{ section.result.notes }}
-  </div>
+                <div class="td-result-notes" *ngIf="section.result.notes">
+                  {{ section.result.notes }}
+                </div>
 
-  <div class="td-result-date">
-    {{ section.result.recorded_at | date:'medium' }}
-  </div>
-</div>
+                <div class="td-result-date">
+                  {{ section.result.recorded_at | date:'medium' }}
+                </div>
+              </div>
 
-<ng-template #noResult>
-  <div class="td-empty-inline">
-    <span>Sin resultado aún</span>
-  </div>
-</ng-template>
+              <ng-template #noResult>
+                <div class="td-empty-inline">
+                  <span>Sin resultado aún</span>
+                </div>
+              </ng-template>
+            </ng-container>
 <div class="td-item-footer" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
         
         <div class="td-video-buttons" *ngIf="section.videos && section.videos.length > 0" style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -433,26 +435,19 @@
         </div>
 
         <div class="td-percent-metrics" *ngIf="!percentageMetricsLoading && !percentageMetricsError && percentageMetrics.length > 0">
-          <button
-            type="button"
-            class="td-percent-metric"
-            [class.is-selected]="metric.code === selectedPercentageMetricCode"
-            *ngFor="let metric of percentageMetrics"
-            (click)="selectPercentageMetric(metric)"
-          >
-            <span>
-              <strong>{{ metric.name }}</strong>
-              <small>{{ metric.code }}</small>
-            </span>
-
-            <span class="td-percent-metric-value" *ngIf="metric.last; else metricEmpty">
-              {{ metric.last.value }} {{ metric.unit || 'kg' }}
-            </span>
-
-            <ng-template #metricEmpty>
-              <span class="td-percent-metric-value is-empty">Sin registro</span>
-            </ng-template>
-          </button>
+          <div class="td-form-group td-exercise-selector">
+            <label class="td-form-label" for="percentage-exercise-select">Ejercicio</label>
+            <select
+              id="percentage-exercise-select"
+              class="td-form-input"
+              [(ngModel)]="selectedPercentageMetricCode"
+              (ngModelChange)="selectPercentageMetricByCode($event)"
+              [ngModelOptions]="{ standalone: true }">
+              <option *ngFor="let metric of percentageMetrics" [ngValue]="metric.code">
+                {{ metric.name }}{{ metric.last ? ' · ' + metric.last.value + ' ' + (metric.unit || 'kg') : ' · Sin registro' }}
+              </option>
+            </select>
+          </div>
 
           <div class="td-form-group">
             <label class="td-form-label">

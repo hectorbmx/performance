@@ -26,6 +26,7 @@ import { addIcons } from 'ionicons';
 import {
   barbellOutline,
   cardOutline,
+  calendarOutline,
   closeOutline,
   createOutline,
   peopleOutline,
@@ -105,6 +106,7 @@ export class CoachAthleteDetailPage {
     addIcons({
       barbellOutline,
       cardOutline,
+      calendarOutline,
       closeOutline,
       createOutline,
       peopleOutline,
@@ -290,6 +292,12 @@ export class CoachAthleteDetailPage {
     if (item.status === 'in_progress') return 'progress';
     if (item.status === 'cancelled' || item.status === 'skipped') return 'muted';
     return 'scheduled';
+  }
+
+  openCalendar(): void {
+    if (this.athlete) {
+      this.router.navigate(['/coach/athletes', this.athlete.id, 'calendar']);
+    }
   }
 
   private addDays(date: string | Date, days: number): Date {

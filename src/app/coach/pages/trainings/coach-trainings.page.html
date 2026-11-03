@@ -58,7 +58,7 @@
       </div>
     </article>
 
-    <article class="training-card" *ngFor="let training of trainings">
+    <article class="training-card" *ngFor="let training of trainings" (click)="openEdit(training)">
       <div class="icon-box">
         <ion-icon name="barbell-outline"></ion-icon>
       </div>
@@ -73,11 +73,22 @@
           <span><ion-icon name="calendar-outline"></ion-icon>{{ training.level }}</span>
         </div>
       </div>
+      <ion-button
+        class="edit-training-button"
+        fill="clear"
+        (click)="openEdit(training); $event.stopPropagation()"
+        [disabled]="loadingDetails"
+        aria-label="Editar entrenamiento">
+        <ion-spinner *ngIf="loadingDetails" name="crescent"></ion-spinner>
+        <ion-icon *ngIf="!loadingDetails" slot="icon-only" name="create-outline"></ion-icon>
+      </ion-button>
     </article>
   </section>
 
   <app-training-form-modal
     [isOpen]="isCreateOpen"
+    [editMode]="!!selectedTraining"
+    [initialTraining]="selectedTraining"
     (closed)="closeCreate()"
     (created)="onTrainingCreated($event)">
   </app-training-form-modal>

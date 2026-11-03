@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import {
   IonButton,
   IonButtons,
-  IonChip,
   IonContent,
   IonHeader,
   IonIcon,
@@ -25,6 +24,7 @@ import { addIcons } from 'ionicons';
 import {
   addOutline,
   calendarOutline,
+  chevronForwardOutline,
   closeOutline,
   peopleOutline,
   refreshOutline,
@@ -47,7 +47,6 @@ import {
     FormsModule,
     IonButton,
     IonButtons,
-    IonChip,
     IonContent,
     IonHeader,
     IonIcon,
@@ -70,6 +69,7 @@ export class CoachAthletesPage {
   isFormOpen = false;
   editingAthlete: CoachAthleteDTO | null = null;
   searchTerm = '';
+  athleteFilter: 'all' | 'withPlan' | 'withoutPlan' = 'all';
 
   form: CoachAthletePayload = this.emptyForm();
 
@@ -81,6 +81,7 @@ export class CoachAthletesPage {
     addIcons({
       addOutline,
       calendarOutline,
+      chevronForwardOutline,
       closeOutline,
       peopleOutline,
       refreshOutline,
@@ -177,6 +178,30 @@ export class CoachAthletesPage {
     const plan = this.planLabel(athlete);
     const ends = athlete.active_membership?.ends_at ? ` · vence ${athlete.active_membership.ends_at}` : '';
     return `${plan}${ends}`;
+  }
+
+  filteredAthletes(): CoachAthleteDTO[] {
+    if (this.athleteFilter === 'withPlan') {
+      return this.athletes.filter((athlete) => !!athlete.active_membership);
+    }
+
+    if (this.athleteFilter === 'withoutPlan') {
+      return this.athletes.filter((athlete) => !athlete.active_membership);
+    }
+
+    return this.athletes;
+  }
+
+  setAthleteFilter(filter: 'all' | 'withPlan' | 'withoutPlan'): void {
+    this.athleteFilter = filter;
+  }
+
+  withPlanCount(): number {
+    return this.athletes.filter((athlete) => !!athlete.active_membership).length;
+  }
+
+  withoutPlanCount(): number {
+    return this.athletes.filter((athlete) => !athlete.active_membership).length;
   }
 
   private emptyForm(): CoachAthletePayload {

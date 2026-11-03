@@ -36,21 +36,22 @@
     (ionInput)="search($event)">
   </ion-searchbar>
 
-  <section class="quick-grid">
-    <button class="quick-action" type="button" (click)="openCreate()">
-      <ion-icon name="people-outline"></ion-icon>
-      <span>Nuevo atleta</span>
+  <section class="athlete-filters" aria-label="Filtros de atletas">
+    <button type="button" [class.active]="athleteFilter === 'all'" (click)="setAthleteFilter('all')">
+      Todos <span>{{ athletes.length }}</span>
     </button>
-    <button class="quick-action muted" type="button">
-      <ion-icon name="calendar-outline"></ion-icon>
-      <span>Asignar rutina</span>
+    <button type="button" [class.active]="athleteFilter === 'withPlan'" (click)="setAthleteFilter('withPlan')">
+      Con plan <span>{{ withPlanCount() }}</span>
+    </button>
+    <button type="button" [class.active]="athleteFilter === 'withoutPlan'" (click)="setAthleteFilter('withoutPlan')">
+      Sin plan <span>{{ withoutPlanCount() }}</span>
     </button>
   </section>
 
   <section class="list-section">
     <div class="section-title">
       <h2>Lista de atletas</h2>
-      <span>{{ athletes.length }} registrados</span>
+      <span>{{ filteredAthletes().length }} mostrados</span>
     </div>
 
     <article class="athlete-card state-card" *ngIf="loading">
@@ -69,16 +70,24 @@
       </div>
     </article>
 
-    <article class="athlete-card compact" *ngFor="let athlete of athletes" (click)="openEdit(athlete)">
+    <article class="athlete-card compact" *ngFor="let athlete of filteredAthletes()" (click)="openEdit(athlete)">
       <div class="avatar">{{ initials(athlete) }}</div>
       <div class="athlete-main">
-        <div class="row">
-          <h3>{{ athlete.full_name }}</h3>
-          <ion-chip [class.warn]="statusClass(athlete) === 'warn'" [class.inactive]="statusClass(athlete) === 'inactive'">
-            {{ statusLabel(athlete) }}
-          </ion-chip>
-        </div>
+        <h3>{{ athlete.full_name }}</h3>
         <p>{{ summaryLabel(athlete) }}</p>
+      </div>
+      <div class="athlete-status">
+        <span class="status-dot" [class.inactive]="!athlete.is_active"></span>
+        <span class="status-text">{{ statusLabel(athlete) }}</span>
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </div>
+    </article>
+
+    <article class="athlete-card state-card" *ngIf="!loading && athletes.length > 0 && filteredAthletes().length === 0">
+      <div class="avatar">A</div>
+      <div class="athlete-main">
+        <h3>Sin coincidencias</h3>
+        <p>No hay atletas para el filtro seleccionado.</p>
       </div>
     </article>
   </section>
@@ -124,7 +133,8 @@
           </ion-item>
 
           <ion-button expand="block" (click)="saveAthlete()" [disabled]="saving">
-            <ion-icon slot="start" name="save-outline"></ion-icon>
+            <ion-spinner *ngIf="saving" slot="start" name="crescent"></ion-spinner>
+            <ion-icon *ngIf="!saving" slot="start" name="save-outline"></ion-icon>
             {{ saving ? 'Guardando...' : 'Guardar atleta' }}
           </ion-button>
         </section>

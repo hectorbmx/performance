@@ -93,6 +93,48 @@ ion-searchbar {
   --background: #f6f8fb;
 }
 
+.player-content {
+  --background: #0f172a;
+}
+
+.video-player {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 16px;
+
+  video,
+  iframe {
+    display: block;
+    width: 100%;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 10px;
+    background: #000000;
+  }
+
+  video {
+    height: auto;
+  }
+}
+
+.player-empty {
+  display: grid;
+  min-height: 100%;
+  place-content: center;
+  padding: 24px;
+  color: #cbd5e1;
+  text-align: center;
+
+  ion-icon {
+    margin: 0 auto 10px;
+    font-size: 42px;
+    color: #60a5fa;
+  }
+}
+
 .form-panel {
   padding: 16px;
 

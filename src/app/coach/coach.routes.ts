@@ -12,6 +12,11 @@ export const routes: Routes = [
           import('./pages/athletes/coach-athletes.page').then((m) => m.CoachAthletesPage),
       },
       {
+        path: 'athletes/:id/calendar',
+        loadComponent: () =>
+          import('./pages/athlete-calendar/coach-athlete-calendar.page').then((m) => m.CoachAthleteCalendarPage),
+      },
+      {
         path: 'athletes/:id',
         loadComponent: () =>
           import('./pages/athlete-detail/coach-athlete-detail.page').then((m) => m.CoachAthleteDetailPage),
