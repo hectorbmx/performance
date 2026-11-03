@@ -121,6 +121,7 @@ Route::prefix('v1')->group(function () {
 
             Route::middleware('coach.api')->group(function () {
                 Route::get('clients/{client}/trainings', [CoachApiClientController::class, 'trainings']);
+                Route::get('clients/{client}/trainings/{assignment}/records', [CoachApiClientController::class, 'trainingRecords']);
                 Route::post('clients/{client}/memberships', [CoachApiSubscriptionController::class, 'storeForClient']);
                 Route::apiResource('clients', CoachApiClientController::class);
                 Route::post('groups/{group}/clients', [CoachApiGroupController::class, 'attachClient']);

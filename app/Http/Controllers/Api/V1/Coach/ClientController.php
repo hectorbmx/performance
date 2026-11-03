@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1\Coach;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\TrainingAssignment;
+use App\Models\TrainingSection;
+use App\Models\TrainingSectionResult;
 use App\Models\UserApp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -186,6 +188,81 @@ class ClientController extends Controller
                     'sections_count' => $assignment->trainingSession->sections_count,
                 ] : null,
             ]),
+        ]);
+    }
+
+    public function trainingRecords(Request $request, Client $client, TrainingAssignment $assignment)
+    {
+        $this->authorizeClient($request, $client);
+
+        abort_unless(
+            (int) $assignment->client_id === (int) $client->id
+                && (int) $assignment->trainingSession()->value('coach_id') === (int) $request->user()->id,
+            404
+        );
+
+        $sections = TrainingSection::query()
+            ->where('training_session_id', $assignment->training_session_id)
+            ->with(['liftingBlocks.rows'])
+            ->orderBy('order')
+            ->get();
+        $results = TrainingSectionResult::query()
+            ->where('training_assignment_id', $assignment->id)
+            ->get()
+            ->keyBy('training_section_id');
+        $logs = $assignment->liftingSetLogs()->get()->groupBy('lifting_row_id');
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'assignment' => [
+                    'id' => $assignment->id,
+                    'status' => $assignment->status,
+                    'scheduled_for' => optional($assignment->scheduled_for)->toDateString(),
+                    'completed_at' => optional($assignment->completed_at)->toIso8601String(),
+                ],
+                'training' => [
+                    'id' => $assignment->trainingSession->id,
+                    'title' => $assignment->trainingSession->title,
+                ],
+                'sections' => $sections->map(function (TrainingSection $section) use ($results, $logs) {
+                    $result = $results->get($section->id);
+
+                    return [
+                        'id' => $section->id,
+                        'name' => $section->name,
+                        'result' => $result ? [
+                            'value' => $result->normalizedValue(),
+                            'unit' => $result->unit,
+                            'notes' => $result->notes,
+                            'recorded_at' => optional($result->recorded_at)->toIso8601String(),
+                        ] : null,
+                        'lifting_blocks' => $section->liftingBlocks->map(fn ($block) => [
+                            'exercise_name' => $block->exercise_name,
+                            'rows' => $block->rows->map(function ($row) use ($logs) {
+                                $rowLogs = $logs->get($row->id, collect())->keyBy('set_number');
+
+                                return [
+                                    'percentage' => $row->percentage !== null ? (float) $row->percentage : null,
+                                    'reps' => $row->reps,
+                                    'sets' => $row->sets,
+                                    'set_statuses' => collect(range(1, max(1, (int) $row->sets)))->map(function ($setNumber) use ($rowLogs) {
+                                        $log = $rowLogs->get($setNumber);
+
+                                        return [
+                                            'set_number' => $setNumber,
+                                            'status' => $log?->status,
+                                            'actual_reps' => $log?->actual_reps,
+                                            'failure_reason' => $log?->failure_reason,
+                                            'notes' => $log?->notes,
+                                        ];
+                                    })->values(),
+                                ];
+                            })->values(),
+                        ])->values(),
+                    ];
+                })->values(),
+            ],
         ]);
     }
 
