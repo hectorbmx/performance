@@ -6,6 +6,7 @@ use App\Enums\TrainingSectionResultType;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\GroupTrainingAssignment;
+use App\Models\LibraryVideo;
 use App\Models\TrainingGoalCatalog;
 use App\Models\TrainingSection;
 use App\Models\TrainingSession;
@@ -14,6 +15,7 @@ use App\Models\Unit;
 use App\Services\AppNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class TrainingController extends Controller
@@ -95,16 +97,21 @@ class TrainingController extends Controller
         $coachId = $request->user()->id;
         $data = $this->validatedTrainingData($request, $coachId, true);
 
-        $training = DB::transaction(function () use ($coachId, $data) {
-            $training = TrainingSession::create($this->trainingHeaderPayload($coachId, $data));
+        $training = DB::transaction(function () use ($coachId, $data, $request) {
+            $header = $this->trainingHeaderPayload($coachId, $data);
+            if ($request->hasFile('cover_image')) {
+                $header['cover_image'] = $request->file('cover_image')->store('training-covers', 'public');
+            }
 
-            $this->syncSections($training, $data['sections'] ?? []);
+            $training = TrainingSession::create($header);
+
+            $this->syncSections($training, $data['sections'] ?? [], $request, $coachId);
             $this->syncAssignments($training, $data['assigned_client_ids'] ?? [], $data['assigned_group_ids'] ?? []);
 
             return $training;
         });
 
-        $training->load(['sections.unit', 'assignments.client']);
+        $training->load(['sections.unit', 'sections.liftingBlocks.rows', 'sections.libraryVideos', 'assignments.client']);
 
         $notifications->notifyTrainingCreated(
             $training,
@@ -124,7 +131,7 @@ class TrainingController extends Controller
     {
         $this->authorizeTraining($request, $training);
 
-        $training->load(['sections.unit', 'assignments.client']);
+        $training->load(['sections.unit', 'sections.liftingBlocks.rows', 'sections.libraryVideos', 'assignments.client']);
 
         return response()->json([
             'ok' => true,
@@ -141,11 +148,20 @@ class TrainingController extends Controller
         $previousRecipientIds = $this->currentRecipientClientIds($training, $notifications);
         $wasFree = $training->visibility === 'free';
 
-        DB::transaction(function () use ($training, $coachId, $data) {
-            $training->update($this->trainingHeaderPayload($coachId, $data, $training));
+        DB::transaction(function () use ($training, $coachId, $data, $request) {
+            $header = $this->trainingHeaderPayload($coachId, $data, $training);
+            if ($request->hasFile('cover_image')) {
+                $newCoverPath = $request->file('cover_image')->store('training-covers', 'public');
+                if (!empty($training->cover_image)) {
+                    Storage::disk('public')->delete($training->cover_image);
+                }
+                $header['cover_image'] = $newCoverPath;
+            }
+
+            $training->update($header);
 
             if (array_key_exists('sections', $data)) {
-                $this->syncSections($training, $data['sections'] ?? []);
+                $this->syncSections($training, $data['sections'] ?? [], $request, $coachId);
             }
 
             if (array_key_exists('assigned_client_ids', $data)) {
@@ -155,7 +171,7 @@ class TrainingController extends Controller
             }
         });
 
-        $training->refresh()->load(['sections.unit', 'assignments.client']);
+        $training->refresh()->load(['sections.unit', 'sections.liftingBlocks.rows', 'sections.libraryVideos', 'assignments.client']);
 
         if (!$wasFree && $training->visibility === 'free') {
             $notifications->notifyTrainingCreated($training, $coachId);
@@ -217,6 +233,7 @@ class TrainingController extends Controller
             'visibility' => [$creating ? 'required' : 'sometimes', Rule::in(['free', 'assigned'])],
             'notes' => ['nullable', 'string'],
             'tag_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'assigned_client_ids' => ['nullable', 'array'],
             'assigned_client_ids.*' => [
                 'integer',
@@ -232,8 +249,23 @@ class TrainingController extends Controller
             'sections.*.name' => ['required_with:sections', 'string', 'max:100'],
             'sections.*.description' => ['nullable', 'string'],
             'sections.*.video_url' => ['nullable', 'url', 'max:255'],
+            'sections.*.video_file' => ['nullable', 'file', 'mimetypes:video/mp4', 'max:10240'],
+            'sections.*.library_video_ids' => ['nullable', 'array'],
+            'sections.*.library_video_ids.*' => ['integer', 'exists:library_videos,id'],
             'sections.*.result_type' => ['nullable', Rule::in(array_merge(['none'], TrainingSectionResultType::values()))],
             'sections.*.unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'sections.*.lifting_blocks' => ['nullable', 'array'],
+            'sections.*.lifting_blocks.*.id' => ['nullable', 'integer', 'exists:training_section_exercise_blocks,id'],
+            'sections.*.lifting_blocks.*.exercise_catalog_id' => ['nullable', 'integer'],
+            'sections.*.lifting_blocks.*.exercise_name' => ['required_with:sections.*.lifting_blocks', 'string', 'max:160'],
+            'sections.*.lifting_blocks.*.notes' => ['nullable', 'string'],
+            'sections.*.lifting_blocks.*.rows' => ['nullable', 'array'],
+            'sections.*.lifting_blocks.*.rows.*.id' => ['nullable', 'integer', 'exists:training_section_lifting_rows,id'],
+            'sections.*.lifting_blocks.*.rows.*.percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'sections.*.lifting_blocks.*.rows.*.reps' => ['required_with:sections.*.lifting_blocks.*.rows', 'integer', 'min:1', 'max:1000'],
+            'sections.*.lifting_blocks.*.rows.*.sets' => ['required_with:sections.*.lifting_blocks.*.rows', 'integer', 'min:1', 'max:1000'],
+            'sections.*.lifting_blocks.*.rows.*.rest_seconds' => ['nullable', 'integer', 'min:0', 'max:86400'],
+            'sections.*.lifting_blocks.*.rows.*.notes' => ['nullable', 'string'],
         ]);
 
         $visibility = $data['visibility'] ?? null;
@@ -268,7 +300,7 @@ class TrainingController extends Controller
         ];
     }
 
-    private function syncSections(TrainingSession $training, array $sections): void
+    private function syncSections(TrainingSession $training, array $sections, Request $request, int $coachId): void
     {
         $existingIds = $training->sections()->pluck('id')->all();
         $sentIds = collect($sections)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
@@ -289,28 +321,153 @@ class TrainingController extends Controller
             $resultType = $sectionData['result_type'] ?? 'none';
             $acceptsResults = $resultType !== 'none';
 
-            $payload = [
-                'order' => $index + 1,
-                'name' => $sectionData['name'],
-                'description' => $sectionData['description'] ?? null,
-                'video_url' => $sectionData['video_url'] ?? null,
-                'accepts_results' => $acceptsResults,
-                'result_type' => $acceptsResults ? $resultType : null,
-                'unit_id' => $acceptsResults ? ($sectionData['unit_id'] ?? null) : null,
-            ];
-
-            $section = null;
+            $existingSection = null;
             if (!empty($sectionData['id'])) {
-                $section = TrainingSection::query()
+                $existingSection = TrainingSection::query()
                     ->where('training_session_id', $training->id)
                     ->where('id', $sectionData['id'])
                     ->first();
             }
 
+            $videoPath = $existingSection?->video_path;
+            $videoUrl = $sectionData['video_url'] ?? null;
+
+            if ($request->hasFile("sections.$index.video_file")) {
+                $videoPath = $request->file("sections.$index.video_file")
+                    ->store("training-section-videos/coach-{$coachId}", 'public');
+                $videoUrl = null;
+
+                if (!empty($existingSection?->video_path)) {
+                    Storage::disk('public')->delete($existingSection->video_path);
+                }
+            }
+
+            $payload = [
+                'order' => $index + 1,
+                'name' => $sectionData['name'],
+                'description' => $sectionData['description'] ?? null,
+                'video_url' => $videoPath ? null : $videoUrl,
+                'video_path' => $videoPath,
+                'accepts_results' => $acceptsResults,
+                'result_type' => $acceptsResults ? $resultType : null,
+                'unit_id' => $acceptsResults ? ($sectionData['unit_id'] ?? null) : null,
+            ];
+
+            $section = $existingSection;
             if ($section) {
                 $section->update($payload);
             } else {
-                $training->sections()->create($payload);
+                $section = $training->sections()->create($payload);
+            }
+
+            $this->syncLiftingBlocks($section, $sectionData['lifting_blocks'] ?? null);
+            $this->syncLibraryVideos($section, $sectionData['library_video_ids'] ?? null, (int) $training->coach_id);
+        }
+    }
+
+    private function syncLibraryVideos(TrainingSection $section, ?array $videoIds, int $coachId): void
+    {
+        if ($videoIds === null) {
+            return;
+        }
+
+        $allowedVideoIds = LibraryVideo::query()
+            ->visibleForCoach($coachId)
+            ->where('is_active', true)
+            ->whereIn('id', collect($videoIds)->map(fn ($id) => (int) $id)->unique()->values())
+            ->pluck('id')
+            ->all();
+
+        $syncPayload = collect($allowedVideoIds)
+            ->values()
+            ->mapWithKeys(fn ($videoId, $order) => [
+                $videoId => ['order' => $order + 1],
+            ])
+            ->all();
+
+        $section->libraryVideos()->sync($syncPayload);
+    }
+
+    private function syncLiftingBlocks(TrainingSection $section, ?array $blocks): void
+    {
+        if ($blocks === null) {
+            return;
+        }
+
+        $existingBlockIds = $section->liftingBlocks()->pluck('id')->all();
+        $sentBlockIds = collect($blocks)
+            ->pluck('id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $blockIdsToDelete = array_diff($existingBlockIds, $sentBlockIds);
+        if (!empty($blockIdsToDelete)) {
+            $section->liftingBlocks()->whereIn('id', $blockIdsToDelete)->delete();
+        }
+
+        foreach (array_values($blocks) as $blockIndex => $blockData) {
+            $block = null;
+
+            if (!empty($blockData['id'])) {
+                $block = $section->liftingBlocks()
+                    ->where('id', (int) $blockData['id'])
+                    ->first();
+            }
+
+            $payload = [
+                'exercise_catalog_id' => $blockData['exercise_catalog_id'] ?? null,
+                'exercise_name' => $blockData['exercise_name'],
+                'notes' => $blockData['notes'] ?? null,
+                'order' => $blockIndex + 1,
+            ];
+
+            if ($block) {
+                $block->update($payload);
+            } else {
+                $block = $section->liftingBlocks()->create($payload);
+            }
+
+            $this->syncLiftingRows($block, $blockData['rows'] ?? []);
+        }
+    }
+
+    private function syncLiftingRows(\App\Models\TrainingSectionExerciseBlock $block, array $rows): void
+    {
+        $existingRowIds = $block->rows()->pluck('id')->all();
+        $sentRowIds = collect($rows)
+            ->pluck('id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $rowIdsToDelete = array_diff($existingRowIds, $sentRowIds);
+        if (!empty($rowIdsToDelete)) {
+            $block->rows()->whereIn('id', $rowIdsToDelete)->delete();
+        }
+
+        foreach (array_values($rows) as $rowIndex => $rowData) {
+            $row = null;
+
+            if (!empty($rowData['id'])) {
+                $row = $block->rows()
+                    ->where('id', (int) $rowData['id'])
+                    ->first();
+            }
+
+            $payload = [
+                'percentage' => $rowData['percentage'] ?? null,
+                'reps' => $rowData['reps'],
+                'sets' => $rowData['sets'],
+                'rest_seconds' => $rowData['rest_seconds'] ?? null,
+                'notes' => $rowData['notes'] ?? null,
+                'order' => $rowIndex + 1,
+            ];
+
+            if ($row) {
+                $row->update($payload);
+            } else {
+                $block->rows()->create($payload);
             }
         }
     }
@@ -406,6 +563,9 @@ class TrainingController extends Controller
             'visibility' => $training->visibility,
             'notes' => $training->notes,
             'tag_color' => $training->tag_color,
+            'cover_image' => $training->cover_image
+                ? url(Storage::disk('public')->url($training->cover_image))
+                : null,
             'sections_count' => $training->sections_count ?? $training->sections?->count(),
             'assignments_count' => $training->assignments_count ?? $training->assignments?->count(),
         ];
@@ -416,7 +576,12 @@ class TrainingController extends Controller
                 'order' => $section->order,
                 'name' => $section->name,
                 'description' => $section->description,
-                'video_url' => $section->video_url,
+                    'video_url' => $section->video_url,
+                    'video_path' => $section->video_path,
+                    'video_playback_url' => $section->video_path
+                        ? url(Storage::disk('public')->url($section->video_path))
+                        : $section->video_url,
+                    'video_source' => $section->video_path ? 'upload' : ($section->video_url ? 'external' : null),
                 'accepts_results' => (bool) $section->accepts_results,
                 'result_type' => $section->result_type ?? 'none',
                 'unit_id' => $section->unit_id,
@@ -426,6 +591,33 @@ class TrainingController extends Controller
                     'symbol' => $section->unit->symbol,
                     'code' => $section->unit->code,
                 ] : null,
+                'library_videos' => $section->libraryVideos->map(fn ($video) => [
+                    'id' => $video->id,
+                    'name' => $video->name,
+                    'source' => $video->source,
+                    'youtube_url' => $video->youtube_url ?: null,
+                    'thumbnail_url' => $video->thumbnail_url,
+                    'playback_url' => $video->video_path
+                        ? url(\Illuminate\Support\Facades\Storage::disk('public')->url($video->video_path))
+                        : $video->youtube_url,
+                    'order' => $video->pivot?->order,
+                ])->values(),
+                'lifting_blocks' => $section->liftingBlocks->map(fn ($block) => [
+                    'id' => $block->id,
+                    'exercise_catalog_id' => $block->exercise_catalog_id,
+                    'exercise_name' => $block->exercise_name,
+                    'notes' => $block->notes,
+                    'order' => $block->order,
+                    'rows' => $block->rows->map(fn ($row) => [
+                        'id' => $row->id,
+                        'percentage' => $row->percentage !== null ? (float) $row->percentage : null,
+                        'reps' => $row->reps,
+                        'sets' => $row->sets,
+                        'rest_seconds' => $row->rest_seconds,
+                        'notes' => $row->notes,
+                        'order' => $row->order,
+                    ])->values(),
+                ])->values(),
             ])->values();
 
             $payload['assigned_clients'] = $training->assignments->map(fn ($assignment) => [
