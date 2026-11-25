@@ -61,8 +61,17 @@
               id="newTrainingForm"
               action="{{ route('coach.trainings.store') }}"
               class="mt-8 space-y-8"
-              enctype="multipart/form-data">
+              enctype="multipart/form-data"
+              data-draft-key="coach-training-draft:v1:{{ auth()->id() }}:{{ $presetClient->id ?? 0 }}"
+              data-has-old-input="{{ session()->hasOldInput() ? '1' : '0' }}"
+              novalidate>
             @csrf
+            <input type="hidden" name="browser_draft_revision" value="{{ old('browser_draft_revision') }}">
+            <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                <p id="trainingDraftStatus" role="status">El borrador se guarda en este navegador. Las portadas y videos subidos se deben volver a seleccionar si cierras la página.</p>
+                <button id="discardTrainingDraft" type="button" class="hidden mt-2 font-semibold text-blue-700">Descartar borrador</button>
+            </div>
+            <div id="trainingValidationError" role="alert" class="hidden rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"></div>
             @if(isset($presetClient) && $presetClient)
                 <input type="hidden" name="return_client_id" value="{{ $presetClient->id }}">
             @endif
@@ -628,7 +637,7 @@
                 `;
                 btn.addEventListener('click', () => {
                     input.value = dateString;
-                    paintActive();
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 });
                 nav.appendChild(btn);
             }
@@ -636,7 +645,7 @@
             nav.querySelectorAll('.date-nav-day').forEach(btn => {
                 btn.addEventListener('click', () => {
                     input.value = btn.dataset.date;
-                    paintActive();
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 });
             });
 
@@ -651,7 +660,7 @@
                 const next = base.toISOString().slice(0, 10);
                 appendDate(next);
                 input.value = next;
-                paintActive();
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
             paintActive();
@@ -938,7 +947,7 @@
     if (resultType) resultType.value = initial.result_type || 'none';
     (initial.lifting_blocks || []).forEach(block => addLiftingBlock(wrapper, block));
     const liftToggle = wrapper.querySelector('.sec-lifting-toggle');
-    if (liftToggle) liftToggle.checked = Array.isArray(initial.lifting_blocks) && initial.lifting_blocks.length > 0;
+    if (liftToggle) liftToggle.checked = initial.lifting_enabled ?? (Array.isArray(initial.lifting_blocks) && initial.lifting_blocks.length > 0);
 
     const unitSel = wrapper.querySelector('.sec-unit-id');
     if (unitSel) unitSel.dataset.initialUnitId = initial.unit_id || '';
@@ -961,12 +970,10 @@
     }
 
     (initial.library_video_ids || []).forEach((videoId) => {
-      const hidden = document.createElement('input');
-      hidden.type = 'hidden';
-      hidden.value = String(videoId);
-      hidden.dataset.libraryVideoId = String(videoId);
-      hidden.className = 'sec-library-video-id';
-      wrapper.appendChild(hidden);
+      const id = Number(videoId);
+      if (Number.isSafeInteger(id) && id > 0) {
+        addVideoPill(wrapper, id, initial.library_video_labels?.[id] || `Video #${id}`);
+      }
     });
 
     rebuildNames();
@@ -974,6 +981,21 @@
       wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
+
+  const trainingForm = document.getElementById('newTrainingForm');
+  trainingForm.addEventListener('training:restore-sections', event => {
+    sectionsEl.replaceChildren();
+    event.detail.forEach(section => addSection(section, false));
+    activeSectionIndex = 0;
+    rebuildNames();
+  });
+
+  trainingForm.addEventListener('invalid', event => {
+    const card = event.target.closest('[data-sec]');
+    if (!card || !card.classList.contains('hidden')) return;
+    activeSectionIndex = Array.from(sectionsEl.querySelectorAll('[data-sec]')).indexOf(card);
+    rebuildNames();
+  }, true);
 
   addBtn.addEventListener('click', () => addSection({}, true));
   if (OLD_SECTIONS.length) {
@@ -1105,7 +1127,7 @@ function removeVideoFromSection(sectionEl, videoId) {
 }
 
         (function () {
-            const form = document.querySelector('form');
+            const form = document.getElementById('newTrainingForm');
             const visibilitySelect = document.getElementById('visibilitySelect');
             const assignBlock = document.getElementById('assignBlock');
             const assignError = document.getElementById('assignError');
@@ -1186,6 +1208,11 @@ function removeVideoFromSection(sectionEl, videoId) {
   const selectedEmpty = document.getElementById('assignedClientsEmpty');
 
   if (input && box && inner && selected) {
+    selected.addEventListener('training:restore-assignments', event => {
+      selected.replaceChildren();
+      event.detail.forEach(item => addPill(item, false));
+      setEmptyState();
+    });
     const searchUrlBase = @json(route('coach.clients.search'));
     let timer = null;
     let abortController = null;
@@ -1231,7 +1258,7 @@ function removeVideoFromSection(sectionEl, videoId) {
       });
     }
 
-    function addPill(item) {
+    function addPill(item, notify = true) {
       if (!item?.id) return;
       if (isSelected(item.id)) return;
 
@@ -1258,7 +1285,7 @@ function removeVideoFromSection(sectionEl, videoId) {
       bindRemoveButtonsWithin(pill);
       setEmptyState();
       syncClientResultActions();
-      showAssignmentToast(`${label} agregado a la lista.`);
+      if (notify) showAssignmentToast(`${label} agregado a la lista.`);
     }
 
     function removePill(id) {
@@ -1398,6 +1425,11 @@ function removeVideoFromSection(sectionEl, videoId) {
   const gSelectedEmpty = document.getElementById('assignedGroupsEmpty');
 
   if (gInput && gBox && gInner && gSelected) {
+    gSelected.addEventListener('training:restore-assignments', event => {
+      gSelected.replaceChildren();
+      event.detail.forEach(item => addPill(item));
+      setEmptyState();
+    });
     const searchUrlBase = @json(route('coach.groups.search'));
     let timer = null;
     let abortController = null;
@@ -1540,7 +1572,7 @@ function removeVideoFromSection(sectionEl, videoId) {
     //{{-- JS: tag color "Sin color" --}}
     
         (function () {
-            const form = document.querySelector('form');
+            const form = document.getElementById('newTrainingForm');
             const noColorCheck = document.getElementById('noColorCheck');
             const tagColorInput = document.getElementById('tagColorInput');
             if (!form || !noColorCheck || !tagColorInput) return;
@@ -1718,15 +1750,6 @@ function makePill(id, name) {
     </div>
 </div>
 
-<script>
-(() => {
-    const form = document.getElementById('newTrainingForm');
-    const overlay = document.getElementById('trainingSavingOverlay');
-    form?.addEventListener('submit', () => {
-        overlay?.classList.remove('hidden');
-        overlay?.classList.add('flex');
-    });
-})();
-</script>
+<script src="{{ asset('js/coach-training-draft.js') }}"></script>
 
 </x-app-layout>

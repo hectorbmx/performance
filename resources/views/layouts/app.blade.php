@@ -95,6 +95,19 @@
             window.setTimeout(dismiss, 4500);
         });
     </script>
+    @if (session()->has('saved_training_browser_draft'))
+        <script>
+            (() => {
+                const receipt = {{ Illuminate\Support\Js::from(session('saved_training_browser_draft')) }};
+                try {
+                    const saved = JSON.parse(localStorage.getItem(receipt.key) ?? 'null');
+                    if (saved?.revision === receipt.revision) localStorage.removeItem(receipt.key);
+                } catch {
+                    // Training is saved even when browser storage is unavailable.
+                }
+            })();
+        </script>
+    @endif
     @stack('scripts')
 </body>
 

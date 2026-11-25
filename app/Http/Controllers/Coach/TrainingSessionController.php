@@ -516,6 +516,14 @@ if ($training->visibility === 'assigned') {
 
     $notifications->notifyTrainingCreated($training, $coachId, $clientIds, $groupIds);
 
+    $draftRevision = $request->input('browser_draft_revision');
+    if (is_string($draftRevision) && preg_match('/\A[a-f0-9]{32}\z/', $draftRevision)) {
+        $request->session()->flash('saved_training_browser_draft', [
+            'key' => 'coach-training-draft:v1:'.$coachId.':'.($returnClient?->id ?? 0),
+            'revision' => $draftRevision,
+        ]);
+    }
+
     if ($returnClient) {
         return redirect()
             ->route('coach.clients.trainings.index', [
