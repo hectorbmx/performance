@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
+  { path: 'register', data: {mode: 'register'}, loadComponent: () => import('./pages/account-access/account-access.page').then(m => m.AccountAccessPage) },
+  { path: 'verify-email', data: {mode: 'verify'}, loadComponent: () => import('./pages/account-access/account-access.page').then(m => m.AccountAccessPage) },
+  { path: 'recover-password', data: {mode: 'recover'}, loadComponent: () => import('./pages/account-access/account-access.page').then(m => m.AccountAccessPage) },
+  { path: 'account', canMatch: [authGuard], loadComponent: () => import('./pages/account/account.page').then(m => m.AccountPage) },
+  { path: 'privacy', loadComponent: () => import('./pages/account/privacy.page').then(m => m.PrivacyPage) },
   {
     path: '',
     redirectTo: 'login',
@@ -25,6 +30,22 @@ export const routes: Routes = [
     path: 'user-profile',
     canMatch: [authGuard],
     loadComponent: () => import('./pages/user-profile/user-profile.page').then( m => m.UserProfilePage)
+  },
+  {
+    path: 'workout-progress', canMatch: [authGuard],
+    canDeactivate: [(component: { canDeactivate: () => boolean }) => component.canDeactivate()],
+    loadComponent: () => import('./pages/workout-progress/workout-progress.page').then(m => m.WorkoutProgressPage),
+  },
+  {
+    path: 'workout-builder', canMatch: [authGuard],
+    canDeactivate: [(component: { canDeactivate: () => boolean }) => component.canDeactivate()],
+    loadComponent: () => import('./pages/workout-builder/workout-builder.page').then(m => m.WorkoutBuilderPage),
+  },
+  {
+    path: 'workout-recorder',
+    canMatch: [authGuard],
+    canDeactivate: [(component: { canDeactivate: () => boolean }) => component.canDeactivate()],
+    loadComponent: () => import('./pages/workout-recorder/workout-recorder.page').then(m => m.WorkoutRecorderPage),
   },
   {
     path: 'training-details/:assignmentId',

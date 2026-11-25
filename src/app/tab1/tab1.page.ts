@@ -29,6 +29,7 @@ import { HealthMetricsService, type HealthMetricKey } from '../services/health-m
 import { NotificationNavigationService } from '../services/notification-navigation.service';
 import { AthleteTipCardDTO, AthleteTipsService, AthleteTipType } from '../services/athlete-tips.service';
 import type { AppNotificationDTO } from 'src/app/services/auth.service'; // ajusta ruta si aplica
+import { useWorkoutCoverOnError, workoutCoverForSession } from 'src/app/workout-covers';
 
 /* =========================
    Tipos locales
@@ -77,6 +78,8 @@ export class Tab1Page implements OnDestroy {
   loading = false;
   errorMsg: string | null = null;
   fallbackCover = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80';
+  readonly workoutCoverForSession = workoutCoverForSession;
+  readonly useWorkoutCoverOnError = useWorkoutCoverOnError;
 
   items: TrainingFeedItemDTO[] = [];
   today: TrainingFeedItemDTO | null = null;

@@ -18,7 +18,7 @@ import {
   LoadingController,
   AlertController,ToastController
 } from '@ionic/angular/standalone';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Preferences } from '@capacitor/preferences';
 import { BiometricAuthService } from 'src/app/services/biometric-auth.service';
@@ -31,6 +31,7 @@ import { BiometricAuthService } from 'src/app/services/biometric-auth.service';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     IonContent,
     IonIcon,
   ],
@@ -182,9 +183,7 @@ export class LoginPage {
 
 
       // Login exitoso → área privada
-      const redirectUrl = res.access?.can_access_service === false
-        ? '/subscription-history'
-        : await this.getRedirectUrl();
+      const redirectUrl = await this.getRedirectUrl();
       console.log('Navegando a:', redirectUrl);
       const navigated = await this.router.navigateByUrl(redirectUrl, { replaceUrl: true });
       console.log('Navegación exitosa:', navigated);
@@ -203,6 +202,11 @@ export class LoginPage {
     'No se pudo iniciar sesión.';
 
   // ✅ Caso: cuenta pendiente de activación
+  if (err?.code === 'email_verification_required') {
+    await this.router.navigate(['/verify-email'], {queryParams: {email}});
+    await this.showToast(message, 'warning');
+    return;
+  }
   if (err?.needsActivation) {
     await this.showToast('Cuenta pendiente. Revisa tu correo para crear tu contrasena o contacta a tu coach.', 'warning');
 
@@ -246,6 +250,7 @@ export class LoginPage {
   }
 
 private async getRedirectUrl(): Promise<string> {
+  if (await this.auth.getActorType() === 'client' && !this.auth.client()?.id) return this.auth.getDefaultRoute();
   const currentNavigation = this.router.getCurrentNavigation();
   const redirectUrl =
     currentNavigation?.extras?.state?.['redirectUrl'] ||

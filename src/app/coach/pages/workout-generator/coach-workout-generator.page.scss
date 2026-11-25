@@ -1,0 +1,8 @@
+ion-content{--background:#f6f8fb;--color:#17243b;}ion-toolbar{--background:#0f172a;--color:white;}main{max-width:850px;margin:auto;padding:16px 16px 64px;}section{background:white;padding:16px;margin:16px 0;border-radius:12px;}p{line-height:1.5;}label{display:block;margin:12px 0;font-weight:600;}input,select,textarea{display:block;width:100%;padding:11px;border:1px solid #9eacbf;border-radius:7px;background:white;color:#17243b;font:inherit;margin-top:5px;}.check{display:flex;align-items:center;gap:10px;font-weight:400;}.check input{width:20px;height:20px;margin:0;flex-shrink:0;}.exercise{display:flex;flex-direction:column;text-align:left;gap:6px;width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:8px;margin:8px 0;background:white;color:#17243b;}.error{color:#a02c14;}button,input,select,textarea{&:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}}
+
+.exercise-status{display:block;font-weight:600;line-height:1.5;font-size:13px;}
+.exercise-status.is-enabled{color:#166534;}
+.exercise-status.is-unavailable{color:#b91c1c;}
+
+.exercise.is-selected{border:2px solid #2563eb;background:#eff6ff;}
+.exercise-editor{scroll-margin-top:16px;}

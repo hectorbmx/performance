@@ -1,3 +1,4 @@
+@use '../../athlete-design' as athlete;
 .td-shell {
   min-height: 100vh;
   background: #10151B;
@@ -718,3 +719,58 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@include athlete.base;
+
+.td-shell { background: #f2f2f7; min-height: 100%; padding-bottom: calc(96px + var(--ion-safe-area-bottom, 0px)); }
+.td-hero { border: 0; background: transparent; }
+.td-cover { margin: 12px 20px 0; width: calc(100% - 40px); height: 190px; border-radius: 24px; background: #18243b; }
+.td-cover-overlay { height: 100%; background: linear-gradient(0deg, #13213a88, transparent); }
+.td-hero-body { margin-top: 0; padding: 20px; }
+.td-title { color: #1c1c1e; text-shadow: none; font-size: 30px; font-weight: 700; letter-spacing: -.7px; }
+.td-badge { border: 0; background: #e8f2ff; color: #0064d2; font-size: 12px; text-transform: none; }
+.td-badge.is-soft { background: #e5e5ea; color: #68686e; }
+.td-meta-item, .td-progress-sub { color: #68686e; font-size: 14px; }
+.td-notes { background: #fff; border: 0; color: #48484a; padding: 16px; border-radius: 18px; font-size: 16px; }
+.td-progress { background: #fff; border: 0; padding: 18px; border-radius: 20px; }
+.td-progress-label { color: #68686e; font-size: 13px; text-transform: none; }
+.td-progress-value { color: #007aff; }
+.td-progress-bar { background: #e5e5ea; height: 6px; }
+.td-progress-fill { background: #007aff; }
+.td-section-title { color: #1c1c1e; font-size: 22px; }
+.td-section-sub, .td-chip { color: #68686e; background: #e5e5ea; border: 0; font-size: 12px; }
+.td-card:not(.td-hero) { background: #fff; border: 0; border-radius: 20px; backdrop-filter: none; }
+.td-item { padding: 18px; }
+.td-item:hover { background: #fff; }
+.td-item-title, .td-lift-block-head h3, .td-lift-set-label { color: #1c1c1e; }
+.td-item-title { font-size: 17px; }
+.td-order { color: #007aff; background: #e8f2ff; }
+.td-chip.is-done { background: #e2f4e9; color: #237b43; }
+.td-item-desc { color: #48484a; font-size: 15px; }
+.td-item-actions, .td-inline-form { border-color: #e5e5ea; }
+.td-link { color: #007aff; min-height: 44px; text-decoration: none; font-size: 16px; }
+.td-lift-block { background: #fff; border: 1px solid #e5e5ea; border-radius: 16px; }
+.td-lift-block-head p, .td-lift-row-notes, .td-result-unit, .td-result-notes, .td-result-date { color: #68686e; }
+.td-lift-row { background: #f2f2f7; border-radius: 12px; }
+.td-lift-row-meta, .td-lift-set-label span { color: #0064d2; font-weight: 500; }
+.td-set-ok { color: #007aff; border-color: #007aff; }
+.td-set-fail { color: #d93332; border-color: #d93332; }
+.td-lift-set.is-completed { border-left-color: #34c759; }
+.td-lift-set.is-failed { border-left-color: #ff3b30; }
+.td-form-label, .td-form-hint { color: #68686e; font-size: 13px; text-transform: none; }
+.td-form-input, .td-form-textarea, .td-exercise-selector .td-form-input { background: #fff; color: #1c1c1e; border: 1px solid #e5e5ea; min-height: 48px; font-size: 16px; }
+.td-form-input::placeholder, .td-form-textarea::placeholder { color: #8e8e93; }
+.td-exercise-selector .td-form-input option { background: #fff; color: #1c1c1e; }
+.td-percent-modal-backdrop { background: #00000055; padding: 0; backdrop-filter: blur(5px); }
+.td-percent-modal { position: relative; background: #f2f2f7; border: 0; border-radius: 28px 28px 0 0; padding: 32px 20px calc(24px + var(--ion-safe-area-bottom, 0px)); max-height: 90dvh; margin-inline: auto; }
+.td-percent-modal::before { content: ''; position: absolute; top: 10px; left: calc(50% - 18px); width: 36px; height: 5px; border-radius: 5px; background: #c7c7cc; }
+.td-percent-modal h2 { color: #1c1c1e; font-size: 26px; }
+.td-percent-kicker, .td-percent-empty { color: #68686e; }
+.td-percent-close { background: #e5e5ea; color: #68686e; width: 44px; height: 44px; flex-shrink: 0; }
+.td-percent-row { background: #fff; border: 0; border-radius: 12px; min-height: 48px; }
+.td-percent-row span { color: #68686e; font-weight: 500; font-size: 15px; }
+.td-percent-row strong { color: #1c1c1e; font-weight: 600; font-size: 17px; }
+.td-percentage-fab, .td-btn-save { background: #007aff; }
+.td-btn-cancel { background: #e5e5ea; color: #48484a; }
+.td-btn-save, .td-btn-cancel { min-height: 44px; }
+@media (min-width: 768px) { .td-percent-modal { border-radius: 28px; } }

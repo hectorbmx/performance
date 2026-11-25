@@ -27,6 +27,10 @@ export const routes: Routes = [
           import('../pages/library/library.page').then((m) => m.LibraryPage),
       },
       {
+        path: 'gym',
+        loadComponent: () => import('../pages/gym/gym.page').then(m => m.GymPage),
+      },
+      {
         path: 'tips',
         loadComponent: () =>
           import('../pages/tips/tips.page').then((m) => m.TipsPage),

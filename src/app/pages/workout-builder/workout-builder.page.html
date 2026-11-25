@@ -1,0 +1,132 @@
+<ion-header><ion-toolbar><ion-buttons slot="start"><ion-back-button defaultHref="/tabs/gym"></ion-back-button></ion-buttons><ion-title>Crear mi rutina</ion-title></ion-toolbar></ion-header>
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)" [disabled]="busy">
+    <ion-refresher-content pullingText="Desliza para actualizar" refreshingSpinner="crescent" refreshingText="Actualizando ejercicios…"></ion-refresher-content>
+  </ion-refresher>
+  <main>
+  <h1>Crea tu rutina</h1><p>Elige la zona, la cantidad y el primer grupo muscular. Después selecciona ejercicios para completar tu sesión.</p>
+  <p role="alert" class="error" *ngIf="error">{{ error }}</p><p role="status" *ngIf="notice">{{ notice }}</p>
+  <ion-button fill="outline" (click)="load()" [disabled]="busy">Actualizar disponibilidad</ion-button>
+  <p *ngIf="settings && !settings.feature_enabled">GYM está temporalmente desactivado en la plataforma. Tus sesiones descargadas siguen disponibles.</p>
+  <p *ngIf="settings?.feature_enabled && !settings?.generator_enabled">GYM no está disponible en este momento. No necesitas autorización de un coach.</p>
+  <p *ngIf="settings?.feature_enabled && settings?.generator_enabled && !settings?.executions_enabled">Puedes preparar tu rutina, pero el inicio de nuevas sesiones está desactivado en el servidor.</p>
+  <p *ngIf="pendingStart()">Hay un inicio pendiente de confirmar. Reintentar recuperará esa misma sesión; tu propuesta queda conservada.</p>
+  <fieldset [disabled]="busy || pendingStart() || !settings?.generator_enabled || !settings?.feature_enabled">
+    <section>
+      <h2>Tu sesión</h2>
+      <label>¿Qué quieres trabajar?<select [ngModel]="draft.region || 'lower_body'" (ngModelChange)="changeRegion($event)"><option value="lower_body">Tren inferior</option><option value="upper_body">Tren superior</option></select></label>
+      <label>¿Cuántos ejercicios quieres hacer?<select [(ngModel)]="draft.exercise_count" (ngModelChange)="updateSession()"><option [ngValue]="3" [disabled]="draft.exercises.length>3">3</option><option [ngValue]="4" [disabled]="draft.exercises.length>4">4</option><option [ngValue]="5" [disabled]="draft.exercises.length>5">5</option><option [ngValue]="6">6</option></select></label>
+      <label *ngIf="!draft.exercises.length">¿Por dónde quieres empezar?<select [(ngModel)]="draft.initial_muscle" (ngModelChange)="changed(); refresh()"><option value="">Todos los grupos de esta zona</option><option *ngFor="let muscle of muscleOptions" [value]="muscle.code">{{ muscle.name }}</option></select></label>
+      <p class="session-summary">{{ regionLabel }} · {{ draft.exercise_count }} ejercicios · Hipertrofia</p>
+      <details *ngIf="draft.equipment.length"><summary>Equipo confirmado para esta sesión</summary>
+      <p>Puedes cambiarlo; si un ejercicio lo necesita, te pediremos resolverlo.</p>
+      <label class="check" *ngFor="let item of equipmentOptions; trackBy: trackCode"><input type="checkbox" [checked]="draft.equipment.includes(item.code)" (change)="toggleEquipment(item.code,$event)"> {{ item.names.es }}</label></details>
+      <label class="check"><input type="checkbox" [(ngModel)]="draft.pain_reported" (ngModelChange)="contextChanged()"> Reporto dolor en el ejercicio</label>
+      <label class="check"><input type="checkbox" [(ngModel)]="draft.technique_issue" (ngModelChange)="contextChanged()"> Reporto dificultad técnica</label>
+      <p>Si reportas dolor o técnica pendiente no se ofrecerá una nueva sugerencia automática de peso.</p>
+    </section>
+    <section>
+      <h2>{{ draft.exercises.length ? 'Sugerencias para completar tu rutina' : 'Elige tu primer ejercicio' }}</h2>
+      <p *ngIf="draft.exercises.length>=draft.exercise_count" role="status">Ya completaste la cantidad de ejercicios elegida. Puedes preparar tu sesión.</p><p *ngIf="candidates.length && draft.exercises.length<draft.exercise_count">{{ candidates.length }} ejercicios publicados. Elige uno y confirma el equipo que necesitas.</p>
+      <p *ngIf="draft.exercises.length && candidates.length">El orden es orientativo. Para sustituir un ejercicio elegido, quítalo de tu sesión y agrega otra opción.</p>
+      <ion-button fill="clear" (click)="refresh()">Recalcular alternativas</ion-button>
+      <article *ngFor="let candidate of (draft.exercises.length<draft.exercise_count ? candidates : []); trackBy: trackId"><h3>{{ candidate.names.es }}</h3>
+        <ul><li *ngFor="let reason of candidate.reasons">{{ reason }}</li></ul>
+        <ion-button size="small" (click)="add(candidate)" [disabled]="draft.exercises.length>=draft.exercise_count">Agregar a mi rutina</ion-button>
+      </article>
+      <p *ngIf="!candidates.length && !catalog.length" role="status">El catálogo todavía no tiene ejercicios publicados. Tu selección y el equipo están guardados; falta habilitar los ejercicios desde el catálogo de la plataforma.</p>
+      <p *ngIf="!candidates.length && catalog.length && !equipmentHints.length" role="status">No hay más ejercicios disponibles con el equipo y tus preferencias actuales. Revisa el equipo disponible.</p>
+      <label class="check" *ngIf="draft.exercises.length<3"><input type="checkbox" [(ngModel)]="draft.acknowledge_short_session" (ngModelChange)="changed()"> Acepto una sesión corta si no hay tres ejercicios disponibles.</label>
+    </section>
+    <section>
+      <h2>Ejercicios elegidos ({{ draft.exercises.length }})</h2>
+      <p *ngIf="!draft.exercises.length">Aún no has agregado ejercicios. Elige uno en «Elige tu primer ejercicio», arriba.</p>
+      <article *ngFor="let exercise of draft.exercises; let index=index; trackBy: trackId">
+        <h3>{{ index+1 }}. {{ exercise.name }}</h3>
+        <div class="actions"><button type="button" (click)="move(index,-1)" [disabled]="index===0">Subir</button><button type="button" (click)="move(index,1)" [disabled]="index===draft.exercises.length-1">Bajar</button><button type="button" (click)="remove(index)">Quitar / sustituir</button></div>
+        <div class="grid">
+          <label>Series<input type="number" min="1" max="6" [(ngModel)]="exercise.sets" (ngModelChange)="changed()"></label>
+          <label>Reps mínimas<input type="number" min="1" max="30" [(ngModel)]="exercise.reps_min" (ngModelChange)="changed()"></label>
+          <label>Reps máximas<input type="number" min="1" max="30" [(ngModel)]="exercise.reps_max" (ngModelChange)="changed()"></label>
+          <div class="rir-field">
+            <div class="rir-label"><label [for]="'target-rir-'+exercise.exercise_id">RIR objetivo</label>
+              <button type="button" class="rir-help-button" aria-label="¿Qué significa RIR?" aria-haspopup="dialog" (click)="rirHelpOpen=true"><ion-icon name="help-circle-outline" aria-hidden="true"></ion-icon></button>
+            </div>
+            <input [id]="'target-rir-'+exercise.exercise_id" type="number" min="0" max="5" step="0.1" [(ngModel)]="exercise.target_rir" (ngModelChange)="changed()">
+          </div>
+          <label>Descanso (segundos)<input type="number" min="15" max="600" [(ngModel)]="exercise.rest_seconds" (ngModelChange)="changed()"></label>
+        </div>
+        <ng-container *ngIf="exercise.load_mode==='total_barbell'">
+          <label>Unidad<select [(ngModel)]="exercise.unit" (ngModelChange)="unitChanged(exercise)"><option value="kg">kg</option><option value="lb">lb</option></select></label>
+          <label>Incremento disponible<select [(ngModel)]="exercise.increment" (ngModelChange)="changed()"><option value="0.25">0.25</option><option value="0.50">0.50</option><option value="1.00">1</option><option value="1.25">1.25</option><option value="2.50">2.5</option><option value="5.00">5</option></select></label>
+          <label>Peso total de barra programado (opcional)<input type="number" min="0" max="10000" step="0.01" [(ngModel)]="exercise.chosen_load" (ngModelChange)="changed()"></label>
+        </ng-container>
+        <div *ngIf="exercise.load_mode==='total_barbell'" class="suggestion">
+          <p *ngIf="!exercise.suggestion?.basis">No hay un máximo vigente disponible para calcular la carga. No necesitas registrar un RM para continuar: puedes indicar tu carga de trabajo arriba o dejarla por definir.</p>
+          <ion-button fill="clear" (click)="openInlineRm(exercise)" [disabled]="busy">Registrar o consultar mi máximo aquí</ion-button>
+          <div *ngIf="inlineRmExercise===exercise.exercise_id">
+            <h3>Máximo de {{exercise.name}}</h3>
+            <p>Solo registra un peso que ya hayas realizado en una repetición. Un peso aproximado de trabajo no es un RM probado.</p>
+            <label>Peso máximo conocido<input type="number" min="0.01" max="10000" step="0.01" [(ngModel)]="rmValue"></label>
+            <label>Unidad<select [(ngModel)]="rmUnit"><option value="kg">kg</option><option value="lb">lb</option></select></label>
+            <label>Fecha de la prueba<input type="date" [(ngModel)]="rmDate"></label>
+            <label class="check"><input type="checkbox" [(ngModel)]="rmConfirmed"> Confirmo que realicé ese peso en una repetición.</label>
+            <ion-button (click)="saveRm()" [disabled]="busy || !rmConfirmed || !rmValue">Guardar máximo</ion-button>
+            <ion-button fill="clear" (click)="inlineRmExercise=null">Continuar sin registrar un máximo</ion-button>
+          </div>
+        </div>
+        <p *ngIf="exercise.load_mode!=='total_barbell'">Puedes continuar sin RM. La sugerencia de carga para esta modalidad todavía no está disponible.</p>
+        <label>Notas<textarea maxlength="2000" [(ngModel)]="exercise.notes" (ngModelChange)="changed()"></textarea></label>
+        <ion-button fill="outline" (click)="suggest(exercise)">Consultar sugerencia</ion-button>
+        <div class="suggestion" *ngIf="exercise.suggestion as suggestion">
+          <p>{{ suggestion.reason }}</p>
+          <p *ngIf="suggestion.basis">Base: {{ suggestion.basis.kind==='tested' ? 'RM declarado como probado' : 'RM estimado' }} · {{ suggestion.basis.value_kg }} kg · {{ suggestion.basis.measured_at | date:'shortDate' }}</p>
+          <p *ngIf="suggestion.suggested_load as load">Sugerencia editable: {{ load.value }} {{ load.unit }}</p>
+          <ion-button *ngIf="suggestion.suggested_load" size="small" (click)="accept(exercise)">Usar sugerencia</ion-button>
+          <p *ngIf="!suggestion.suggested_load">Peso por definir. Puedes dejarlo sin registrar.</p>
+        </div>
+      </article>
+    </section>
+
+  </fieldset>
+  <ion-button expand="block" (click)="prepare()" [disabled]="busy || (!pendingStart() && (!draft.exercises.length || !settings?.generator_enabled || !settings?.feature_enabled || !settings?.executions_enabled))">{{ pendingStart() ? 'Recuperar inicio pendiente' : 'Preparar sesión privada' }}</ion-button>
+
+</main></ion-content>
+
+<ion-modal [isOpen]="rirHelpOpen" (didDismiss)="rirHelpOpen=false">
+  <ng-template>
+    <ion-header><ion-toolbar>
+      <ion-title>¿Qué es RIR?</ion-title>
+      <ion-buttons slot="end"><ion-button (click)="rirHelpOpen=false" aria-label="Cerrar explicación de RIR">Cerrar</ion-button></ion-buttons>
+    </ion-toolbar></ion-header>
+    <ion-content>
+      <div class="rir-help-content">
+        <h2>Las repeticiones que te quedan</h2>
+        <p><strong>RIR significa «repeticiones en reserva».</strong> Es una estimación de cuántas repeticiones más crees que podrías hacer al terminar una serie, manteniendo una buena técnica.</p>
+        <p><strong>Ejemplo:</strong> haces 8 repeticiones y sientes que podrías hacer otras 2 con buena técnica. Tu RIR es 2.</p>
+        <ul>
+          <li><strong>RIR 3:</strong> crees que te quedan unas 3 repeticiones.</li>
+          <li><strong>RIR 2:</strong> crees que te quedan unas 2.</li>
+          <li><strong>RIR 1:</strong> crees que te queda una.</li>
+          <li><strong>RIR 0:</strong> crees que no podrías hacer otra con buena técnica.</li>
+        </ul>
+        <h3>¿Qué significa «RIR objetivo»?</h3>
+        <p>Es el margen que buscas dejar al terminar la serie. Un objetivo de 2 significa terminar sintiendo que aún podrías hacer unas 2 repeticiones más; no son repeticiones extra que debas completar.</p>
+        <p>Es una estimación: no necesitas llegar al límite para comprobarla. Al registrar tu serie podrás indicar el RIR que realmente sentiste.</p>
+        <ion-button expand="block" (click)="rirHelpOpen=false">Entendido</ion-button>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [isOpen]="!!equipmentExercise" [canDismiss]="!busy || !equipmentExercise" (didDismiss)="equipmentExercise=null">
+<ng-template><ion-header><ion-toolbar><ion-title>¿Tienes este equipo?</ion-title></ion-toolbar></ion-header><ion-content><main *ngIf="equipmentExercise as exercise">
+<h2>{{exercise.names.es}}</h2><p>Para este ejercicio necesitas lo siguiente. Confirma que tienes todo disponible para esta sesión.</p>
+<label class="check" *ngFor="let term of requiredEquipment(exercise)"><input type="checkbox" [(ngModel)]="equipmentChecks[term.code]">{{term.names.es}} <small *ngIf="rememberedEquipment(term.code)">Lo confirmaste antes; verifica hoy.</small></label>
+<ion-button expand="block" [disabled]="!equipmentConfirmed||busy" (click)="confirmEquipment()">Sí, agregar ejercicio</ion-button>
+<ion-button expand="block" fill="clear" [disabled]="busy" (click)="equipmentExercise=null">No lo tengo / elegir otro</ion-button>
+</main></ion-content></ng-template></ion-modal>
+<ion-modal [isOpen]="!!equipmentRemoval" (didDismiss)="equipmentRemoval=null"><ng-template><ion-header><ion-toolbar><ion-title>Revisar equipo</ion-title></ion-toolbar></ion-header><ion-content><main *ngIf="equipmentRemoval as conflict">
+<h2>Estos ejercicios necesitan el equipo</h2><p *ngFor="let name of conflict.names">{{name}}</p><p>Puedes conservarlo y volver para sustituir los ejercicios, o quitar explícitamente los ejercicios afectados de este borrador.</p>
+<ion-button expand="block" (click)="equipmentRemoval=null">Conservar equipo y volver</ion-button><ion-button expand="block" fill="outline" (click)="confirmEquipmentRemoval()">Quitar equipo y ejercicios afectados</ion-button>
+</main></ion-content></ng-template></ion-modal>

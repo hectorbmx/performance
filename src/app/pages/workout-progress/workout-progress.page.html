@@ -1,0 +1,43 @@
+<ion-header><ion-toolbar><ion-buttons slot="start"><ion-back-button [defaultHref]="coachId ? '/coach/athletes/'+coachId : '/tabs/gym'"></ion-back-button></ion-buttons><ion-title>Progreso registrado</ion-title></ion-toolbar></ion-header>
+<ion-content><main>
+<p role="alert" class="error-notice" *ngIf="error">{{error}}</p><p role="status" class="success-notice" *ngIf="message">{{message}}</p>
+<p class="page-caption">Tus registros y metas, ejercicio por ejercicio.</p>
+<p class="page-caption" *ngIf="coachId">Este espacio muestra sesiones asignadas y registros del servicio de coach. Las sesiones personales de GYM son privadas del atleta.</p>
+<div class="control-group"><label class="control-row"><span>Ejercicio</span><select [(ngModel)]="exerciseId" (change)="changeExercise()" [disabled]="busy || !!pendingGoal"><option *ngFor="let item of catalog" [ngValue]="item.id">{{item.names.es}}</option></select></label></div>
+<p *ngIf="!busy && !catalog.length" class="empty-state">Todavía no hay ejercicios compatibles con esta vista de máximos.</p>
+<p *ngIf="busy" role="status" class="page-caption">Actualizando progreso…</p>
+<section class="chart-card" *ngIf="progress as data"><p class="eyebrow">EVOLUCIÓN DEL EJERCICIO</p><h1>{{data.name}}</h1>
+<div class="record-counts"><span>{{data.points.length}} registros históricos</span><span>{{data.goals.length}} metas programadas</span></div>
+<div class="chart-legend" aria-label="Tipos de registro"><span><i class="legend-dot tested"></i>RM declarado</span><span><i class="legend-dot estimated"></i>e1RM estimado</span><span><i class="legend-dot planned"></i>Meta programada</span></div>
+<p class="caption">Cada variante tiene su propio historial. Las metas no son resultados realizados.</p>
+<svg *ngIf="points.length" viewBox="0 0 700 265" role="img" aria-label="Puntos de RM y metas en kg por fecha. Valores y fuentes disponibles en la tabla siguiente.">
+<line x1="35" y1="230" x2="675" y2="230" stroke="#d6d9e3"/><line x1="35" y1="20" x2="35" y2="230" stroke="#d6d9e3"/>
+<g *ngFor="let p of points"><circle *ngIf="p.kind!=='goal'" [attr.cx]="p.x" [attr.cy]="p.y" r="5" [attr.fill]="color(p.kind)"><title>{{label(p.kind)}} {{p.date}}: {{p.value_kg}} kg</title></circle>
+<rect *ngIf="p.kind==='goal'" [attr.x]="p.x-5" [attr.y]="p.y-5" width="10" height="10" fill="none" [attr.stroke]="color(p.kind)" stroke-width="2"><title>Meta {{p.date}}: {{p.value_kg}} kg</title></rect>
+<text [attr.x]="p.x" [attr.y]="p.y-10" text-anchor="middle" font-size="11">{{p.value_kg | number:'1.0-1'}}</text></g><text x="5" y="15">kg</text>
+</svg>
+<div class="empty-state" *ngIf="!points.length"><strong>Aún no hay registros</strong><p>Cuando tengas un RM declarado o series sincronizadas compatibles, podrás consultar su evolución aquí.</p><p>También puedes añadir una meta futura de forma opcional.</p></div>
+<details class="records-details" *ngIf="points.length"><summary>Ver registros y fuentes ({{points.length}})</summary><div class="table-scroll"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>kg</th><th>Procedencia y método</th></tr></thead><tbody>
+<tr *ngFor="let p of points"><td>{{p.date | date:'shortDate'}}</td><td>{{label(p.kind)}}</td><td>{{p.value_kg | number:'1.0-3'}}</td><td>{{p.source || p.author}} · {{p.method}} · {{p.confidence}}<span *ngIf="p.kind==='goal'"> · {{p.load_original}} {{p.unit}} × {{p.reps}}, RIR {{p.rir}}</span></td></tr>
+</tbody></table></div></details><details class="limits-details"><summary>Cómo interpretar estos datos</summary><p>{{data.limits}}</p><p>Series para e1RM: últimos {{data.history_window_days}} días, máximo 200 registros recientes. RM guardados: hasta 200. Solo datos sincronizados.</p></details>
+</section>
+<h2 class="section-label">Meta opcional</h2>
+<section class="goal-card"><p class="caption">Programa una carga futura para este ejercicio. No modifica tu RM ni predice una mejora automática.</p>
+<fieldset [disabled]="busy || !!pendingGoal" class="control-group">
+  <label class="control-row"><span>Fecha</span><input type="date" [(ngModel)]="goal.scheduled_for"></label>
+  <label class="control-row"><span>Carga total</span><input type="number" min="0.01" step="0.25" placeholder="Sin indicar" [(ngModel)]="goal.load"></label>
+  <label class="control-row"><span>Unidad</span><select [(ngModel)]="goal.unit"><option>kg</option><option>lb</option></select></label>
+  <label class="control-row"><span>Repeticiones</span><input type="number" min="1" max="10" [(ngModel)]="goal.reps"></label>
+  <label class="control-row"><span>RIR objetivo</span><input type="number" min="0" max="3" step="0.5" [(ngModel)]="goal.rir"></label>
+  <label class="notes-label" for="goal-notes">Notas</label><textarea id="goal-notes" maxlength="2000" placeholder="Añade una nota a tu meta" [(ngModel)]="goal.notes"></textarea>
+</fieldset>
+<p class="pending-notice" *ngIf="pendingGoal">Respuesta pendiente. Reintenta el mismo envío para evitar duplicados.</p>
+<ion-button class="save-goal" expand="block" [disabled]="busy || !exerciseId" (click)="saveGoal()">{{pendingGoal ? 'Reintentar meta pendiente' : 'Guardar meta'}}</ion-button></section>
+<section *ngIf="coachId"><h2>Sesiones registradas del atleta</h2><p>Historial de las nuevas ejecuciones; incluye sesiones en curso y finalizadas.</p>
+<button class="session-row" type="button" *ngFor="let s of sessions" (click)="openSession(s.uuid)" [disabled]="busy">{{s.title}} · {{s.started_at | date:'short'}} · {{s.status}}</button>
+<ion-button (click)="paginate(-1)" [disabled]="busy || page<=1">Anterior</ion-button><span>{{page}} / {{lastPage}}</span><ion-button (click)="paginate(1)" [disabled]="busy || page>=lastPage">Siguiente</ion-button>
+<article class="session-detail" *ngIf="detail as d"><h3>{{d.prescription.content.title}}</h3><p>{{d.status}} · {{d.summary.work_sets_completed}} series de trabajo completadas · {{d.summary.tonnage_kg===null ? 'Sin carga medida' : d.summary.tonnage_kg+' kg'}}{{d.summary.tonnage_complete ? '' : ' · parcial'}}</p>
+<p *ngFor="let muscle of d.summary.direct_muscle_series | keyvalue">{{muscle.key}}: {{muscle.value}} series directas</p>
+<div *ngFor="let section of d.prescription.content.sections"><div *ngFor="let e of section.exercises"><h4>{{e.name}}</h4><div *ngFor="let set of e.sets"><p>Serie {{set.set_number}}: prescrito {{set.prescribed.reps_min}}–{{set.prescribed.reps_max}} reps · RIR {{set.prescribed.rir ?? 'sin objetivo'}}</p>
+<p *ngIf="detailRecords[set.uuid] as result; else unrecorded">Realizado: {{result.status}} · {{result.type}} · {{result.actual_load ?? 'sin carga'}} {{result.load_unit}} × {{result.actual_reps ?? 'sin reps'}} · RIR {{result.actual_rir ?? 'no indicado'}} · {{result.notes}}</p><ng-template #unrecorded><p>Sin registrar</p></ng-template></div></div></div>
+</article></section></main></ion-content>

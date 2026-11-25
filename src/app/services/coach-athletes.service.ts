@@ -4,6 +4,7 @@ import { ApiService } from './api.service';
 export interface CoachAthleteMembershipDTO {
   id: number;
   plan_name: string;
+  price?: number;
   status: string;
   billing_status: string;
   starts_at: string | null;
@@ -17,6 +18,7 @@ export interface CoachAthleteDTO {
   full_name: string;
   email: string | null;
   phone: string | null;
+  avatar_url?: string | null;
   is_active: boolean;
   app_account: null | {
     id: number;
@@ -26,6 +28,7 @@ export interface CoachAthleteDTO {
   };
   active_membership: CoachAthleteMembershipDTO | null;
   future_membership: CoachAthleteMembershipDTO | null;
+  latest_membership?: CoachAthleteMembershipDTO | null;
 }
 
 export interface CoachAthletePayload {
@@ -40,6 +43,14 @@ export interface CoachAthletePlanAssignmentPayload {
   coach_client_plan_id: number;
   reminder_days_before?: number | null;
   grace_days?: number | null;
+}
+
+export interface CoachAthletePaymentPayload {
+  amount: number | null;
+  discount: number | null;
+  payment_method: string;
+  payment_date: string;
+  notes: string;
 }
 
 export interface CoachAthleteStoreResult {
@@ -62,6 +73,11 @@ export interface CoachAthleteTrainingDTO {
     type: string | null;
     sections_count: number;
   };
+}
+
+export interface CoachAthleteTrainingSummary {
+  scheduled: number;
+  completed: number;
 }
 
 export interface CoachAthleteTrainingRecordsDTO {
@@ -121,8 +137,26 @@ export class CoachAthletesService {
   }
 
   async trainings(id: number): Promise<CoachAthleteTrainingDTO[]> {
+    return (await this.trainingsWithSummary(id)).items;
+  }
+
+  async recordPayment(clientId: number, membershipId: number, payload: CoachAthletePaymentPayload): Promise<string> {
+    const res = await this.api.post<{ message: string }>(
+      `coach/clients/${clientId}/memberships/${membershipId}/payments`,
+      payload,
+    );
+    return res.message;
+  }
+
+  async trainingsWithSummary(id: number): Promise<{
+    items: CoachAthleteTrainingDTO[];
+    summary: CoachAthleteTrainingSummary | null;
+  }> {
     const res = await this.api.get<any>(`coach/clients/${id}/trainings`);
-    return res?.data?.data ?? res?.data ?? [];
+    return {
+      items: res?.data?.data ?? res?.data ?? [],
+      summary: res?.summary ?? null,
+    };
   }
 
   async trainingRecords(clientId: number, assignmentId: number): Promise<CoachAthleteTrainingRecordsDTO> {

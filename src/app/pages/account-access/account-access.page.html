@@ -1,0 +1,29 @@
+<ion-header><ion-toolbar><ion-title>{{ title }}</ion-title></ion-toolbar></ion-header>
+<ion-content class="account-content">
+  <main class="account-container">
+    <a routerLink="/login" class="text-link">‹ Volver a iniciar sesión</a>
+    <section class="account-card">
+      <h1>{{ title }}</h1>
+      <p *ngIf="mode === 'register'">Tu cuenta personal de atleta, sin necesidad de tener coach.</p>
+      <p *ngIf="mode === 'verify'">Escribe el código de seis dígitos que enviamos a tu correo. Vence en 15 minutos.</p>
+      <p *ngIf="mode === 'recover'">Recupera el acceso usando tu correo, sin contactar a un coach.</p>
+      <p class="error" role="alert" *ngIf="error">{{ error }}</p>
+      <form (ngSubmit)="submit()" #form="ngForm">
+        <label *ngIf="mode === 'register'">Nombre<input name="firstName" [(ngModel)]="firstName" autocomplete="given-name" required maxlength="100"></label>
+        <label *ngIf="mode === 'register'">Apellido (opcional)<input name="lastName" [(ngModel)]="lastName" autocomplete="family-name" maxlength="100"></label>
+        <label>Correo electrónico<input type="email" name="email" [(ngModel)]="email" autocomplete="email" required email maxlength="255"></label>
+        <label *ngIf="mode === 'verify' || codeRequested">Código de confirmación<input name="code" [(ngModel)]="code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" minlength="6" maxlength="6"></label>
+        <ng-container *ngIf="mode === 'register' || (mode === 'recover' && codeRequested)">
+          <label>Contraseña<input type="password" name="password" [(ngModel)]="password" autocomplete="new-password" required minlength="8" maxlength="128"></label>
+          <small>Al menos 8 caracteres.</small>
+          <label>Repite la contraseña<input type="password" name="confirmation" [(ngModel)]="confirmation" autocomplete="new-password" required minlength="8" maxlength="128"></label>
+        </ng-container>
+        <label class="check-row" *ngIf="mode === 'register'"><input type="checkbox" name="privacy" [(ngModel)]="privacy" required><span>Acepto la <a routerLink="/privacy">política de privacidad</a>.</span></label>
+        <button class="primary" type="submit" [disabled]="busy || form.invalid">{{ busy ? 'Procesando…' : mode === 'register' ? 'Crear cuenta' : mode === 'verify' ? 'Confirmar correo' : codeRequested ? 'Guardar contraseña' : 'Solicitar código' }}</button>
+      </form>
+      <button class="secondary" type="button" *ngIf="mode === 'verify' || codeRequested" [disabled]="busy || !email" (click)="resend()">Solicitar otro código</button>
+      <p *ngIf="mode !== 'register'">Puedes solicitar otro código después de un minuto. Si ya tienes uno vigente, usa el último que recibiste.</p>
+    </section>
+    <a routerLink="/privacy" class="text-link">Privacidad y uso de tus datos</a>
+  </main>
+</ion-content>

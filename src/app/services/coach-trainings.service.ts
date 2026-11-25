@@ -43,6 +43,7 @@ export interface CoachTrainingLiftingRowDTO {
 export interface CoachTrainingLiftingBlockDTO {
   id: number;
   exercise_catalog_id: number | null;
+  workout_exercise_id?: number | null;
   exercise_name: string;
   notes: string | null;
   order: number;
@@ -61,6 +62,7 @@ export interface CoachTrainingLiftingRowPayload {
 export interface CoachTrainingLiftingBlockPayload {
   id?: number;
   exercise_catalog_id?: number | string | null;
+  workout_exercise_id?: number | string | null;
   exercise_name: string;
   notes?: string | null;
   rows?: CoachTrainingLiftingRowPayload[];
@@ -138,6 +140,7 @@ export class CoachTrainingsService {
         lifting_blocks: (section.lifting_blocks ?? []).map((block: any) => ({
           id: block.id,
           exercise_catalog_id: block.exercise_catalog_id ?? null,
+          workout_exercise_id: block.workout_exercise_id ?? null,
           exercise_name: block.exercise_name ?? '',
           notes: block.notes ?? '',
           rows: (block.rows ?? []).map((row: any) => ({
@@ -178,6 +181,7 @@ export class CoachTrainingsService {
       assigned_client_ids: payload.visibility === 'assigned' ? (payload.assigned_client_ids ?? []) : [],
       assigned_group_ids: payload.visibility === 'assigned' ? (payload.assigned_group_ids ?? []) : [],
       sections: payload.sections.map((section) => ({
+        ...(section.id ? { id: section.id } : {}),
         name: section.name.trim(),
         description: section.description?.trim() || null,
         video_url: section.video_url?.trim() || null,
@@ -188,6 +192,7 @@ export class CoachTrainingsService {
         lifting_blocks: section.lifting_blocks?.map((block) => ({
           ...(block.id ? { id: block.id } : {}),
           exercise_catalog_id: this.optionalNumber(block.exercise_catalog_id),
+          workout_exercise_id: this.optionalNumber(block.workout_exercise_id),
           exercise_name: block.exercise_name.trim(),
           notes: block.notes?.trim() || null,
           rows: (block.rows ?? []).map((row) => ({
@@ -250,6 +255,7 @@ export class CoachTrainingsService {
         const blockPrefix = `${prefix}[lifting_blocks][${blockIndex}]`;
         append(`${blockPrefix}[id]`, block.id);
         append(`${blockPrefix}[exercise_catalog_id]`, block.exercise_catalog_id);
+        append(`${blockPrefix}[workout_exercise_id]`, block.workout_exercise_id);
         append(`${blockPrefix}[exercise_name]`, block.exercise_name);
         append(`${blockPrefix}[notes]`, block.notes);
 

@@ -1,3 +1,10 @@
 <ion-app>
+  <div *ngIf="auth.sessionNotice()" role="status" style="position:relative;z-index:10000;padding:10px;background:var(--ion-color-warning);color:var(--ion-color-warning-contrast)">
+    {{auth.sessionNotice()}}
+    <ng-container *ngIf="auth.sessionState()!=='anonymous'">
+      <button type="button" (click)="retrySession()" [disabled]="auth.sessionState()==='checking'">Reintentar</button>
+      <button type="button" (click)="closeSession()">Cerrar sesión</button>
+    </ng-container>
+  </div>
   <ion-router-outlet></ion-router-outlet>
 </ion-app>

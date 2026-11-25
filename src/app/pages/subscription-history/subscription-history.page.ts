@@ -80,6 +80,7 @@ interface MembershipsResponse {
   ],
 })
 export class SubscriptionHistoryPage {
+  openDownloadedWorkouts(): void { void this.router.navigate(['/workout-recorder']); }
   loading = false;
   creatingPlanId: number | null = null;
   error = '';

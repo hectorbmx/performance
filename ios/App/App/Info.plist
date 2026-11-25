@@ -46,6 +46,12 @@ Usamos Apple Health para mostrar tu progreso diario: pasos, calorías quemadas y
 Usamos Apple Health para mostrar tu progreso diario: pasos , calorias quemadas y minutos activos</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Usamos Apple Health para guardar tus entrenamientos y actualizar datos de actividad, como calorías quemadas y minutos activos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Usamos la cámara para grabar videos de las secciones del entrenamiento.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Usamos el micrófono para dictar texto y grabar el audio de los videos de entrenamiento.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Convertimos tu voz en texto al dictar notas o descripciones de entrenamientos.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

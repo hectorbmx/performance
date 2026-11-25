@@ -78,10 +78,11 @@ export class CoachShellPage {
     this.loggingOut = true;
     try {
       await this.auth.logout();
-      await this.menuCtrl.close('coach-menu');
-      await this.router.navigate(['/login'], { replaceUrl: true });
     } finally {
-      this.loggingOut = false;
+      try { await this.menuCtrl.close('coach-menu'); } finally {
+        await this.router.navigate(['/login'], { replaceUrl: true });
+        this.loggingOut = false;
+      }
     }
   }
 }

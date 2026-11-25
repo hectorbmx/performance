@@ -12,6 +12,16 @@ export const routes: Routes = [
           import('./pages/athletes/coach-athletes.page').then((m) => m.CoachAthletesPage),
       },
       {
+        path: 'athletes/:id/progress',
+        canDeactivate: [(component: { canDeactivate: () => boolean }) => component.canDeactivate()],
+        loadComponent: () => import('../pages/workout-progress/workout-progress.page').then(m => m.WorkoutProgressPage),
+      },
+      {
+        path: 'athletes/:id/generator',
+        redirectTo: 'athletes/:id',
+        pathMatch: 'full',
+      },
+      {
         path: 'athletes/:id/calendar',
         loadComponent: () =>
           import('./pages/athlete-calendar/coach-athlete-calendar.page').then((m) => m.CoachAthleteCalendarPage),

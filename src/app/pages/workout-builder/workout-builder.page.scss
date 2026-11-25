@@ -1,0 +1,35 @@
+@use '../../athlete-design' as athlete;
+ion-content { --background: #f6f8fb; --color: #17243b; } ion-toolbar { --background:#0f172a; --color:white; }
+main{max-width:850px;margin:auto;padding:16px 16px 64px;}section{background:white;padding:16px;border-radius:12px;margin:16px 0;}
+h1{font-size:25px;}h2{font-size:21px;}h3{font-size:18px;}p,li{line-height:1.5;}fieldset{border:0;padding:0;margin:0;min-width:0;}
+label{display:block;margin:12px 0;font-weight:600;}input,select,textarea{display:block;width:100%;padding:11px;border:1px solid #9eacbf;border-radius:7px;background:white;color:#17243b;font:inherit;margin-top:5px;}
+.check{display:flex;align-items:center;gap:10px;font-weight:400;}.check input{width:20px;height:20px;margin:0;flex-shrink:0;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;}article{border-top:1px solid #dce4ef;padding:12px 0;}.actions{display:flex;gap:8px;flex-wrap:wrap;}.actions button{padding:10px;border:1px solid #9eacbf;border-radius:6px;background:#f6f8fb;color:#17243b;}
+.suggestion{padding:12px;background:#eff6ff;border-radius:8px;}.error{color:#a02c14;}button,input,select,textarea{&:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}}
+
+// This screen uses a light surface even when the app has a dark theme.
+select {
+  color-scheme: light;
+}
+select option {
+  background-color: #ffffff;
+  color: #17243b;
+}
+select option:checked {
+  background-color: #dbeafe;
+  color: #17243b;
+}
+
+.rir-field{margin:12px 0;}
+.rir-label{display:flex;align-items:center;gap:4px;min-height:24px;}
+.rir-label label{margin:0;}
+.rir-help-button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:28px;padding:0;border:0;background:transparent;color:#2563eb;border-radius:50%;flex-shrink:0;}
+.rir-help-button ion-icon{font-size:22px;}
+.rir-help-content{padding:24px;max-width:600px;margin:auto;}
+
+@include athlete.base;
+main { max-width: 760px; padding-inline: 20px; }
+section { border-radius: 20px; padding: 20px; }
+h1 { font-size: 30px; font-weight: 700; letter-spacing: -.6px; }
+input, select, textarea { border-color: #d1d1d6; border-radius: 12px; min-height: 48px; font-size: 16px; }
+.session-summary { color: #68686e; font-size: 14px; }

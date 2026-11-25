@@ -1,0 +1,50 @@
+// Shared visual language for athlete screens. No behavior or data bindings.
+@mixin base {
+  :host {
+    color-scheme: light;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --ion-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --ion-background-color: #f2f2f7;
+    --ion-text-color: #1c1c1e;
+    --ion-color-primary: #007aff;
+    --ion-color-primary-rgb: 0, 122, 255;
+    --ink: #1c1c1e; --muted: #68686e; --blue: #007aff;
+    --text: #1c1c1e; --panel: #fff; --panel-strong: #f5f5fa; --stroke: #e5e5ea;
+    --tip-text: #1c1c1e; --tip-muted: #68686e; --tip-blue: #007aff;
+    --tip-panel: #fff; --tip-panel-strong: #f5f5fa; --tip-stroke: #e5e5ea;
+    --app-bg: #f2f2f7; --line: #e5e5ea; --blue-soft: #e8f2ff;
+    color: #1c1c1e;
+  }
+  ion-content,
+  .home-content,
+  .library-content,
+  .tips-content,
+  .gym-content,
+  .timer-content { --background: #f2f2f7; --color: #1c1c1e; }
+  :host > ion-header { box-shadow: none; }
+  :host > ion-header ion-toolbar { --background: #f2f2f7; --color: #1c1c1e; --border-width: 0; }
+  ion-title { font-size: 17px; font-weight: 600; }
+  ion-back-button { --color: #007aff; }
+  button, input, select, textarea { font: inherit; }
+  button:focus-visible, a:focus-visible { outline: 3px solid #007aff; outline-offset: 3px; }
+  ion-button { text-transform: none; letter-spacing: 0; --box-shadow: none; --border-radius: 14px; min-height: 44px; font-weight: 600; }
+  ion-searchbar { --background: #e5e5ea; --color: #1c1c1e; --placeholder-color: #68686e; --icon-color: #8e8e93; --border-radius: 12px; --box-shadow: none; font-size: 17px; }
+  .home-container, .library-shell, .tips-shell, .timer-shell, .gym-container { max-width: 760px; margin-inline: auto; padding-inline: 20px; padding-bottom: calc(28px + var(--ion-safe-area-bottom, 0px)); }
+  .library-shell, .tips-shell { padding-top: calc(24px + var(--ion-safe-area-top, 0px)); }
+  .library-header h1, .tips-header h1, .gym-header h1, .page-heading h1 { font-size: 34px; line-height: 1.12; font-weight: 700; letter-spacing: -.9px; color: #1c1c1e; }
+  .library-header p, .tips-header p, .eyebrow { color: #68686e; font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+  .icon-action, .open-action { width: 44px; height: 44px; border: 0; border-radius: 50%; background: #e8f2ff; color: #007aff; }
+  .type-filter, .filters ion-select { background: #fff; border: 0; border-radius: 12px; color: #1c1c1e; }
+  .type-filter ion-select, .filters ion-select { min-height: 44px; font-size: 15px; font-weight: 500; }
+  .video-list, .tips-list { gap: 0; background: #fff; border-radius: 20px; overflow: hidden; }
+  .video-card, .tip-card { background: #fff; border: 0; border-bottom: 1px solid #e5e5ea; border-radius: 0; padding: 16px; gap: 14px; }
+  .video-card:last-child, .tip-card:last-child { border-bottom: 0; }
+  .video-info h2, .tip-card h2 { font-size: 17px; font-weight: 600; white-space: normal; line-height: 1.35; }
+  .video-info p, .tip-card p { color: #68686e; font-size: 14px; line-height: 1.45; font-weight: 400; }
+  .video-thumb { background: #18243b; color: #fff; }
+  .tip-image { width: 76px; min-height: 80px; background: #e8f2ff; color: #007aff; }
+  .tip-meta { gap: 5px; margin-bottom: 6px; }
+  .tip-meta span { background: #e8f2ff; color: #0064d2; font-size: 11px; font-weight: 500; text-transform: none; }
+  .tip-footer, .open-icon { color: #68686e; font-size: 12px; font-weight: 400; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+}

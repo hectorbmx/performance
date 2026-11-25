@@ -1,4 +1,4 @@
-<ion-modal [isOpen]="isOpen" (didDismiss)="close()">
+<ion-modal [isOpen]="isOpen" (willDismiss)="cancelDictation()" (didDismiss)="close()">
   <ng-template>
     <ion-header>
       <ion-toolbar>
@@ -79,18 +79,36 @@
         <div class="dictation-field">
           <ion-item>
             <ion-label position="stacked">Notas</ion-label>
-            <ion-textarea #trainingNotes rows="3" [(ngModel)]="form.notes"></ion-textarea>
+            <ion-textarea rows="3" [(ngModel)]="form.notes"></ion-textarea>
           </ion-item>
-          <ion-button class="dictation-button" fill="clear" size="small" (click)="focusTrainingNotes()" aria-label="Dictar notas">
-            <ion-icon slot="icon-only" name="mic-outline"></ion-icon>
+          <ion-button class="dictation-button" fill="clear" size="small" (click)="toggleDictation('notes')"
+            [disabled]="saving || (!!dictation && (dictation.target !== 'notes' || !dictation.stop))"
+            [attr.aria-label]="dictation?.target === 'notes' ? 'Finalizar dictado de notas' : 'Dictar notas'">
+            <ion-icon slot="icon-only" [name]="dictation?.target === 'notes' ? 'stop-circle-outline' : 'mic-outline'"></ion-icon>
           </ion-button>
         </div>
 
         <div class="cover-image-picker">
-          <label for="training-cover-image">Imagen de portada</label>
+          <div role="group" aria-label="Portadas de entrenamiento">
+            <button type="button" class="cover-default" [disabled]="saving"
+              [attr.aria-pressed]="!selectedCover && !form.cover_image"
+              (click)="selectCover(null, coverInput)">
+              {{ editMode ? 'Conservar portada' : 'Portada automática' }}
+            </button>
+            <div class="cover-options">
+              <button *ngFor="let cover of workoutCovers" type="button" [disabled]="saving"
+                [attr.aria-pressed]="selectedCover === cover" (click)="selectCover(cover, coverInput)">
+                <img [src]="cover.src" alt="" loading="lazy">
+                <span>{{ cover.name }}</span>
+              </button>
+            </div>
+          </div>
+          <label for="training-cover-image">Subir una imagen propia</label>
           <input
+            #coverInput
             id="training-cover-image"
             type="file"
+            [disabled]="saving"
             accept="image/jpeg,image/png,image/webp"
             (change)="setCoverImage($event)" />
           <span *ngIf="form.cover_image">{{ form.cover_image.name }}</span>
@@ -234,53 +252,24 @@
           <div class="dictation-field">
             <ion-item>
               <ion-label position="stacked">Descripcion</ion-label>
-              <ion-textarea #sectionDescription rows="2" [(ngModel)]="section.description"></ion-textarea>
+              <ion-textarea rows="2" [(ngModel)]="section.description"></ion-textarea>
             </ion-item>
-            <ion-button class="dictation-button" fill="clear" size="small" (click)="focusSectionDescription(i)" aria-label="Dictar descripcion">
-              <ion-icon slot="icon-only" name="mic-outline"></ion-icon>
+            <ion-button class="dictation-button" fill="clear" size="small" (click)="toggleDictation(section)"
+              [disabled]="saving || (!!dictation && (dictation.target !== section || !dictation.stop))"
+              [attr.aria-label]="dictation?.target === section ? 'Finalizar dictado de descripción' : 'Dictar descripción'">
+              <ion-icon slot="icon-only" [name]="dictation?.target === section ? 'stop-circle-outline' : 'mic-outline'"></ion-icon>
             </ion-button>
           </div>
 
-          <ion-item>
-            <ion-label position="stacked">Video URL</ion-label>
-            <ion-input [(ngModel)]="section.video_url" placeholder="https://..."></ion-input>
-          </ion-item>
-
-          <div class="section-video-file">
-            <label for="section-video-{{ i }}">Video MP4 (máximo 10 MB)</label>
-            <input
-              [id]="'section-video-' + i"
-              type="file"
-              accept="video/mp4"
-              (change)="setSectionVideoFile(section, $event)" />
-            <span *ngIf="section.video_file">{{ section.video_file.name }}</span>
-            <small>Si seleccionas un archivo, Laravel lo usará como video principal.</small>
-          </div>
-
-          <div class="library-picker">
-            <div class="library-picker-head">
-              <div>
-                <h4>Videos de biblioteca</h4>
-                <p>Selecciona videos reutilizables para esta sección.</p>
-              </div>
-              <span>{{ section.library_video_ids?.length ?? 0 }} seleccionados</span>
-            </div>
-            <ion-input
-              class="library-search"
-              [(ngModel)]="librarySearch"
-              placeholder="Buscar video por nombre"></ion-input>
-            <ion-select
-              multiple="true"
-              [(ngModel)]="section.library_video_ids"
-              interface="popover"
-              placeholder="Seleccionar videos">
-              <ion-select-option *ngFor="let video of filteredLibraryVideos()" [value]="video.id">
-                {{ video.name }} · {{ video.source === 'upload' ? 'Dispositivo' : 'YouTube' }}
-              </ion-select-option>
-            </ion-select>
-            <p class="library-empty" *ngIf="libraryVideos.length === 0">
-              No hay videos disponibles en la biblioteca.
-            </p>
+          <div class="section-media-actions">
+            <button type="button" (click)="openVideoPicker(section)">
+              <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>
+              <span>Video de la sección<small *ngIf="section.video_file || section.video_url">{{ section.video_file?.name || 'Enlace agregado' }}</small></span>
+            </button>
+            <button type="button" (click)="openLibraryPicker(section)">
+              <ion-icon name="videocam-outline" aria-hidden="true"></ion-icon>
+              <span>Biblioteca<small *ngIf="section.library_video_ids?.length">{{ section.library_video_ids?.length }} seleccionados</small></span>
+            </button>
           </div>
 
           <div class="two-col">
@@ -381,12 +370,95 @@
           </ion-button>
         </div>
 
-        <ion-button expand="block" (click)="createTraining()" [disabled]="saving">
+        <ion-button expand="block" (click)="createTraining()" [disabled]="saving || !!dictation">
           <ion-spinner *ngIf="saving" slot="start" name="crescent"></ion-spinner>
           <ion-icon *ngIf="!saving" slot="start" name="save-outline"></ion-icon>
           {{ saving ? 'Guardando...' : 'Guardar entrenamiento' }}
         </ion-button>
       </section>
     </ion-content>
+
+    <ion-modal [isOpen]="!!videoPicker" (didDismiss)="videoPicker = null">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Video de la sección</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="videoPicker = null" aria-label="Cancelar">
+                <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="modal-content ion-padding">
+          <ng-container *ngIf="videoPicker as picker">
+            <div class="section-media-actions">
+              <button type="button" (click)="cameraInput.click()">
+                <ion-icon name="camera-outline" aria-hidden="true"></ion-icon>
+                <span>Grabar video</span>
+              </button>
+              <button type="button" (click)="videoInput.click()">Elegir archivo</button>
+            </div>
+            <input #cameraInput hidden type="file" accept="video/*" capture="environment" (change)="setSectionVideoFile($event)">
+            <input #videoInput hidden type="file" accept="video/mp4,video/quicktime,.mp4,.mov" (change)="setSectionVideoFile($event)">
+            <p class="media-hint">MP4 o MOV, máximo 10 MB.</p>
+            <p class="media-error" role="alert" *ngIf="picker.error">{{ picker.error }}</p>
+            <div class="selected-video" *ngIf="picker.file">
+              <span>{{ picker.file.name }}</span>
+              <ion-button fill="clear" color="danger" (click)="picker.file = null; picker.error = null">Quitar</ion-button>
+            </div>
+            <ion-item>
+              <ion-input label="O pega un enlace de video" labelPlacement="stacked"
+                type="url" [(ngModel)]="picker.url" placeholder="https://..."></ion-input>
+            </ion-item>
+            <ion-button expand="block" (click)="applyVideoPicker()" [disabled]="!!picker.error">Aplicar</ion-button>
+          </ng-container>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
+
+    <ion-modal [isOpen]="!!libraryPicker" (didDismiss)="closeLibraryPicker()">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Videos de biblioteca</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="closeLibraryPicker()" aria-label="Cancelar">
+                <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="modal-content ion-padding">
+          <ng-container *ngIf="libraryPicker as picker">
+            <ion-input class="library-search" type="search" [debounce]="300" aria-label="Buscar video por nombre"
+              placeholder="Buscar video por nombre" (ionInput)="searchLibrary($event.detail.value ?? '')"></ion-input>
+            <div class="library-results">
+              <label *ngFor="let video of libraryVideos">
+                <input type="checkbox" [checked]="picker.selected.has(video.id)"
+                  (change)="toggleLibraryVideo(video.id, $any($event.target).checked)">
+                <span>{{ video.name }}<small>{{ video.source === 'upload' ? 'Dispositivo' : 'YouTube' }}</small></span>
+              </label>
+            </div>
+            <p *ngIf="libraryLoading" class="media-hint" role="status">Cargando videos…</p>
+            <ng-container *ngIf="libraryError">
+              <p class="media-error" role="alert">No se pudo cargar la biblioteca.</p>
+              <ion-button fill="clear" (click)="loadLibraryPage()">Reintentar</ion-button>
+            </ng-container>
+            <p *ngIf="!libraryLoading && !libraryError && libraryVideos.length === 0" class="media-hint">
+              {{ librarySearch ? 'No se encontraron videos.' : 'No hay videos en la biblioteca.' }}
+            </p>
+            <ion-button *ngIf="libraryHasMore && !libraryError" fill="clear" [disabled]="libraryLoading" (click)="loadLibraryPage()">
+              Cargar más
+            </ion-button>
+          </ng-container>
+        </ion-content>
+        <ion-footer *ngIf="libraryPicker as picker">
+          <ion-toolbar>
+            <ion-button expand="block" (click)="applyLibraryPicker()">Aplicar ({{ picker.selected.size }})</ion-button>
+          </ion-toolbar>
+        </ion-footer>
+      </ng-template>
+    </ion-modal>
   </ng-template>
 </ion-modal>

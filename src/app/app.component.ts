@@ -1,4 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AuthService } from './services/auth.service';
+import { WorkoutOfflineService } from './services/workout-offline.service';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular/standalone';
@@ -9,9 +12,20 @@ import { Preferences } from '@capacitor/preferences';
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
-  imports: [IonApp, IonRouterOutlet],
+  imports: [CommonModule, IonApp, IonRouterOutlet],
 })
-export class AppComponent implements OnInit { // Añade implements OnInit por buena práctica
+export class AppComponent implements OnInit, OnDestroy { // Añade implements OnInit por buena práctica
+  readonly workoutSync = inject(WorkoutOfflineService);
+  readonly auth = inject(AuthService);
+  private foregroundHandle?: {remove:()=>Promise<void>};
+  private readonly refreshAuth = () => { void this.auth.revalidateSession().catch(()=>undefined); };
+  async retrySession():Promise<void>{await this.auth.revalidateSession();}
+  async closeSession():Promise<void>{try{await this.auth.logout();}finally{await this.router.navigateByUrl('/login',{replaceUrl:true});}}
+  ngOnDestroy():void {
+    window.removeEventListener('online',this.refreshAuth);window.removeEventListener('focus',this.refreshAuth);
+    window.removeEventListener('app:membership-expired',this.handleMembershipExpired);
+    void this.foregroundHandle?.remove();
+  }
   private handlingMembershipExpired = false;
 
   constructor(
@@ -22,6 +36,8 @@ export class AppComponent implements OnInit { // Añade implements OnInit por bu
 
   ngOnInit() {
     window.addEventListener('app:membership-expired', this.handleMembershipExpired);
+    window.addEventListener('online',this.refreshAuth);window.addEventListener('focus',this.refreshAuth);
+    void App.addListener('appStateChange',state=>{if(state.isActive)this.refreshAuth();}).then(handle=>{this.foregroundHandle=handle;});
     this.pushRegistration.init();
     void this.installDeepLinkListener();
   }

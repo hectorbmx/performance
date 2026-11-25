@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { IonIcon, IonSpinner } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { calendarOutline, chevronBackOutline, chevronForwardOutline, flashOutline } from 'ionicons/icons';
@@ -26,7 +26,7 @@ type CalendarCell = {
   templateUrl: './athlete-activity-calendar.component.html',
   styleUrls: ['./athlete-activity-calendar.component.scss'],
 })
-export class AthleteActivityCalendarComponent {
+export class AthleteActivityCalendarComponent implements OnChanges {
   @Input() days: ActivityCalendarDayDTO[] = [];
   @Input() month = this.currentMonth();
   @Input() loading = false;
@@ -56,7 +56,17 @@ export class AthleteActivityCalendarComponent {
     return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  get cells(): CalendarCell[] {
+  cells: CalendarCell[] = [];
+
+  ngOnChanges(): void {
+    this.cells = this.buildCells();
+  }
+
+  trackCell(index: number, cell: CalendarCell): string | number {
+    return cell.date ?? index;
+  }
+
+  private buildCells(): CalendarCell[] {
     const date = this.monthDate();
     const year = date.getFullYear();
     const monthIndex = date.getMonth();

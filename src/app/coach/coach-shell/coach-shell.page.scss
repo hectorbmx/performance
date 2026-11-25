@@ -112,3 +112,10 @@ h2 {
     --color-selected: #60a5fa;
   }
 }
+
+.coach-tabs {
+  ion-tab-bar { --background: #fff; --border: 1px solid #dddfe8; padding-top: 5px; min-height: 64px; }
+  ion-tab-button { --color: #70768a; --color-selected: #3054d7; }
+  ion-tab-button ion-icon { font-size: 23px; }
+  ion-tab-button ion-label { font-size: 9px; margin-top: 4px; }
+}

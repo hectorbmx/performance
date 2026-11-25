@@ -51,6 +51,7 @@ export class CoachAthleteCalendarPage {
   athleteId = 0;
   trainings: CoachAthleteTrainingDTO[] = [];
   loading = false;
+  calendarDays: ActivityCalendarDayDTO[] = [];
   calendarMonth = this.currentMonth();
   selectedCalendarDate: string | null = null;
   selectedTraining: CoachAthleteTrainingDTO | null = null;
@@ -80,6 +81,7 @@ export class CoachAthleteCalendarPage {
     this.loading = true;
     try {
       this.trainings = await this.athletesApi.trainings(this.athleteId);
+      this.updateCalendarDays();
     } catch (err: any) {
       await this.toast(err?.message ?? 'No se pudieron cargar los entrenamientos.', 'danger');
     } finally {
@@ -87,16 +89,18 @@ export class CoachAthleteCalendarPage {
     }
   }
 
-  calendarDays(): ActivityCalendarDayDTO[] {
+  private updateCalendarDays(): void {
     const byDate = new Map<string, CoachAthleteTrainingDTO[]>();
 
     for (const training of this.trainings) {
       const date = training.scheduled_for;
       if (!date || !date.startsWith(this.calendarMonth)) continue;
-      byDate.set(date, [...(byDate.get(date) ?? []), training]);
+      const items = byDate.get(date) ?? [];
+      items.push(training);
+      byDate.set(date, items);
     }
 
-    return Array.from(byDate.entries()).map(([date, items]) => {
+    this.calendarDays = Array.from(byDate.entries()).map(([date, items]) => {
       const completed = items.filter((item) => item.status === 'completed').length;
       const status: ActivityCalendarDayStatus = completed === items.length
         ? 'completed'
@@ -118,6 +122,7 @@ export class CoachAthleteCalendarPage {
 
   changeCalendarMonth(month: string): void {
     this.calendarMonth = month;
+    this.updateCalendarDays();
     this.selectedCalendarDate = null;
   }
 

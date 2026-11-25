@@ -1,3 +1,4 @@
+@use '../athlete-design' as athlete;
 .home-content {
   --background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 100%);
 }
@@ -348,23 +349,65 @@
 /* ================================
    EMPTY STATE
 ================================ */
-.empty-state {
+.empty-workouts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding: 60px 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 20px;
+  padding: 20px 16px 24px;
+  background: #fff;
+  border-radius: 22px;
   margin-bottom: 30px;
+  color: #68686e;
 
-  ion-icon {
-    font-size: 64px;
-    color: rgba(255, 255, 255, 0.2);
-    margin-bottom: 16px;
+  &__art {
+    display: block;
+    margin-bottom: 8px;
   }
 
-  p {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 14px;
+  &__title {
     margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  &__subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+  }
+
+  &__calendar {
+    transform-origin: 60px 82px;
+    animation: empty-calendar-wobble 2.4s ease-in-out infinite;
+  }
+
+  &__tear {
+    animation: empty-calendar-tear 2s ease-in infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__calendar,
+    &__tear {
+      animation: none;
+    }
+  }
+}
+
+@keyframes empty-calendar-wobble {
+  50% { transform: rotate(-4deg); }
+}
+
+@keyframes empty-calendar-tear {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  20% { opacity: 1; }
+
+  100% {
+    transform: translateY(16px);
+    opacity: 0;
   }
 }
 
@@ -795,3 +838,44 @@ ion-modal.notif-sheet::part(content) {
   border-radius: 18px 18px 0 0;
   overflow: hidden;
 }
+
+@include athlete.base;
+
+.home-header { padding-top: var(--ion-safe-area-top, 0px); margin-bottom: 24px; gap: 12px; align-items: center; }
+.user-greeting { min-width: 0; gap: 12px; }
+.avatar-wrapper { width: 60px; height: 60px; border: 2px solid #fff; background: #e8f2ff; box-shadow: 0 2px 8px #0000000a; }
+.greeting-label { color: #68686e; font-size: 12px; letter-spacing: .03em; }
+.user-name { color: #1c1c1e; font-size: 22px; line-height: 1.18; }
+.header-actions { gap: 6px; }
+.streak-chip, .notification-icon { background: #fff; border: 0; border-radius: 50%; color: #007aff; width: 48px; height: 48px; flex: 0 0 48px; }
+.streak-chip { padding: 0 5px; gap: 3px; }
+.streak-chip ion-icon, .notification-icon > ion-icon { width: 26px; height: 26px; font-size: 26px; flex: 0 0 26px; color: #007aff; }
+.streak-chip span { min-width: 8px; font-size: 13px; }
+.notification-badge { top: 1px; right: 1px; min-width: 18px; height: 18px; line-height: 18px; font-size: 11px; border: 2px solid #fff; box-sizing: content-box; }
+.greeting-text { min-width: 0; }
+.calendar-strip { gap: 8px; margin-bottom: 20px; }
+.day-item { background: #fff; border: 0; border-radius: 18px; box-shadow: none; min-height: 72px; }
+.day-number { color: #1c1c1e; font-size: 22px; font-weight: 600; }
+.day-name { color: #68686e; font-size: 13px; }
+.day-item.active { background: #007aff; box-shadow: 0 4px 12px #007aff24; }
+.day-item.active .day-number, .day-item.active .day-name { color: #fff; }
+.section-header { margin-top: 28px; margin-bottom: 12px; gap: 10px; }
+.section-title { color: #1c1c1e; font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+.view-details { color: #007aff; font-size: 14px; min-height: 44px; display: inline-flex; align-items: center; }
+.tip-preview-card, .performance-card, .upcoming-item { background: #fff; border: 0; border-radius: 20px; box-shadow: none; }
+.tip-preview-card { padding: 16px; }
+.tip-preview-bg { opacity: .06; }
+.tip-preview-main h3, .upcoming-name { color: #1c1c1e; font-size: 17px; font-weight: 600; }
+.tip-preview-main p, .upcoming-date { color: #68686e; font-size: 14px; line-height: 1.45; }
+.tip-preview-meta span { background: #e8f2ff; color: #0064d2; font-size: 11px; text-transform: none; }
+.performance-card { min-width: 0; padding: 16px 8px; }
+.progress-value { color: #1c1c1e; font-size: 26px; }
+.progress-label, .performance-copy { color: #68686e; font-size: 12px; }
+.workout-card { border-radius: 24px; border: 0; box-shadow: none; }
+@media (max-width: 360px) { .home-header { flex-wrap: wrap; } .header-actions { margin-left: auto; } }
+.tip-preview-card::after { background: transparent; }
+.tip-preview-main h4 { color: #1c1c1e; font-size: 17px; font-weight: 600; }
+.tip-preview-main small { color: #68686e; font-size: 12px; }
+.tips-preview-loading, .tips-preview-empty { background: #fff; color: #68686e; border: 0; }
+.progress-bg { stroke: #e5e5ea; }
+.progress-label { letter-spacing: 0; text-transform: none; }

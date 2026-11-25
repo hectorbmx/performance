@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
+import { authStorageKey } from './auth-storage';
 import { environment } from 'src/environments/environment';
 import { Preferences } from '@capacitor/preferences';
 
@@ -129,26 +130,33 @@ export class ApiService {
 
   async setToken(token: string, persistent: boolean = true): Promise<void> {
     if (persistent) {
-      sessionStorage.removeItem('auth_token');
-      await Preferences.set({ key: 'auth_token', value: token });
+      sessionStorage.removeItem(authStorageKey('auth_token'));
+      await Preferences.set({ key: authStorageKey('auth_token'), value: token });
       return;
     }
 
-    sessionStorage.setItem('auth_token', token);
-    await Preferences.remove({ key: 'auth_token' });
+    sessionStorage.setItem(authStorageKey('auth_token'), token);
+    await Preferences.remove({ key: authStorageKey('auth_token') });
   }
 
   async getToken(): Promise<string | null> {
-    const sessionToken = sessionStorage.getItem('auth_token');
+    const sessionToken = sessionStorage.getItem(authStorageKey('auth_token'));
     if (sessionToken) return sessionToken;
 
-    const { value } = await Preferences.get({ key: 'auth_token' });
+    const { value } = await Preferences.get({ key: authStorageKey('auth_token') });
     return value ?? null;
   }
 
   async clearToken(): Promise<void> {
-    sessionStorage.removeItem('auth_token');
-    await Preferences.remove({ key: 'auth_token' });
+    sessionStorage.removeItem(authStorageKey('auth_token'));
+    await Preferences.remove({ key: authStorageKey('auth_token') });
+  }
+
+  async revokeToken(path: 'coach/logout' | 'app/logout', token: string): Promise<void> {
+    // Pin the old credential; a late response must not affect a subsequent login.
+    await firstValueFrom(this.http.post(this.normalizeUrl(path), {}, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+    }).pipe(timeout(5000)));
   }
 
 private async buildHeaders(
@@ -219,7 +227,7 @@ private async buildHeaders(
         body: options?.body,
       });
 
-      return await firstValueFrom(obs);
+      return await firstValueFrom(obs.pipe(timeout(20000)));
     } catch (err) {
       throw this.normalizeError(err, {
         suppressMembershipRedirect: options?.suppressMembershipRedirect ?? false,
@@ -264,7 +272,7 @@ private async buildHeaders(
         responseType: 'blob',
       });
 
-      return await firstValueFrom(obs);
+      return await firstValueFrom(obs.pipe(timeout(20000)));
     } catch (err) {
       throw this.normalizeError(err, {
         suppressMembershipRedirect: options?.suppressMembershipRedirect ?? false,
@@ -298,7 +306,7 @@ private async buildHeaders(
       const msg =
         err.error?.message ||
         (typeof err.error === 'string' ? err.error : null) ||
-        `HTTP ${err.status}: ${err.statusText || 'Error'}`;
+        (err.status === 0 ? 'No se pudo conectar con el servidor. Revisa la conexión o la dirección de la API.' : `HTTP ${err.status}: ${err.statusText || 'Error'}`);
 
       const e = new Error(msg) as ApiError;
       e.status = err.status;

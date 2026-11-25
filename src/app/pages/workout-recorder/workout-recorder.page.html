@@ -1,0 +1,218 @@
+<ion-header><ion-toolbar>
+  <ion-buttons slot="start"><ion-back-button defaultHref="/tabs/gym"></ion-back-button></ion-buttons>
+  <ion-title>Registro de series</ion-title>
+</ion-toolbar></ion-header>
+<ion-content>
+  <main>
+    <nav aria-label="Tipo de sesiones">
+      <ion-button fill="clear" (click)="showScope('personal')">Mis rutinas</ion-button>
+      <ion-button *ngIf="workouts.hasAssigned()" fill="clear" (click)="showScope('assigned')">Asignadas por coach</ion-button>
+    </nav>
+    <p role="status" *ngIf="workouts.migrationNotice()">{{workouts.migrationNotice()}} <ion-button fill="clear" (click)="workouts.retry()">Reintentar recuperación</ion-button></p>
+    <p role="alert" class="error" *ngIf="error || workouts.error()">{{ error || workouts.error() }}</p>
+    <p role="status" *ngIf="message">{{ message }}</p>
+    <section *ngIf="assignment && !current()">
+      <h2>Preparar entrenamiento</h2>
+      <p>Se descargará una copia de los ejercicios y series para esta sesión.</p>
+      <ion-button (click)="start()" [disabled]="busy || !workouts.state()">Iniciar una sesión nueva</ion-button>
+    </section>
+    <ng-container *ngIf="current() as session">
+      <h1 class="sr-only">{{ session.execution.prescription.content.title }}</h1>
+      
+      <section class="routine-section" *ngFor="let section of sections(); trackBy: trackUuid">
+        <h2 class="sr-only">{{ section.name }}</h2><p class="description" *ngIf="section.description">{{ section.description }}</p>
+        <article class="exercise-card" *ngFor="let exercise of section.exercises; let index=index; trackBy: trackUuid">
+          <div class="exercise-heading"><p class="exercise-number">Ejercicio {{index+1}}</p>
+          <h3>{{ exercise.name }}</h3><p *ngIf="exercise.notes">{{ exercise.notes }}</p>
+          <div class="exercise-progress">
+            <div class="progress-segments" role="img" [attr.aria-label]="exerciseProgress()[exercise.uuid]+' de '+exercise.sets.length+' series completadas'">
+              <span *ngFor="let set of exercise.sets; trackBy:trackUuid" [class.done]="session.records[set.uuid]?.values?.status==='completed'"></span>
+            </div><span>{{exerciseProgress()[exercise.uuid]}} de {{exercise.sets.length}} series</span>
+          </div>
+          <ion-button class="replace-button" *ngIf="session.execution.prescription.content.source==='athlete_generated' && session.execution.status==='in_progress' && !closing() && !substitution()" fill="outline" size="small" (click)="chooseReplacement(exercise.uuid)" [disabled]="busy">Sustituir ejercicio sin comenzar</ion-button>
+          </div>
+          <div *ngIf="replacementTarget===exercise.uuid && !substitution()">
+            <label>Alternativa<select [(ngModel)]="replacementId"><option [ngValue]="0">Elegir</option><option *ngFor="let candidate of replacementOptions" [ngValue]="candidate.id">{{ candidate.names.es }}</option></select></label>
+            <p>Se propondrán 3 series de 8–12 reps, RIR 2 y descanso de 90 segundos; peso por definir.</p>
+            <ion-button size="small" (click)="replaceExercise()" [disabled]="busy || !replacementId">Confirmar sustitución</ion-button>
+            <ion-button fill="clear" (click)="replacementTarget=null">Cancelar</ion-button>
+          </div>
+
+          <div class="set" *ngFor="let set of exercise.sets; trackBy: trackUuid"
+            [class.is-completed]="session.records[set.uuid]?.values?.status==='completed'"
+            [class.is-next]="nextSeries()[set.uuid] && session.execution.status==='in_progress'"
+            [class.has-error]="session.records[set.uuid]?.sync==='error' || session.records[set.uuid]?.sync==='conflict'">
+            <div class="set-heading">
+              <span class="set-number">{{set.set_number}}</span>
+              <div class="set-title"><strong>Serie {{set.set_number}}</strong><span>{{set.prescribed.reps_min}}–{{set.prescribed.reps_max}} reps<span *ngIf="session.records[set.uuid]"> · RIR {{set.prescribed.rir ?? '—'}} · {{set.prescribed.rest_seconds ?? '—'}} s</span></span></div>
+              <span class="status-badge" [class.completed-badge]="session.records[set.uuid]?.values?.status==='completed'" [class.next-badge]="nextSeries()[set.uuid]">
+                {{session.records[set.uuid] ? (session.records[set.uuid].values.status==='completed' ? '✓ Completada' : session.records[set.uuid].values.status==='failed' ? 'Fallida' : 'Omitida') : nextSeries()[set.uuid] && session.execution.status==='in_progress' ? 'Siguiente' : 'Pendiente'}}
+              </span>
+            </div>
+            <div class="target-chips" *ngIf="!session.records[set.uuid]">
+              <span *ngIf="set.prescribed.rir != null">◎ RIR objetivo {{set.prescribed.rir}}</span>
+              <span *ngIf="set.prescribed.rest_seconds != null">◷ Descanso {{set.prescribed.rest_seconds}} s</span>
+            </div>
+            <p class="prescribed-load" *ngIf="set.prescribed.load as load">Programado: {{load.value}} {{load.unit}}</p>
+            <p class="prescribed-load" *ngIf="set.prescribed.percentage != null">Programado: {{set.prescribed.percentage}}%</p>
+            <ng-container *ngIf="session.records[set.uuid] as record">
+              <div class="record-metrics">
+                <div><strong>{{record.values.actual_reps ?? '—'}}</strong><span>reps</span></div>
+                <div><strong>{{record.values.actual_load===null ? '—' : (record.values.actual_load | number:'1.0-2')}}</strong><span>{{record.values.load_unit || 'sin carga'}}</span></div>
+                <div><strong>{{record.values.actual_rir===null ? '—' : (record.values.actual_rir | number:'1.0-1')}}</strong><span>RIR</span></div>
+              </div>
+              <p class="record-note" *ngIf="record.values.notes">{{record.values.notes}}</p>
+              <div class="set-footer">
+              <p class="state" [class.error]="record.sync === 'error' || record.sync === 'conflict'">
+                {{ record.sync === 'synced' ? '✓ Sincronizada' : record.sync === 'pending' ? '◷ Guardada · pendiente de envío' : record.sync === 'conflict' ? 'Conflicto de sincronización' : 'Error al sincronizar' }}
+              </p>
+                <ion-button class="edit-button" size="small" fill="clear" (click)="edit(set)" [disabled]="busy || !!closing() || !!substitution() || record.sync==='conflict' || session.execution.status!=='in_progress'">✎ Editar serie</ion-button>
+              </div>
+              <div role="alert" class="record-error" *ngIf="record.message"><strong>No se pudo sincronizar esta serie</strong><p>{{ record.message }}</p><p>{{record.sync==='conflict' ? 'Compara ambas versiones y elige cómo resolver el conflicto.' : 'Tus datos siguen guardados en este dispositivo. Pulsa «Editar serie» para corregirlos.'}}</p></div>
+              <div class="conflict" *ngIf="record.sync === 'conflict'">
+                <p><strong>Tu registro:</strong> {{ summary(record.values) }}</p>
+                <p><strong>En el servidor:</strong> {{ summary(record.remote) }}</p>
+                <ion-button size="small" (click)="resolve(set.uuid, true)" [disabled]="busy">Enviar mi registro como corrección</ion-button>
+                <ion-button size="small" fill="outline" (click)="resolve(set.uuid, false)" [disabled]="busy">Usar registro del servidor</ion-button>
+              </div>
+            </ng-container>
+            <ion-button *ngIf="!session.records[set.uuid]" class="register-button" [class.next-action]="nextSeries()[set.uuid]" expand="block" (click)="edit(set)" [disabled]="busy || !!closing() || !!substitution() || session.execution.status!=='in_progress'">Registrar serie</ion-button>
+
+          </div>
+          <p *ngIf="!exercise.sets.length">Sin series programadas.</p>
+        </article>
+      </section>
+      <ng-container *ngIf="measured() as summary">
+      <section *ngIf="summary.registered > 0; else noSeriesYet">
+        <h2>Resumen registrado</h2>
+        <p>Adherencia de series: {{summary.completed}} / {{summary.prescribed}} completadas ({{summary.seriesAdherencePercent ?? 0}} %). Finalizar la sesión no completa las series faltantes.</p>
+        <p *ngIf="summary.includesPending">Incluye cambios guardados en este dispositivo que aún no están sincronizados.</p>
+        <p>{{ summary.workCompleted }} series de trabajo completadas · {{ summary.reps }} repeticiones realizadas</p>
+        <p><strong>Volumen de carga: {{ summary.tonnage === null ? 'Sin carga registrada' : (summary.tonnage | number:'1.0-3') + ' kg' }}</strong></p>
+        <p *ngIf="!summary.complete">Total parcial: {{ summary.missingLoad }} series sin carga y {{ summary.unrecorded }} sin registrar.</p>
+        <p *ngIf="summary.tonnage !== null">Trabajo: {{ summary.workTonnage | number:'1.0-3' }} kg · Aproximación: {{ summary.warmupTonnage | number:'1.0-3' }} kg</p>
+        <p>Volumen de carga = peso × repeticiones registradas. No representa una medida de hipertrofia.</p>
+        <p *ngFor="let muscle of summary.directMuscleSeries | keyvalue">{{ muscle.key }}: {{ muscle.value }} series directas de trabajo completadas</p>
+        <p *ngIf="summary.unclassifiedWorkSets">{{ summary.unclassifiedWorkSets }} series sin clasificación muscular conservada.</p>
+        <p>Se cuentan músculos primarios del catálogo guardado; no se suman secundarios. Una serie puede tener varios primarios.</p>
+        <article *ngFor="let exercise of summary.exercises; trackBy: trackUuid">
+          <h3>{{ exercise.name }}</h3>
+          <p>{{ exercise.completed }} series completadas · {{ exercise.failed }} fallidas · {{ exercise.skipped }} omitidas</p>
+          <p>{{ exercise.tonnage === null ? 'Sin carga registrada' : (exercise.tonnage | number:'1.0-3') + ' kg' }}{{ exercise.complete ? '' : ' · parcial' }}</p>
+        </article>
+      </section>
+      <ng-template #noSeriesYet>
+        <section>
+          <h2>{{session.execution.status==='in_progress' ? 'Sesión lista para comenzar' : 'Sesión sin series registradas'}}</h2>
+          <p *ngIf="session.execution.status==='in_progress'">Tienes {{summary.prescribed}} series programadas. Abre la primera serie y guarda lo que realizaste; el resumen aparecerá después de tu primer registro.</p>
+          <p *ngIf="session.execution.status!=='in_progress'">Esta sesión terminó sin registros de series. No hay resultados para resumir.</p>
+        </section>
+      </ng-template>
+      </ng-container>
+      <section *ngIf="substitution() as pending">
+        <h2>Sustitución pendiente</h2><p>{{ pending.message || 'Reintenta para confirmar si el cambio llegó al servidor. Las series guardadas se conservan.' }}</p>
+        <ion-button (click)="retrySubstitution()" [disabled]="busy">Reintentar sustitución</ion-button>
+        <ion-button *ngIf="pending.conflict" fill="outline" (click)="reviewSubstitution()" [disabled]="busy">Revisar sesión del servidor</ion-button>
+      </section>
+      <section aria-live="polite">
+        <h2>Estado de la sesión</h2>
+        <p>{{ completionCounts().completed }} completadas · {{ completionCounts().failed }} fallidas · {{ completionCounts().skipped }} omitidas · {{ completionCounts().missing }} sin registrar</p>
+        <p *ngIf="session.execution.status === 'completed'">Sesión finalizada y confirmada por el servidor. {{ session.execution.completed_at | date:'short' }}</p>
+        <ng-container *ngIf="closing() as close">
+          <p>{{ close.state === 'pending' ? 'Finalización guardada en el dispositivo. Se enviará cuando todas las series pendientes estén sincronizadas.' : 'El servidor no confirmó la finalización.' }}</p>
+          <p role="alert" *ngIf="close.message">{{ close.message }}</p>
+          <ion-button *ngIf="!close.sent" fill="outline" (click)="cancelCompletion()" [disabled]="busy">Seguir registrando</ion-button>
+          <ion-button *ngIf="close.state !== 'pending'" fill="outline" (click)="reviewCompletion()" [disabled]="busy">Revisar sesión del servidor</ion-button>
+        </ng-container>
+        <ion-button *ngIf="session.execution.status === 'in_progress' && !closing() && !substitution()" (click)="complete()" [disabled]="busy">Finalizar sesión</ion-button>
+      </section>
+    </ng-container>
+    <details class="session-picker" [open]="!current()">
+      <summary>{{current() ? 'Cambiar de sesión' : 'Sesiones en este dispositivo'}}</summary>
+
+      <p *ngIf="!sessions().length">Abre un entrenamiento asignado y elige «Registrar series sin conexión» para preparar tu primera sesión.</p>
+      <button class="session" type="button" *ngFor="let item of sessions()" (click)="select(item.execution.uuid)" [class.selected]="selected() === item.execution.uuid">
+        <strong>{{ item.execution.prescription.content.title }}</strong>
+        <span>{{ item.execution.started_at | date:'short' }}</span>
+      </button>
+    </details>
+    <details class="sync-panel">
+      <summary>Sincronización · {{pending()}} series pendientes</summary>
+      <strong>{{ pending() }} series pendientes de sincronizar</strong>
+      <p>Las series guardadas permanecen en este dispositivo para tu cuenta. Una sesión nueva requiere conexión.</p>
+      <p *ngIf="workouts.syncing()">Sincronizando…</p>
+      <p class="error" *ngIf="workouts.state()?.blocked">{{ workouts.state()?.blocked }}</p>
+      <ion-button fill="outline" (click)="retry()" [disabled]="busy || workouts.syncing()">Sincronizar pendientes</ion-button>
+      <ion-button fill="clear" (click)="download()" [disabled]="busy">Recuperar sesiones del servidor</ion-button>
+    </details>
+  </main>
+</ion-content>
+
+<ion-modal [isOpen]="editing!==null" [canDismiss]="canDismissSeries" (didDismiss)="seriesModalDismissed()">
+  <ng-template>
+    <ion-header><ion-toolbar>
+      <ion-title>Registrar serie {{editingSetNumber}}</ion-title>
+      <ion-buttons slot="end"><ion-button (click)="cancel()" [disabled]="busy">Cerrar</ion-button></ion-buttons>
+    </ion-toolbar></ion-header>
+    <ion-content>
+      <main *ngIf="current() as session" class="series-modal-content">
+        <h2>{{editingExerciseName}}</h2>
+        <div class="modal-targets" *ngIf="editingPrescription as set">
+          <span><ion-icon name="repeat-outline" aria-hidden="true"></ion-icon>{{set.prescribed.reps_min}}–{{set.prescribed.reps_max}} reps</span>
+          <span *ngIf="set.prescribed.rir != null"><ion-icon name="speedometer-outline" aria-hidden="true"></ion-icon>RIR {{set.prescribed.rir}}</span>
+          <span *ngIf="set.prescribed.rest_seconds != null"><ion-icon name="time-outline" aria-hidden="true"></ion-icon>Descanso {{set.prescribed.rest_seconds}} s</span>
+        </div>
+        <p role="alert" class="record-error" *ngIf="error">{{error}}</p>
+        <form *ngIf="editing && !closing() && !substitution()" (ngSubmit)="save()">
+          <ng-container *ngIf="session.execution.prescription.content.source==='athlete_generated'">
+            <h3 class="form-group-title">Observaciones</h3>
+            <div class="form-group">
+              <label class="form-row toggle-row"><span>Reporto dolor para consultar la sugerencia</span><input type="checkbox" role="switch" name="pain" [(ngModel)]="advisoryPain" (ngModelChange)="advisory=null" [disabled]="busy"></label>
+              <label class="form-row toggle-row"><span>Reporto dificultad técnica</span><input type="checkbox" role="switch" name="technique" [(ngModel)]="advisoryTechnique" (ngModelChange)="advisory=null" [disabled]="busy"></label>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="form.status!=='skipped'">
+            <h3 class="form-group-title">Carga</h3>
+            <div class="form-group">
+              <ng-container *ngIf="previousLoad as previous">
+                <p class="form-caption">Serie anterior: {{previous.value}} {{previous.unit}} · {{loadLabel}}</p>
+                <label class="form-row"><span>¿Cómo sentiste el peso anterior?</span><select name="previousFeeling" [ngModel]="previousFeeling" (ngModelChange)="chooseFeeling($event)"><option value="">Selecciona una opción</option><option value="light">Ligero</option><option value="good">Bien</option><option value="heavy">Pesado</option></select></label>
+                <div class="load-decisions" *ngIf="previousFeeling">
+                  <button type="button" *ngIf="previousFeeling==='light'" (click)="changeLoad('up')" [disabled]="advisoryPain||advisoryTechnique">¿Quieres aumentar? Indica el nuevo peso</button>
+                  <button type="button" *ngIf="previousFeeling==='heavy'" (click)="changeLoad('down')" [disabled]="advisoryPain||advisoryTechnique">¿Quieres disminuir? Indica el nuevo peso</button>
+                  <button type="button" (click)="usePreviousLoad()">{{previousFeeling==='good'?'Mantener el mismo peso':'Conservar el peso anterior'}}</button>
+                </div>
+              </ng-container>
+              <ng-container *ngIf="editingLoadMode!=='unknown'">
+                <label class="form-row"><span>Registra el peso usado</span><input name="load" type="number" min="0" max="10000" step="0.01" inputmode="decimal" placeholder="Ej. 20" [(ngModel)]="form.actual_load" (ngModelChange)="dirty=true"></label>
+                <label class="form-row"><span>Unidad</span><select name="unit" [(ngModel)]="form.load_unit" (ngModelChange)="dirty=true;advisory=null"><option value="kg">kg</option><option value="lb">lb</option></select></label>
+              </ng-container>
+              <button class="form-row consult-action" type="button" *ngIf="false" (click)="consultLoad()" [disabled]="busy"><ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon><span>Consultar carga orientativa con historial sincronizado</span></button>
+            </div>
+            <p class="form-caption" *ngIf="form.load_mode==='total_barbell'">Incluye el peso de la barra. Deja vacío si no conoces la carga.</p>
+            <p class="form-caption" *ngIf="editingLoadMode==='unknown'">Ejercicio sin carga externa registrada.</p>
+            <div class="modal-info" *ngIf="advisory as a"><p>{{a.reason}} {{a.suggested_load ? 'Referencia: '+a.suggested_load.value+' '+a.suggested_load.unit : 'Peso por definir'}} · {{a.rule_version}}<span *ngIf="a.basis"> · base {{a.basis.kind}}, {{a.basis.confidence}}, {{a.basis.measured_at | date:'short'}}</span>. Registra solo lo que realmente realizaste.</p></div>
+          </ng-container>
+          <h3 class="form-group-title">Resultado</h3>
+          <div class="form-group">
+            <label class="form-row"><span>Estado</span><select name="status" [(ngModel)]="form.status" (ngModelChange)="dirty=true"><option value="completed">Completada</option><option value="failed">Fallida</option><option value="skipped">Omitida</option></select></label>
+            <label class="form-row"><span>Tipo</span><select name="type" [(ngModel)]="form.type" (ngModelChange)="dirty=true"><option value="work">Trabajo</option><option value="warmup">Aproximación</option></select></label>
+            <label class="form-row" *ngIf="form.status!=='skipped'"><span>Repeticiones realizadas</span><input name="reps" type="number" min="0" max="1000" step="1" inputmode="numeric" placeholder="Ej. 10" [(ngModel)]="form.actual_reps" (ngModelChange)="dirty=true"></label>
+          </div>
+          <ng-container *ngIf="form.status!=='skipped'">
+            <p class="modal-info" *ngIf="belowTarget()">Registraste menos repeticiones que el mínimo programado. Puedes guardar lo realizado y revisar la carga o el descanso antes de continuar.</p>
+            <h3 class="form-group-title">Esfuerzo</h3>
+            <div class="form-group"><label class="form-row"><span>Guía aproximada de esfuerzo</span><select (change)="effortChanged($event)"><option value="">Sin estimar</option><option value="easy">Fácil · RIR 4</option><option value="adequate">Adecuado · RIR 2</option><option value="hard">Difícil · RIR 1</option><option value="limit">Al límite · RIR 0</option></select></label></div>
+            <p class="form-caption">Es una ayuda para declarar tu esfuerzo; ajusta el RIR numérico si hace falta.</p>
+            <div class="form-group"><label class="form-row"><span>RIR real (opcional)</span><input name="rir" type="number" min="0" max="10" step="0.1" inputmode="decimal" placeholder="Sin indicar" [(ngModel)]="form.actual_rir" (ngModelChange)="dirty=true"></label></div>
+            <p class="form-caption">RIR: repeticiones que crees que podrías haber hecho antes del límite.</p>
+          </ng-container>
+          <label class="form-group-title" for="series-notes">Notas</label>
+          <textarea id="series-notes" class="modal-notes" name="notes" maxlength="2000" placeholder="Añade una nota" [(ngModel)]="form.notes" (ngModelChange)="dirty=true"></textarea>
+          <ion-button class="modal-save" expand="block" type="submit" [disabled]="busy"><ion-icon name="save-outline" slot="start" aria-hidden="true"></ion-icon>{{busy ? 'Guardando…' : 'Guardar en el dispositivo'}}</ion-button>
+          <ion-button class="modal-cancel" expand="block" type="button" fill="clear" (click)="cancel()" [disabled]="busy">Cancelar</ion-button>
+        </form>
+      </main>
+    </ion-content>
+  </ng-template>
+</ion-modal>

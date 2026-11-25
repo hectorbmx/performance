@@ -64,13 +64,15 @@
             />
             <span>Mantener sesion iniciada</span>
           </label>
-          <a href="#" class="forgot-link">Olvide mi contrasena</a>
+          <a routerLink="/recover-password" class="forgot-link">Olvidé mi contraseña</a>
         </div>
 
         <!-- Sign In Button -->
         <button type="submit" class="sign-in-btn">
           Iniciar sesion
         </button>
+        <p class="contact-text"><a routerLink="/register" class="contact-link">Crear mi cuenta de atleta</a></p>
+        <p class="contact-text"><a routerLink="/privacy" class="contact-link">Política de privacidad</a></p>
 
         <div class="biometric-divider" *ngIf="biometricLoginReady">
           <span>o</span>

@@ -1,6 +1,6 @@
 <ion-tabs>
   <ion-tab-bar slot="bottom">
-    <ion-tab-button tab="tab1" href="/tabs/tab1">
+    <ion-tab-button *ngIf="hasCoachService" tab="tab1" href="/tabs/tab1">
       
             <ion-icon name="home-outline"></ion-icon>
       <ion-label>HOME</ion-label>
@@ -12,15 +12,18 @@
       <ion-label>TIMER</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="library" href="/tabs/library">
+    <ion-tab-button *ngIf="hasCoachService" tab="library" href="/tabs/library">
       <ion-icon name="book-outline"></ion-icon>
       <ion-label>BIBLIOTECA</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="tips" href="/tabs/tips">
+    <ion-tab-button *ngIf="hasCoachService" tab="tips" href="/tabs/tips">
       <ion-icon name="newspaper-outline"></ion-icon>
       <ion-label>TIPS</ion-label>
     </ion-tab-button>
-    
+    <ion-tab-button tab="gym" href="/tabs/gym" aria-label="GYM: rutinas, sesiones y progreso">
+      <ion-icon name="barbell-outline"></ion-icon>
+      <ion-label>GYM</ion-label>
+    </ion-tab-button>
   </ion-tab-bar>
 </ion-tabs>

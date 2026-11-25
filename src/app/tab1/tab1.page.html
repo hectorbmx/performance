@@ -102,9 +102,9 @@
   <div class="workout-card" *ngFor="let item of todayItems" style="margin-bottom: 15px;">
     <div class="workout-image">
       <img
-        [src]="item?.training_session?.cover_image || fallbackCover"
-        alt="Workout"
-        (error)="onImgError($event)"
+        [src]="item.training_session.cover_image || workoutCoverForSession(item.training_session.id)"
+        alt=""
+        (error)="useWorkoutCoverOnError($event, workoutCoverForSession(item.training_session.id))"
       />
       <div class="live-badge" [ngClass]="item.source">
         {{ item.source === 'personal' ? 'PERSONAL' : (item.group ? 'GRUPAL' : 'LIBRE') }}
@@ -137,16 +137,23 @@
   </div>
 </div>
 
-<div class="empty-state" *ngIf="todayItems.length === 0 && !loading">
-  <ion-icon name="barbell-outline"></ion-icon>
-  <p>No hay entrenamientos para este día</p>
+<div class="empty-workouts" *ngIf="todayItems.length === 0 && !loading">
+  <svg class="empty-workouts__art" viewBox="0 0 120 100" width="130" height="100" aria-hidden="true">
+    <ellipse cx="60" cy="92" rx="26" ry="4" fill="#000" fill-opacity=".08"/>
+    <g class="empty-workouts__calendar">
+      <rect x="30" y="22" width="60" height="60" rx="8" fill="#fff" stroke="#2e86ff" stroke-width="3"/>
+      <path d="M31.5 38V30a6.5 6.5 0 0 1 6.5-6.5h44a6.5 6.5 0 0 1 6.5 6.5v8z" fill="#2e86ff"/>
+      <rect x="44" y="14" width="6" height="14" rx="3" fill="#1b3a66"/>
+      <rect x="70" y="14" width="6" height="14" rx="3" fill="#1b3a66"/>
+      <circle cx="50" cy="56" r="3" fill="#1b3a66"/>
+      <circle cx="70" cy="56" r="3" fill="#1b3a66"/>
+      <path d="M52 72Q60 65 68 72" fill="none" stroke="#1b3a66" stroke-width="2.5" stroke-linecap="round"/>
+      <path class="empty-workouts__tear" d="M50 60q-3 5 0 7q3-2 0-7z" fill="#5bb5ff"/>
+    </g>
+  </svg>
+  <p class="empty-workouts__title">No hay entrenamientos para este día</p>
+  <p class="empty-workouts__subtitle">Tu calendario está vacío por hoy</p>
 </div>
-
-    <!-- Empty State -->
-    <!-- <div class="empty-state" *ngIf="!today && !loading">
-      <ion-icon name="barbell-outline"></ion-icon>
-      <p>No workout scheduled for today</p>
-    </div> -->
 
     <!-- Tips -->
     <div class="section-header">

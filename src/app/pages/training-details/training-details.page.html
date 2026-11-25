@@ -24,9 +24,9 @@
         <div class="td-cover">
           <img
             class="td-cover-img"
-            [src]="detail.training_session.cover_image || fallbackCover"
-            alt="Cover"
-            (error)="onImgError($event)"
+            [src]="detail.training_session.cover_image || workoutCoverForSession(detail.training_session.id)"
+            alt=""
+            (error)="useWorkoutCoverOnError($event, workoutCoverForSession(detail.training_session.id))"
           />
           <div class="td-cover-overlay"></div>
         </div>
@@ -94,6 +94,10 @@
         </div>
       </section>
 
+      <section class="td-card" style="padding: 16px" *ngIf="assignmentId">
+        <ion-button expand="block" (click)="openOfflineRecorder()">Registrar series sin conexión</ion-button>
+        <p>Prepara una sesión conectada y continúa registrando sus series sin red.</p>
+      </section>
       <!-- SECTIONS -->
       <section class="td-section">
         <div class="td-section-header">

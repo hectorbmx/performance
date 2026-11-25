@@ -1,0 +1,46 @@
+<ion-header><ion-toolbar><ion-buttons slot="start"><ion-back-button [defaultHref]="'/coach/athletes/'+athleteId"></ion-back-button></ion-buttons><ion-title>Generador del atleta</ion-title></ion-toolbar></ion-header>
+<ion-content><main><h1>Permisos y catálogo revisado</h1>
+  <p role="alert" class="error" *ngIf="error">{{ error }}</p><p role="status" *ngIf="message">{{ message }}</p>
+  <section><h2>Permisos de este atleta</h2>
+    <p *ngIf="!settings.feature_enabled">El generador está desactivado en el servidor. Puedes guardar el permiso de este atleta; la activación general corresponde al administrador.</p>
+    <p *ngIf="settings.feature_enabled && !settings.executions_enabled">El inicio de sesiones está desactivado en el servidor.</p>
+    <p>Marca las opciones y pulsa «Guardar permisos y restricciones» para aplicarlas.</p>
+    <p role="status" *ngIf="permissionsDirty">Tienes cambios sin guardar.</p><p>Habilitar permite crear rutinas cuando el generador esté activo. No cambia el acceso al historial ni las sesiones existentes.</p>
+    <label class="check"><input type="checkbox" [(ngModel)]="settings.generator_enabled" (ngModelChange)="permissionsChanged()" [disabled]="busy"> Habilitar generador para este atleta</label>
+    <h3>Demandas excluidas</h3><p>Estas restricciones se aplican en el servidor. Son reglas de programación del coach, no diagnósticos automáticos.</p>
+    <label class="check" *ngFor="let item of meta['demand'];trackBy:trackCode"><input type="checkbox" [checked]="settings.blocked_demands.includes(item.code)" [disabled]="busy" (change)="toggleBlocked('blocked_demands',item.code,$event)"> {{ item.names.es }}</label>
+    <h3>Ejercicios excluidos</h3><label class="check" *ngFor="let exercise of catalog;trackBy:trackCode"><input type="checkbox" [checked]="settings.blocked_exercise_codes.includes(exercise.code)" [disabled]="busy" (change)="toggleBlocked('blocked_exercise_codes',exercise.code,$event)"> {{ exercise.names.es }} {{ exercise.scope==='global'?'(global)':'(privado)' }}</label>
+    <ion-button (click)="saveSettings()" [disabled]="busy">{{busy ? 'Guardando…' : 'Guardar permisos y restricciones'}}</ion-button>
+  </section>
+  <section><h2>Revisión del catálogo</h2>
+    <p>{{enabledExerciseCount}} ejercicios habilitados para este atleta en esta lista. ✓ Verde: habilitado. ✕ Roja: no habilitado; consulta el motivo.</p>
+    <p>Las marcas reflejan los permisos guardados. El equipo que el atleta elija para su sesión puede reducir las opciones disponibles.</p>
+    <p *ngIf="permissionsDirty">Guarda los cambios de permisos para actualizar las marcas.</p><p>Los globales son una clasificación inicial pendiente. Revisa sus datos y guarda una versión privada para tu catálogo antes de usarla con tus atletas.</p>
+    <button class="exercise" type="button" *ngFor="let exercise of catalog;trackBy:trackCode" (click)="open(exercise)" [class.is-selected]="selected?.id===exercise.id" [attr.aria-pressed]="selected?.id===exercise.id" [disabled]="busy"><strong>{{ exercise.names.es }}</strong><span>{{ exercise.scope==='global'?'Global':'Privado' }} · {{ exercise.review_status==='reviewed'?'Revisado':'Pendiente de revisión' }}{{ exercise.is_active?'':' · inactivo' }}</span>
+      <span *ngIf="availability[exercise.code] as state" class="exercise-status" [class.is-enabled]="state.enabled" [class.is-unavailable]="!state.enabled">
+        <span aria-hidden="true">{{state.enabled ? '✓' : '✕'}}</span>
+        {{state.enabled ? 'Habilitado para este atleta' : 'No habilitado: '+state.reasons.join(' · ')}}
+      </span>
+    </button>
+  </section>
+  <section *ngIf="selected" #exerciseEditor class="exercise-editor"><h2>{{ selected.scope==='global'?'Crear versión privada revisada':'Editar ejercicio privado' }}</h2>
+    <h3>{{selected.names.es}}</h3>
+    <p *ngIf="selected.scope==='global'">Se guardará una versión privada. El ejercicio global seguirá apareciendo por separado con su estado original.</p>
+    <label *ngIf="selected.scope==='global'">Código privado<input [(ngModel)]="editor.code" maxlength="80"></label>
+    <label>Nombre en español<input [(ngModel)]="editor.names.es" maxlength="160"></label><label>Nombre en inglés<input [(ngModel)]="editor.names.en" maxlength="160"></label>
+    <label>Modalidad de carga<select [(ngModel)]="editor.load_mode"><option value="total_barbell">Peso total de barra</option><option value="per_dumbbell">Por mancuerna</option><option value="external_total">Carga externa total</option><option value="machine_indicated">Valor indicado por máquina</option><option value="bodyweight">Peso corporal</option></select></label>
+    <label>Fatiga relativa orientativa<select [(ngModel)]="editor.fatigue"><option value="low">Baja</option><option value="moderate">Moderada</option><option value="high">Alta</option></select></label>
+    <label class="check"><input type="checkbox" [(ngModel)]="editor.unilateral"> Unilateral</label><label class="check"><input type="checkbox" [(ngModel)]="editor.is_active"> Activo</label>
+    <h3>Patrones</h3><label class="check" *ngFor="let item of meta['pattern'];trackBy:trackCode"><input type="checkbox" [checked]="editor.patterns.includes(item.code)" (change)="toggle('patterns',item.code,$event)"> {{ item.names.es }}</label>
+    <h3>Equipo requerido</h3><label class="check" *ngFor="let item of meta['equipment'];trackBy:trackCode"><input type="checkbox" [checked]="editor.equipment.includes(item.code)" (change)="toggle('equipment',item.code,$event)"> {{ item.names.es }}</label>
+    <h3>Músculos principales</h3><label class="check" *ngFor="let item of meta['muscle'];trackBy:trackCode"><input type="checkbox" [checked]="editor.primary_muscles.includes(item.code)" (change)="toggle('primary_muscles',item.code,$event)"> {{ item.names.es }}</label>
+    <h3>Músculos secundarios</h3><label class="check" *ngFor="let item of meta['muscle'];trackBy:trackCode"><input type="checkbox" [checked]="editor.secondary_muscles.includes(item.code)" (change)="toggle('secondary_muscles',item.code,$event)"> {{ item.names.es }}</label>
+    <h3>Demandas funcionales</h3><label class="check" *ngFor="let item of meta['demand'];trackBy:trackCode"><input type="checkbox" [checked]="editor.demands.includes(item.code)" (change)="toggle('demands',item.code,$event)"> {{ item.names.es }}</label>
+    <label>Notas<textarea [(ngModel)]="editor.notes" maxlength="4000"></textarea></label>
+    <p><strong>Al guardar: {{editor.review_status==='reviewed' ? 'Revisado por el coach' : 'Pendiente de revisión'}}</strong></p>
+    <label class="check"><input type="checkbox" [ngModel]="reviewed" (ngModelChange)="reviewChanged($event)" [disabled]="busy"> He revisado los músculos, patrón, equipo, modalidad, demandas y límites de esta variante. Marcar esta casilla la guardará como revisada.</label>
+    <p *ngIf="!reviewed">Puedes guardar un borrador pendiente; el atleta solo podrá elegir versiones revisadas, activas y permitidas.</p>
+    <ion-button (click)="saveExercise()" [disabled]="busy">{{busy ? 'Guardando…' : reviewed ? 'Guardar ejercicio revisado' : 'Guardar pendiente de revisión'}}</ion-button>
+    <ion-button fill="clear" (click)="selected=null" [disabled]="busy">Cancelar</ion-button>
+  </section>
+</main></ion-content>

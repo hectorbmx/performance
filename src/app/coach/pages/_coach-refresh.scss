@@ -1,0 +1,65 @@
+@mixin surface {
+  :host { --ion-color-primary: #3054d7; --ion-color-primary-rgb: 48, 84, 215; color: #10172c; }
+  :host > ion-header { box-shadow: none; background: #e1e7f7; }
+  :host > ion-header ion-toolbar { --background: #e1e7f7; --color: #3054d7; --border-width: 0; --min-height: 52px; padding-inline: 8px; }
+  :host > ion-header ion-title { font-size: 14px; font-weight: 500; }
+  :host > ion-header ion-button { --background: #fff; --color: #3054d7; --border-radius: 50%; width: 36px; height: 36px; margin-inline: 4px; }
+  :host > ion-header ion-buttons[slot='end'] ion-button:last-child { --background: #3054d7; --color: #fff; }
+  .coach-content, .groups-content { --background: linear-gradient(180deg, #e1e7f7 0, #f2f2f8 260px); }
+  .hero { padding: 4px 20px 12px; gap: 14px; background: transparent; color: #10172c; align-items: flex-end; }
+  .hero h1 { margin: 2px 0 4px; font-size: clamp(28px, 8vw, 34px); line-height: 1.12; letter-spacing: -1px; font-weight: 800; }
+  .hero p { color: #526789; font-size: 14px; line-height: 1.4; }
+  .eyebrow { color: #3054d7 !important; font-size: 10px !important; font-weight: 700; letter-spacing: .08em; }
+  .hero-stat { flex: 0 0 60px; min-width: 60px; height: 50px; gap: 0; align-content: center; border: 0; border-radius: 16px; background: #fff; box-shadow: 0 2px 3px #1524490a; }
+  .hero-stat strong { color: #10172c; font-size: 22px; line-height: 24px; }
+  .hero-stat span { color: #526789; font-size: 11px; }
+  ion-searchbar { --background: #dcdfe8; --color: #10172c; --placeholder-color: #65738c; --icon-color: #727b8e; --box-shadow: none; --border-radius: 12px; padding: 0 16px 8px; min-height: 42px; }
+  .list-section, .cards { padding: 8px 16px 24px; }
+  .section-title { margin: 0 4px 8px; }
+  .section-title h2, .list-heading { color: #526789; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+  .section-title span { font-size: 11px; }
+  .athlete-card, .group-card, .training-card, .video-card { margin: 0; border-radius: 0; box-shadow: none; border-bottom: 1px solid #e8e9f0; background: #fff; }
+  .athlete-card:first-of-type, .group-card:first-of-type, .training-card:first-of-type, .video-card:first-of-type { border-radius: 18px 18px 0 0; }
+  .athlete-card:last-of-type, .group-card:last-of-type, .training-card:last-of-type, .video-card:last-of-type { border-radius: 0 0 18px 18px; }
+  .athlete-card:only-of-type, .group-card:only-of-type, .training-card:only-of-type, .video-card:only-of-type { border-radius: 18px; }
+  .avatar { border-radius: 50%; flex-shrink: 0; background: #e5edff; color: #3054d7; }
+  .athlete-card:nth-of-type(4n + 2) .avatar { background: #eee8fc; color: #7652d7; }
+  .athlete-card:nth-of-type(4n + 3) .avatar { background: #fcebdd; color: #bb621e; }
+  .athlete-card:nth-of-type(4n + 4) .avatar { background: #e0f3e9; color: #187b65; }
+  .athlete-card.compact { min-height: 57px; padding: 8px 12px; }
+  .athlete-filters { padding: 2px 16px 8px; gap: 7px; }
+  .athlete-filters button { border: 0; border-radius: 999px; min-height: 30px; color: #10172c; font-size: 12px; }
+  .athlete-filters button span { color: inherit; font-weight: 400; }
+  .athlete-filters button.active { background: #3054d7; color: #fff; }
+  .athlete-filters button.active span { color: inherit; }
+  .status-dot { background: #3ba36d; }
+  .quick-grid { padding: 2px 16px 12px; gap: 8px; }
+  .quick-action { min-height: 44px; justify-content: center; padding: 10px 8px; border-radius: 13px; box-shadow: none; font-size: 13px; }
+  .quick-action:first-child { background: #3054d7; color: #fff; }
+  .quick-action:first-child ion-icon { color: #fff; }
+  .quick-action.muted { color: #10172c; }
+  .primary-action, .create-training-btn { background: #3054d7; border-radius: 13px; min-height: 44px; font-size: 15px; box-shadow: none; }
+  .library-actions { padding: 2px 16px 8px; }
+  .segment-wrap { padding: 0 16px 10px; }
+  .segment-wrap ion-segment { --background: #dcdfe8; border-radius: 10px; }
+  .segment-wrap ion-segment-button { min-height: 30px; font-size: 12px; text-transform: none; --color: #526789; --color-checked: #10172c; --indicator-color: #fff; --border-radius: 9px; }
+  .create-training-strip { padding: 0 16px 8px; }
+  .training-card { padding: 12px; gap: 10px; align-items: center; }
+  .training-card .main { min-width: 0; }
+  .training-card .row { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .training-card .meta { flex-direction: row; justify-content: flex-start; flex-wrap: wrap; gap: 8px; font-size: 11px; color: #65738c; }
+  .training-card p { margin: 3px 0; font-size: 12px; }
+  .training-card h2 { font-size: 15px; }
+  .icon-box { flex-shrink: 0; border-radius: 12px; background: #e5edff; }
+  .edit-training-button, .video-actions ion-button { --background: #e5edff; --color: #3054d7; --border-radius: 50%; width: 32px; height: 32px; margin: 0; }
+  .video-card { gap: 11px; padding: 12px; align-items: center; }
+  .thumb { width: 84px; height: 60px; min-height: 60px; align-self: center; border-radius: 12px; background: #121628; color: #fff; }
+  .video-main h2 { font-size: 15px; }
+  .video-main p { font-size: 11px; }
+  .video-main ion-chip { height: 18px; margin-top: 4px; --background: #fdebed; --color: #ce3037; font-size: 10px; }
+  .video-actions { flex-direction: column; gap: 6px; }
+  .video-actions ion-button[color='danger'] { --background: #fdebed; --color: #dc4149; }
+  button:focus-visible { outline: 2px solid #3054d7; outline-offset: 3px; }
+  @media (min-width: 768px) { .hero, .list-section, .cards, .quick-grid, .athlete-filters, .library-actions, .segment-wrap, .create-training-strip { max-width: 860px; margin-inline: auto; } ion-searchbar { max-width: 860px; margin-inline: auto; } }
+}
+

@@ -35,8 +35,12 @@ export class CoachLibraryService {
   constructor(private api: ApiService) {}
 
   async index(params?: { q?: string }): Promise<CoachLibraryVideoDTO[]> {
-    const res = await this.api.get<any>('coach/library', params);
-    return res?.data?.data ?? res?.data ?? [];
+    return (await this.page(params)).items;
+  }
+
+  async page(params?: { q?: string; page?: number }): Promise<{ items: CoachLibraryVideoDTO[]; hasMore: boolean }> {
+    const res = await this.api.get<{ data: { data: CoachLibraryVideoDTO[]; next_page_url: string | null } }>('coach/library', params);
+    return { items: res.data.data, hasMore: !!res.data.next_page_url };
   }
 
   async meta(): Promise<{ types: CoachLibraryTypeDTO[] }> {

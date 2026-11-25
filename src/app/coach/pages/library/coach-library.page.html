@@ -37,7 +37,7 @@
     </button>
   </section>
 
-  <section class="cards">
+  <section class="cards"><div class="section-title"><h2>Videos</h2><span>{{ videos.length }} guardados</span></div>
     <article class="card state-card" *ngIf="loading">
       <div class="icon-box">
         <ion-spinner name="crescent"></ion-spinner>
@@ -180,3 +180,4 @@
     </ng-template>
   </ion-modal>
 </ion-content>
+

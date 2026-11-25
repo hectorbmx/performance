@@ -5,10 +5,10 @@
     </ion-buttons>
     <ion-title>Atleta</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="openEdit()" [disabled]="loading || !athlete">
+      <ion-button fill="clear" (click)="openEdit()" [disabled]="loading || !athlete" aria-label="Editar atleta">
         <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
       </ion-button>
-      <ion-button fill="clear" (click)="load()" [disabled]="loading">
+      <ion-button fill="clear" (click)="load()" [disabled]="loading" aria-label="Actualizar atleta">
         <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -17,13 +17,49 @@
 
 <ion-content class="detail-content">
   <section class="detail-hero">
-    <div class="avatar-lg">{{ initials() }}</div>
+    <div class="avatar-lg">
+      <ng-container *ngIf="athlete?.avatar_url as avatarUrl; else avatarInitials">
+        <img *ngIf="avatarUrl !== failedAvatarUrl; else avatarInitials"
+          [src]="avatarUrl" alt="" (error)="failedAvatarUrl = avatarUrl">
+      </ng-container>
+      <ng-template #avatarInitials>{{ initials() }}</ng-template>
+    </div>
     <div>
-      <p class="eyebrow">Perfil atleta</p>
       <h1>{{ athlete?.full_name || 'Cargando atleta' }}</h1>
       <p>{{ athlete?.email || 'Sin correo registrado' }}</p>
     </div>
-    <ion-chip>{{ statusLabel() }}</ion-chip>
+    <ion-chip *ngIf="athlete" [class.inactive]="!athlete.is_active">{{ statusLabel() }}</ion-chip>
+    <dl class="athlete-summary">
+      <div>
+        <dt>Programados</dt>
+        <dd>{{ loadingTrainings ? '—' : (trainingSummary?.scheduled ?? '—') }}</dd>
+      </div>
+      <div>
+        <dt>Completados</dt>
+        <dd>{{ loadingTrainings ? '—' : (trainingSummary?.completed ?? '—') }}</dd>
+      </div>
+      <div *ngIf="planDaysUntilExpiry !== null; else noPlanDate" [class.plan-alert]="planDaysUntilExpiry < 0">
+        <dt>{{ planDaysUntilExpiry < 0 ? 'Plan vencido' : (planDaysUntilExpiry === 0 ? 'Vence hoy' : 'Vence el plan') }}</dt>
+        <dd>{{ (planDaysUntilExpiry < 0 ? -planDaysUntilExpiry : planDaysUntilExpiry) + ' d' }}</dd>
+      </div>
+      <ng-template #noPlanDate>
+        <div *ngIf="athlete && !planMembership; else missingPlanDate" class="plan-alert">
+          <dt>Sin plan</dt>
+          <dd><ion-icon name="close-circle-outline" aria-hidden="true"></ion-icon></dd>
+        </div>
+      </ng-template>
+      <ng-template #missingPlanDate>
+        <div>
+          <dt>{{ planMembership ? 'Sin fecha' : 'Vence el plan' }}</dt>
+          <dd>—</dd>
+        </div>
+      </ng-template>
+    </dl>
+    <button *ngIf="pendingPaymentMemberships.length" type="button" class="payment-warning"
+      [disabled]="loading" (click)="openPayment()" aria-label="Pago pendiente. Registrar pago manual">
+      <ion-icon name="warning-outline" aria-hidden="true"></ion-icon>
+      Pago pendiente
+    </button>
   </section>
 
   <section class="panel loading-panel" *ngIf="loading">
@@ -40,6 +76,8 @@
       <ion-icon name="card-outline"></ion-icon>
       <span>Asignar plan</span>
     </button>
+    <button type="button" (click)="openWorkoutProgress()"><span>Sesiones asignadas y progreso</span></button>
+
     <button type="button" (click)="openCalendar()">
       <ion-icon name="calendar-outline"></ion-icon>
       <span>Calendario</span>
@@ -70,7 +108,7 @@
       </div>
     </article>
 
-    <article class="training-row" *ngFor="let item of trainings">
+    <button type="button" class="training-row training-link" *ngFor="let item of trainings" (click)="openTraining(item)" [attr.aria-label]="'Ver entrenamiento: ' + trainingTitle(item)">
       <div class="training-icon">
         <ion-icon name="barbell-outline"></ion-icon>
       </div>
@@ -81,7 +119,7 @@
       <span class="training-status" [ngClass]="trainingStatusClass(item)">
         {{ item.status_label }}
       </span>
-    </article>
+    </button>
   </section>
 
   <section class="panel plan-panel" *ngIf="!loading">
@@ -97,6 +135,60 @@
       <span>{{ futurePlanStatus() }}</span>
     </div>
   </section>
+
+
+  <ion-modal [isOpen]="!!selectedAssignment" (didDismiss)="closeTraining()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Detalle del entreno</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closeTraining()">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="edit-content">
+        <section class="panel" *ngIf="selectedAssignment as assignment">
+          <h2>{{ trainingTitle(assignment) }}</h2>
+          <p>{{ assignment.scheduled_for || 'Sin fecha' }} · {{ assignment.status_label }}</p>
+        </section>
+        <section class="panel loading-panel" *ngIf="loadingTrainingDetail">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Cargando entrenamiento...</span>
+        </section>
+        <section class="panel" *ngIf="trainingDetailError" role="alert">
+          <p>{{ trainingDetailError }}</p>
+          <ion-button *ngIf="selectedAssignment?.training" (click)="openTraining(selectedAssignment!)">Reintentar</ion-button>
+        </section>
+        <ng-container *ngIf="trainingDetail as detail">
+          <section class="panel training-detail">
+            <p *ngIf="detail.duration_minutes">Duración: {{ detail.duration_minutes }} minutos</p>
+            <p>Nivel: {{ detail.level === 'beginner' ? 'Principiante' : detail.level === 'intermediate' ? 'Intermedio' : 'Avanzado' }}</p>
+            <p *ngIf="detail.goal">Objetivo: {{ detail.goal }}</p>
+            <p *ngIf="detail.type">Tipo: {{ detail.type }}</p>
+            <p class="training-description" *ngIf="detail.notes">{{ detail.notes }}</p>
+          </section>
+          <section class="panel training-detail" *ngFor="let section of detail.sections">
+            <h2>{{ section.name }}</h2>
+            <p class="training-description" *ngIf="section.description">{{ section.description }}</p>
+            <article class="lifting-detail" *ngFor="let block of section.lifting_blocks">
+              <h3>{{ block.exercise_name }}</h3>
+              <p class="training-description" *ngIf="block.notes">{{ block.notes }}</p>
+              <div class="lifting-prescription" *ngFor="let row of block.rows">
+                <strong>{{ row.sets }} series × {{ row.reps }} repeticiones</strong>
+                <p *ngIf="row.percentage != null">Carga: {{ row.percentage }}%</p>
+                <p *ngIf="row.rest_seconds != null">Descanso: {{ row.rest_seconds }} segundos</p>
+                <p class="training-description" *ngIf="row.notes">{{ row.notes }}</p>
+              </div>
+            </article>
+          </section>
+          <section class="panel" *ngIf="detail.sections.length === 0">
+            <p>Este entrenamiento no tiene secciones.</p>
+          </section>
+        </ng-container>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 
   <app-training-form-modal
     [isOpen]="isAssignTrainingOpen"
@@ -168,6 +260,69 @@
             {{ assigningPlan ? 'Asignando...' : 'Asignar pendiente de pago' }}
           </ion-button>
         </section>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <ion-modal [isOpen]="isPaymentOpen" [canDismiss]="canDismissPayment" (didDismiss)="isPaymentOpen = false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Registrar pago manual</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" [disabled]="recordingPayment" (click)="isPaymentOpen = false" aria-label="Cerrar">
+              <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="edit-content">
+        <form class="panel edit-panel" (ngSubmit)="recordPayment()">
+          <h3>{{ athlete?.full_name }}</h3>
+          <p *ngIf="pendingPaymentMemberships.length === 1">
+            {{ paymentMembership?.plan_name }} · {{ paymentMembership?.starts_at }} a {{ paymentMembership?.ends_at }}
+          </p>
+
+          <ion-item *ngIf="pendingPaymentMemberships.length > 1">
+            <ion-select label="Membresía" labelPlacement="stacked" [value]="paymentMembership?.id"
+              [disabled]="recordingPayment" (ionChange)="selectPaymentMembership($event.detail.value)">
+              <ion-select-option *ngFor="let membership of pendingPaymentMemberships" [value]="membership.id">
+                {{ membership.plan_name }} · {{ membership.starts_at }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-input label="Monto" labelPlacement="stacked" type="number" min="0" step="0.01"
+              name="amount" [(ngModel)]="paymentForm.amount" [disabled]="recordingPayment"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-input label="Descuento" labelPlacement="stacked" type="number" min="0" step="0.01"
+              name="discount" [(ngModel)]="paymentForm.discount" [disabled]="recordingPayment"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-select label="Método de pago" labelPlacement="stacked" name="payment_method"
+              [(ngModel)]="paymentForm.payment_method" [disabled]="recordingPayment">
+              <ion-select-option value="efectivo">Efectivo</ion-select-option>
+              <ion-select-option value="transferencia">Transferencia</ion-select-option>
+              <ion-select-option value="tarjeta">Tarjeta</ion-select-option>
+              <ion-select-option value="paypal">PayPal</ion-select-option>
+              <ion-select-option value="otro">Otro</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-input label="Fecha de pago" labelPlacement="stacked" type="date"
+              name="payment_date" [(ngModel)]="paymentForm.payment_date" [disabled]="recordingPayment"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-textarea label="Notas (opcional)" labelPlacement="stacked" [maxlength]="500"
+              name="notes" [(ngModel)]="paymentForm.notes" [disabled]="recordingPayment"></ion-textarea>
+          </ion-item>
+          <p *ngIf="paymentError" role="alert">{{ paymentError }}</p>
+          <ion-button type="submit" expand="block" [disabled]="recordingPayment">
+            {{ recordingPayment ? 'Guardando…' : 'Registrar pago' }}
+          </ion-button>
+        </form>
       </ion-content>
     </ng-template>
   </ion-modal>

@@ -29,7 +29,7 @@
   <div class="days-grid">
     <button
       type="button"
-      *ngFor="let cell of cells"
+      *ngFor="let cell of cells; trackBy: trackCell"
       class="day-cell"
       [class.is-empty]="!cell.date"
       [class.is-today]="cell.isToday"

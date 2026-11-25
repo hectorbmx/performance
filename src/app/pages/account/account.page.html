@@ -1,0 +1,30 @@
+<ion-header><ion-toolbar><ion-title>Mi cuenta</ion-title></ion-toolbar></ion-header>
+<ion-content class="account-content"><main class="account-container">
+  <a class="text-link" routerLink="/tabs/gym">‹ Volver a GYM</a>
+  <p class="error" role="alert" *ngIf="error">{{ error }}</p>
+  <section class="account-card">
+    <h1>Mi perfil de atleta</h1><p>{{ auth.user()?.email }}</p>
+    <form (ngSubmit)="save()" #profileForm="ngForm">
+      <label>Nombre<input name="firstName" [(ngModel)]="firstName" required maxlength="100" autocomplete="given-name"></label>
+      <label>Apellido (opcional)<input name="lastName" [(ngModel)]="lastName" maxlength="100" autocomplete="family-name"></label>
+      <button class="primary" type="submit" [disabled]="busy || profileForm.invalid">{{ busy ? 'Procesando…' : 'Guardar perfil' }}</button>
+    </form>
+  </section>
+  <section class="account-card account-links">
+    <a routerLink="/recover-password">Cambiar mi contraseña</a>
+    <a routerLink="/privacy">Privacidad y uso de mis datos</a>
+    <button class="secondary" [disabled]="busy" (click)="logout()">Cerrar sesión</button>
+  </section>
+  <section class="account-card">
+    <h2>Eliminar mi cuenta</h2>
+    <p>Solicita eliminar tu cuenta y los datos personales asociados. Cerraremos tus sesiones al confirmar. Completaremos la eliminación en un máximo de 7 días y te avisaremos por correo.</p>
+    <button *ngIf="!deleting" class="danger-outline" [disabled]="busy" (click)="deleting = true">Solicitar eliminación</button>
+    <form *ngIf="deleting" (ngSubmit)="deleteAccount()" #deleteForm="ngForm">
+      <p>Se eliminarán también los entrenamientos pendientes guardados en este dispositivo para esta cuenta. Esta acción no cancela suscripciones contratadas con Apple u otros proveedores; revísalas por separado.</p>
+      <label>Confirma tu contraseña<input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password"></label>
+      <label class="check-row"><input type="checkbox" name="confirm" [(ngModel)]="confirmation" required><span>Solicito eliminar mi cuenta y mis datos personales.</span></label>
+      <button class="danger" type="submit" [disabled]="busy || deleteForm.invalid">Confirmar eliminación</button>
+      <button type="button" class="secondary" [disabled]="busy" (click)="deleting = false; password = ''; confirmation = false">Cancelar</button>
+    </form>
+  </section>
+</main></ion-content>

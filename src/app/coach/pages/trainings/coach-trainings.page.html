@@ -39,7 +39,7 @@
     </button>
   </section>
 
-  <section class="list-section">
+  <section class="list-section"><div class="section-title"><h2>Sesiones</h2></div>
     <article class="training-card state-card" *ngIf="loading">
       <ion-spinner name="crescent"></ion-spinner>
       <div class="main">
@@ -93,3 +93,4 @@
     (created)="onTrainingCreated($event)">
   </app-training-form-modal>
 </ion-content>
+

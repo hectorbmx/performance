@@ -1,0 +1,28 @@
+<ion-content class="gym-content">
+  <main class="gym-container">
+    <p role="status" *ngIf="workouts.migrationNotice()">{{workouts.migrationNotice()}} <button (click)="workouts.retry()">Reintentar recuperación</button></p>
+    <header class="gym-header">
+      <span class="gym-mark"><ion-icon name="barbell-outline" aria-hidden="true"></ion-icon></span>
+      <p class="eyebrow">ENTRENA A TU RITMO</p>
+      <h1>GYM</h1>
+      <p>Crea tu rutina, registra tus sesiones y consulta tu progreso.</p>
+      <a routerLink="/account">Mi cuenta y privacidad</a>
+    </header>
+
+    <a class="gym-card gym-card-primary" routerLink="/workout-builder">
+      <span class="card-icon"><ion-icon name="add-outline" aria-hidden="true"></ion-icon></span>
+      <span class="card-copy"><h2>Crear mi rutina</h2><p>Elige un ejercicio, confirma su equipo y prepara tu sesión.</p></span>
+      <ion-icon name="chevron-forward-outline" aria-hidden="true"></ion-icon>
+    </a>
+    <a class="gym-card" routerLink="/workout-recorder">
+      <span class="card-icon"><ion-icon name="download-outline" aria-hidden="true"></ion-icon></span>
+      <span class="card-copy"><h2>Mis sesiones</h2><p>Continúa tus sesiones descargadas y registra tus series sin conexión.</p></span>
+      <ion-icon name="chevron-forward-outline" aria-hidden="true"></ion-icon>
+    </a>
+    <a class="gym-card" routerLink="/workout-progress">
+      <span class="card-icon"><ion-icon name="trending-up-outline" aria-hidden="true"></ion-icon></span>
+      <span class="card-copy"><h2>Mi progreso</h2><p>Consulta tus registros y metas por ejercicio.</p></span>
+      <ion-icon name="chevron-forward-outline" aria-hidden="true"></ion-icon>
+    </a>
+  </main>
+</ion-content>

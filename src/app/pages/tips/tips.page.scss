@@ -1,3 +1,4 @@
+@use '../../athlete-design' as athlete;
 .tips-content {
   --background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 100%);
 }
@@ -261,3 +262,6 @@ ion-searchbar {
     width: 82px;
   }
 }
+
+@include athlete.base;
+

@@ -40,6 +40,7 @@ import {
   TrainingSectionDTO,
 } from '../../services/training-api.service';
 import { ProfileService } from '../../services/profile.service';
+import { useWorkoutCoverOnError, workoutCoverForSession } from '../../workout-covers';
 
 type PercentageMetric = {
   id: number | null;
@@ -97,7 +98,8 @@ export class TrainingDetailsPage implements OnInit {
 
   // Este es el que usa el HTML (detailed)
   detail: TrainingDetailDTO | null = null;
-  fallbackCover = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80';
+  readonly workoutCoverForSession = workoutCoverForSession;
+  readonly useWorkoutCoverOnError = useWorkoutCoverOnError;
   isPercentageCalculatorOpen = false;
   percentageMetrics: PercentageMetric[] = [];
   percentageMetricsLoading = false;
@@ -155,6 +157,10 @@ if (sessionId && !Number.isNaN(sessionId)) {
 
   this.errorMsg = 'ID de entrenamiento inválido';
   this.loading = false;
+}
+
+openOfflineRecorder(): void {
+  if (this.assignmentId) void this.router.navigate(['/workout-recorder'], { queryParams: { assignment: this.assignmentId } });
 }
 
 toggleSectionResult(section: TrainingSectionDTO) {
@@ -623,10 +629,6 @@ private buildYoutubeEmbedUrl(id: string): string {
       this.errorMsg = e?.message ?? 'Error completando entrenamiento';
     }
   }
-  onImgError(ev: Event) {
-  (ev.target as HTMLImageElement).src = this.fallbackCover;
-}
-
   onAddResult(section: TrainingSectionDTO) {
   // abre/cierra estilo acordeón
   if (this.expandedSectionId === section.id) {

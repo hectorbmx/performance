@@ -11,6 +11,7 @@ import {
   KeychainAccess,
   SecureStorage,
 } from '@aparajita/capacitor-secure-storage';
+import { AUTH_API_SCOPE } from './auth-storage';
 import type { ActorType } from './auth.service';
 
 export interface StoredBiometricSession {
@@ -18,6 +19,7 @@ export interface StoredBiometricSession {
   actorType: ActorType;
   email?: string;
   savedAt: string;
+  apiUrl?: string;
 }
 
 export interface BiometricAvailability {
@@ -38,7 +40,7 @@ export interface BiometricPromptResult {
 
 @Injectable({ providedIn: 'root' })
 export class BiometricAuthService {
-  private readonly keyPrefix = 'coach_saas_biometric_';
+  private readonly keyPrefix = `coach_saas_biometric_${encodeURIComponent(AUTH_API_SCOPE)}_`;
   private readonly enabledKey = 'enabled';
   private readonly sessionKey = 'session';
   private initialized = false;
@@ -98,7 +100,7 @@ export class BiometricAuthService {
 
   async enableSession(session: StoredBiometricSession): Promise<void> {
     await this.initializeStorage();
-    await SecureStorage.setItem(this.sessionKey, JSON.stringify(session));
+    await SecureStorage.setItem(this.sessionKey, JSON.stringify({...session,apiUrl:AUTH_API_SCOPE}));
     await SecureStorage.setItem(this.enabledKey, '1');
   }
 
@@ -121,7 +123,7 @@ export class BiometricAuthService {
 
     try {
       const parsed = JSON.parse(value) as StoredBiometricSession;
-      return parsed.token && parsed.actorType ? parsed : null;
+      return parsed.token && parsed.actorType && parsed.apiUrl === AUTH_API_SCOPE ? parsed : null;
     } catch {
       await this.clearSession();
       return null;
