@@ -544,6 +544,9 @@ public function updateProfile(Request $request)
         'email' => $data['email'] ?? $client->email,
         'phone' => $data['phone'] ?? null,
     ]);
+    $userApp->athleteProfile()->updateOrCreate(['user_app_id'=>$userApp->id], [
+        'first_name'=>$data['first_name'],'last_name'=>$data['last_name'],
+    ]);
 
     $health = $client->healthProfile()->firstOrCreate([]);
     $health->fill([

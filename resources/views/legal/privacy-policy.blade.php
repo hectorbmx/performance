@@ -19,7 +19,7 @@
 <body>
   <main class="wrap">
     <h1>Política de Privacidad</h1>
-    <div class="muted">Coach SaaS · Última actualización: {{ now()->format('Y-m-d') }}</div>
+    <div class="muted">Coach SaaS · Última actualización: 2026-11-15</div>
 
     <div class="card">
       <h2>1. Introducción</h2>
@@ -31,7 +31,7 @@
 
       <h2>2. Información que recopilamos</h2>
       <ul>
-        <li><strong>Registro:</strong> nombre, correo electrónico, contraseña (encriptada), rol dentro de la plataforma.</li>
+        <li><strong>Registro:</strong> nombre, apellido opcional, correo electrónico, contraseña protegida mediante hash, confirmación del correo y aceptación de privacidad. La cuenta personal de atleta no requiere coach.</li>
         <li><strong>Perfil:</strong> foto, datos físicos (peso, edad, altura), objetivos y preferencias.</li>
         <li><strong>Entrenamientos:</strong> sesiones asignadas, resultados (reps, peso, tiempo, distancia, etc.), historial de progreso.</li>
       </ul>
@@ -71,7 +71,7 @@
       <h2>7. Seguridad</h2>
       <p>
         Implementamos medidas técnicas y organizativas para proteger los datos. Las contraseñas se almacenan
-        en formato encriptado.
+        mediante un hash, sin conservarlas en texto legible. Los códigos de acceso tienen caducidad y límite de intentos.
       </p>
 
       <h2>8. Retención</h2>
@@ -82,11 +82,14 @@
 
       <h2>9. Eliminación de cuenta</h2>
       <p>
-        El usuario puede solicitar la eliminación de su cuenta en cualquier momento desde la app (si está disponible)
-        o enviando un correo a: <strong>soporte@tudominio.com</strong>.
+        El usuario puede iniciar la eliminación de su cuenta y datos personales desde
+        <strong>Mi cuenta → Eliminar mi cuenta</strong>, confirmando su contraseña. No necesita autorización del coach ni contactar a soporte para iniciar el proceso.
       </p>
       <p>
-        Al eliminar la cuenta, se eliminarán los datos personales asociados, salvo que deban conservarse por obligación legal.
+        Al aceptar la solicitud se revoca el acceso. La eliminación se completa en un máximo de 7 días y se confirma por correo.
+        Se eliminan los datos personales asociados; cualquier conservación legal necesaria debe informarse al titular con su alcance.
+        La solicitud no cancela automáticamente suscripciones contratadas con Apple u otros proveedores: deben administrarse con el proveedor correspondiente.
+        Las copias locales en otros dispositivos deben eliminarse también de esos dispositivos.
       </p>
 
       <h2>10. Derechos del usuario</h2>

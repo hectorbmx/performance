@@ -28,7 +28,7 @@ class AppPasswordSetupController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $reset = DB::table('password_reset_tokens')
+        $reset = DB::table('athlete_setup_tokens')
             ->where('email', $data['email'])
             ->first();
 
@@ -39,7 +39,7 @@ class AppPasswordSetupController extends Controller
         }
 
         if (Carbon::parse($reset->created_at)->lt(now()->subHours(24))) {
-            DB::table('password_reset_tokens')->where('email', $data['email'])->delete();
+            DB::table('athlete_setup_tokens')->where('email', $data['email'])->delete();
 
             return back()
                 ->withInput($request->only('email'))
@@ -49,6 +49,7 @@ class AppPasswordSetupController extends Controller
         $userApp = UserApp::query()
             ->where('email', $data['email'])
             ->where('is_active', true)
+            ->whereNull('password')
             ->first();
 
         if (!$userApp) {
@@ -64,7 +65,7 @@ class AppPasswordSetupController extends Controller
             'activation_expires_at' => null,
         ]);
 
-        DB::table('password_reset_tokens')->where('email', $data['email'])->delete();
+        DB::table('athlete_setup_tokens')->where('email', $data['email'])->delete();
 
         return view('app-password-setup.success', [
             'email' => $userApp->email,

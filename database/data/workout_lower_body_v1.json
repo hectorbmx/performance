@@ -1,0 +1,1062 @@
+{
+  "version": "lower-body-v1",
+  "review_status": "pending",
+  "exercises": [
+    {
+      "code": "back_squat",
+      "names": {
+        "es": "Sentadilla trasera",
+        "en": "Back Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "front_squat",
+      "names": {
+        "es": "Sentadilla frontal",
+        "en": "Front Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "high_bar_squat",
+      "names": {
+        "es": "Sentadilla con barra alta",
+        "en": "High Bar Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": "back_squat"
+    },
+    {
+      "code": "low_bar_squat",
+      "names": {
+        "es": "Sentadilla con barra baja",
+        "en": "Low Bar Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": "back_squat"
+    },
+    {
+      "code": "box_squat",
+      "names": {
+        "es": "Sentadilla a cajón",
+        "en": "Box Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "barbell",
+        "rack",
+        "box"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": "back_squat"
+    },
+    {
+      "code": "goblet_squat",
+      "names": {
+        "es": "Sentadilla goblet",
+        "en": "Goblet Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "dumbbell_front_squat",
+      "names": {
+        "es": "Sentadilla frontal con mancuernas",
+        "en": "Dumbbell Front Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "front_squat"
+    },
+    {
+      "code": "bodyweight_squat",
+      "names": {
+        "es": "Sentadilla sin carga",
+        "en": "Bodyweight Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "smith_squat",
+      "names": {
+        "es": "Sentadilla en Smith",
+        "en": "Smith Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "smith_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "back_squat"
+    },
+    {
+      "code": "hack_squat",
+      "names": {
+        "es": "Sentadilla hack en máquina",
+        "en": "Hack Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "hack_squat_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "leg_press",
+      "names": {
+        "es": "Prensa de piernas",
+        "en": "Leg Press"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "leg_press_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "single_leg_press",
+      "names": {
+        "es": "Prensa unilateral",
+        "en": "Single Leg Press"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "leg_press_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": "leg_press"
+    },
+    {
+      "code": "belt_squat",
+      "names": {
+        "es": "Sentadilla con cinturón",
+        "en": "Belt Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "belt_squat_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "split_squat_dumbbell",
+      "names": {
+        "es": "Sentadilla dividida con mancuernas",
+        "en": "Dumbbell Split Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "split_squat_barbell",
+      "names": {
+        "es": "Sentadilla dividida con barra",
+        "en": "Barbell Split Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": true,
+      "variant_of": "split_squat_dumbbell"
+    },
+    {
+      "code": "bulgarian_split_squat",
+      "names": {
+        "es": "Sentadilla búlgara con mancuernas",
+        "en": "Dumbbell Bulgarian Split Squat"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": "split_squat_dumbbell"
+    },
+    {
+      "code": "reverse_lunge_dumbbell",
+      "names": {
+        "es": "Zancada inversa con mancuernas",
+        "en": "Dumbbell Reverse Lunge"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "forward_lunge_dumbbell",
+      "names": {
+        "es": "Zancada frontal con mancuernas",
+        "en": "Dumbbell Forward Lunge"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "walking_lunge_dumbbell",
+      "names": {
+        "es": "Zancadas caminando con mancuernas",
+        "en": "Dumbbell Walking Lunge"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "step_up_dumbbell",
+      "names": {
+        "es": "Subida a cajón con mancuernas",
+        "en": "Dumbbell Step Up"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell",
+        "box"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "step_up_bodyweight",
+      "names": {
+        "es": "Subida a cajón sin carga",
+        "en": "Bodyweight Step Up"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "bodyweight",
+        "box"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": "step_up_dumbbell"
+    },
+    {
+      "code": "lateral_lunge_dumbbell",
+      "names": {
+        "es": "Zancada lateral con mancuerna",
+        "en": "Dumbbell Lateral Lunge"
+      },
+      "pattern": "knee_dominant",
+      "primary_muscles": [
+        "quadriceps",
+        "adductors"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "leg_extension",
+      "names": {
+        "es": "Extensión de rodilla en máquina",
+        "en": "Leg Extension"
+      },
+      "pattern": "knee_extension",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "leg_extension_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "single_leg_extension",
+      "names": {
+        "es": "Extensión de rodilla unilateral",
+        "en": "Single Leg Extension"
+      },
+      "pattern": "knee_extension",
+      "primary_muscles": [
+        "quadriceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "leg_extension_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": "leg_extension"
+    },
+    {
+      "code": "romanian_deadlift",
+      "names": {
+        "es": "Peso muerto rumano con barra",
+        "en": "Barbell Romanian Deadlift"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "erectors"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "dumbbell_romanian_deadlift",
+      "names": {
+        "es": "Peso muerto rumano con mancuernas",
+        "en": "Dumbbell Romanian Deadlift"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "erectors"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "romanian_deadlift"
+    },
+    {
+      "code": "single_leg_romanian_deadlift",
+      "names": {
+        "es": "Peso muerto rumano unilateral con mancuerna",
+        "en": "Single Leg Dumbbell Romanian Deadlift"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "erectors"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": "romanian_deadlift"
+    },
+    {
+      "code": "conventional_deadlift",
+      "names": {
+        "es": "Peso muerto convencional",
+        "en": "Conventional Deadlift"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "quadriceps",
+        "erectors"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "sumo_deadlift",
+      "names": {
+        "es": "Peso muerto sumo",
+        "en": "Sumo Deadlift"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "glutes",
+        "adductors"
+      ],
+      "secondary_muscles": [
+        "quadriceps",
+        "hamstrings",
+        "erectors"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": "conventional_deadlift"
+    },
+    {
+      "code": "trap_bar_deadlift",
+      "names": {
+        "es": "Peso muerto con barra hexagonal",
+        "en": "Trap Bar Deadlift"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "glutes",
+        "quadriceps"
+      ],
+      "secondary_muscles": [
+        "hamstrings",
+        "erectors"
+      ],
+      "equipment": [
+        "trap_bar"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": "conventional_deadlift"
+    },
+    {
+      "code": "good_morning",
+      "names": {
+        "es": "Buenos días con barra",
+        "en": "Barbell Good Morning"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "erectors"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "cable_pull_through",
+      "names": {
+        "es": "Pull through en polea",
+        "en": "Cable Pull Through"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "cable_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "back_extension",
+      "names": {
+        "es": "Extensión de cadera en banco de 45 grados",
+        "en": "45 Degree Hip Extension"
+      },
+      "pattern": "hip_hinge",
+      "primary_muscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "erectors"
+      ],
+      "equipment": [
+        "back_extension_bench"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "hip_thrust_barbell",
+      "names": {
+        "es": "Hip thrust con barra",
+        "en": "Barbell Hip Thrust"
+      },
+      "pattern": "hip_extension",
+      "primary_muscles": [
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "equipment": [
+        "barbell",
+        "bench"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "hip_thrust_machine",
+      "names": {
+        "es": "Hip thrust en máquina",
+        "en": "Machine Hip Thrust"
+      },
+      "pattern": "hip_extension",
+      "primary_muscles": [
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "equipment": [
+        "hip_thrust_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "hip_thrust_barbell"
+    },
+    {
+      "code": "glute_bridge",
+      "names": {
+        "es": "Puente de glúteos sin carga",
+        "en": "Glute Bridge"
+      },
+      "pattern": "hip_extension",
+      "primary_muscles": [
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "single_leg_glute_bridge",
+      "names": {
+        "es": "Puente de glúteos unilateral",
+        "en": "Single Leg Glute Bridge"
+      },
+      "pattern": "hip_extension",
+      "primary_muscles": [
+        "glutes"
+      ],
+      "secondary_muscles": [
+        "hamstrings"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": "glute_bridge"
+    },
+    {
+      "code": "cable_glute_kickback",
+      "names": {
+        "es": "Extensión de cadera en polea",
+        "en": "Cable Glute Kickback"
+      },
+      "pattern": "hip_extension",
+      "primary_muscles": [
+        "glutes"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "cable_machine",
+        "ankle_strap"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "seated_leg_curl",
+      "names": {
+        "es": "Curl femoral sentado",
+        "en": "Seated Leg Curl"
+      },
+      "pattern": "knee_flexion",
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "seated_leg_curl_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "lying_leg_curl",
+      "names": {
+        "es": "Curl femoral tumbado",
+        "en": "Lying Leg Curl"
+      },
+      "pattern": "knee_flexion",
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "lying_leg_curl_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "standing_leg_curl",
+      "names": {
+        "es": "Curl femoral de pie",
+        "en": "Standing Leg Curl"
+      },
+      "pattern": "knee_flexion",
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "standing_leg_curl_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": null
+    },
+    {
+      "code": "slider_leg_curl",
+      "names": {
+        "es": "Curl femoral con deslizadores",
+        "en": "Slider Leg Curl"
+      },
+      "pattern": "knee_flexion",
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "sliders"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "stability_ball_leg_curl",
+      "names": {
+        "es": "Curl femoral con balón",
+        "en": "Stability Ball Leg Curl"
+      },
+      "pattern": "knee_flexion",
+      "primary_muscles": [
+        "hamstrings"
+      ],
+      "secondary_muscles": [
+        "glutes"
+      ],
+      "equipment": [
+        "stability_ball"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "hip_abduction_machine",
+      "names": {
+        "es": "Abducción de cadera en máquina",
+        "en": "Machine Hip Abduction"
+      },
+      "pattern": "hip_abduction",
+      "primary_muscles": [
+        "hip_abductors"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "hip_abduction_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "cable_hip_abduction",
+      "names": {
+        "es": "Abducción de cadera en polea",
+        "en": "Cable Hip Abduction"
+      },
+      "pattern": "hip_abduction",
+      "primary_muscles": [
+        "hip_abductors"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "cable_machine",
+        "ankle_strap"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": "hip_abduction_machine"
+    },
+    {
+      "code": "hip_adduction_machine",
+      "names": {
+        "es": "Aducción de cadera en máquina",
+        "en": "Machine Hip Adduction"
+      },
+      "pattern": "hip_adduction",
+      "primary_muscles": [
+        "adductors"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "hip_adduction_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "standing_calf_raise",
+      "names": {
+        "es": "Elevación de talones de pie en máquina",
+        "en": "Standing Machine Calf Raise"
+      },
+      "pattern": "plantar_flexion",
+      "primary_muscles": [
+        "gastrocnemius"
+      ],
+      "secondary_muscles": [
+        "soleus"
+      ],
+      "equipment": [
+        "standing_calf_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "seated_calf_raise",
+      "names": {
+        "es": "Elevación de talones sentado en máquina",
+        "en": "Seated Machine Calf Raise"
+      },
+      "pattern": "plantar_flexion",
+      "primary_muscles": [
+        "soleus"
+      ],
+      "secondary_muscles": [
+        "gastrocnemius"
+      ],
+      "equipment": [
+        "seated_calf_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "leg_press_calf_raise",
+      "names": {
+        "es": "Elevación de talones en prensa",
+        "en": "Leg Press Calf Raise"
+      },
+      "pattern": "plantar_flexion",
+      "primary_muscles": [
+        "gastrocnemius"
+      ],
+      "secondary_muscles": [
+        "soleus"
+      ],
+      "equipment": [
+        "leg_press_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "standing_calf_raise"
+    },
+    {
+      "code": "tibialis_raise",
+      "names": {
+        "es": "Elevación de punta de pie sin carga",
+        "en": "Bodyweight Tibialis Raise"
+      },
+      "pattern": "dorsiflexion",
+      "primary_muscles": [
+        "tibialis_anterior"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "bodyweight"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    }
+  ]
+}

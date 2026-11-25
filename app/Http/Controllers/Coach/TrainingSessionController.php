@@ -330,6 +330,7 @@ public function store(Request $request, AppNotificationService $notifications)
         'sections.*.lifting_blocks' => ['nullable','array'],
         'sections.*.lifting_blocks.*.id' => ['nullable','integer','exists:training_section_exercise_blocks,id'],
         'sections.*.lifting_blocks.*.exercise_catalog_id' => ['nullable','integer'],
+        'sections.*.lifting_blocks.*.workout_exercise_id' => ['nullable', 'integer', Rule::exists('workout_exercises', 'id')->where(fn ($q) => $q->where('is_active', true)->where(fn ($visible) => $visible->whereNull('coach_id')->orWhere('coach_id', $request->user()->id)))],
         'sections.*.lifting_blocks.*.exercise_name' => ['required_with:sections.*.lifting_blocks','string','max:160'],
         'sections.*.lifting_blocks.*.notes' => ['nullable','string'],
         'sections.*.lifting_blocks.*.rows' => ['nullable','array'],
@@ -736,6 +737,7 @@ public function update(Request $request, TrainingSession $training)
         'sections.*.lifting_blocks' => ['nullable','array'],
         'sections.*.lifting_blocks.*.id' => ['nullable','integer','exists:training_section_exercise_blocks,id'],
         'sections.*.lifting_blocks.*.exercise_catalog_id' => ['nullable','integer'],
+        'sections.*.lifting_blocks.*.workout_exercise_id' => ['nullable', 'integer', Rule::exists('workout_exercises', 'id')->where(fn ($q) => $q->where('is_active', true)->where(fn ($visible) => $visible->whereNull('coach_id')->orWhere('coach_id', $request->user()->id)))],
         'sections.*.lifting_blocks.*.exercise_name' => ['required_with:sections.*.lifting_blocks','string','max:160'],
         'sections.*.lifting_blocks.*.notes' => ['nullable','string'],
         'sections.*.lifting_blocks.*.rows' => ['nullable','array'],
@@ -995,6 +997,7 @@ private function syncLiftingBlocks(TrainingSection $section, ?array $blocks): vo
 
         $payload = [
             'exercise_catalog_id' => $blockData['exercise_catalog_id'] ?? null,
+            'workout_exercise_id' => array_key_exists('workout_exercise_id', $blockData) ? $blockData['workout_exercise_id'] : $block?->workout_exercise_id,
             'exercise_name' => $blockData['exercise_name'],
             'notes' => $blockData['notes'] ?? null,
             'order' => $blockIndex + 1,
@@ -1148,6 +1151,7 @@ public function copy(Request $request, TrainingSession $training, AppNotificatio
             foreach ($section->liftingBlocks as $block) {
                 $newBlock = $newSection->liftingBlocks()->create([
                     'exercise_catalog_id' => $block->exercise_catalog_id,
+                    'workout_exercise_id' => $block->workout_exercise_id,
                     'exercise_name' => $block->exercise_name,
                     'notes' => $block->notes,
                     'order' => $block->order,

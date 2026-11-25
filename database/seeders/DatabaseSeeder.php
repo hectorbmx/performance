@@ -11,6 +11,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndAdminSeeder::class,
             TenantBaseCatalogSeeder::class,
+            WorkoutExerciseCatalogSeeder::class,
+            WorkoutUpperBodyCatalogSeeder::class,
         ]);
     }
 }

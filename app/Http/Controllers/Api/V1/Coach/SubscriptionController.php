@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\ClientMembership;
 use App\Models\CoachClientPlan;
+use App\Services\RecordClientPayment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
@@ -118,6 +120,26 @@ class SubscriptionController extends Controller
             'message' => 'Plan asignado correctamente. Quedo pendiente de pago.',
             'data' => $this->payload($membership),
         ], 201);
+    }
+
+    public function storeManualPayment(Request $request, Client $client, ClientMembership $membership, RecordClientPayment $payments)
+    {
+        $coachId = (int) $request->user()->id;
+        abort_unless((int) $client->coach_id === $coachId, 403);
+        abort_unless((int) $membership->coach_id === $coachId && (int) $membership->client_id === (int) $client->id, 404);
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0|max:99999999.99|decimal:0,2',
+            'discount' => 'nullable|numeric|min:0|lte:amount|decimal:0,2',
+        ] + RecordClientPayment::RULES);
+        $data['idempotency_key'] = (string) Str::uuid();
+        $created = $payments->record($membership, $coachId, $data);
+
+        return response()->json([
+            'ok' => true,
+            'message' => $created ? 'Pago registrado exitosamente.' : 'Esta membresía ya está pagada.',
+            'data' => ['billing_status' => 'paid'],
+        ], $created ? 201 : 200);
     }
 
     private function payload(ClientMembership $membership): array

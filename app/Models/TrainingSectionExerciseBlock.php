@@ -11,10 +11,16 @@ class TrainingSectionExerciseBlock extends Model
     protected $fillable = [
         'training_section_id',
         'exercise_catalog_id',
+        'workout_exercise_id',
         'exercise_name',
         'notes',
         'order',
     ];
+
+    public function workoutExercise(): BelongsTo
+    {
+        return $this->belongsTo(WorkoutExercise::class);
+    }
 
     public function section(): BelongsTo
     {

@@ -11,6 +11,7 @@ use App\Models\UserApp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
@@ -68,7 +69,7 @@ class ClientController extends Controller
                     'client_id' => $client->id,
                     'email' => $client->email,
                     'password' => null,
-                    'is_active' => (bool) $client->is_active,
+                    'is_active' => true, // Platform identity is independent of the commercial client status.
                     'activation_code' => null,
                     'activation_expires_at' => null,
                     'activated_at' => null,
@@ -130,15 +131,10 @@ class ClientController extends Controller
                 'is_active' => $data['is_active'] ?? false,
             ]);
 
-            if ($client->userApp) {
-                $client->userApp->update([
-                    'email' => $client->email ?: $client->userApp->email,
-                    'is_active' => (bool) $client->is_active,
-                ]);
-            }
+            // Client contact/status belong to the coach; account credentials/status belong to the athlete.
         });
 
-        $client->refresh()->load(['activeMembership', 'futureMembership', 'userApp:id,client_id,email,activated_at,is_active']);
+        $client->refresh()->load(['activeMembership', 'futureMembership', 'latestMembership', 'userApp:id,client_id,email,activated_at,is_active']);
 
         return response()->json([
             'ok' => true,
@@ -163,9 +159,16 @@ class ClientController extends Controller
     {
         $this->authorizeClient($request, $client);
 
-        $assignments = TrainingAssignment::query()
+        $query = TrainingAssignment::query()
             ->where('client_id', $client->id)
-            ->whereHas('trainingSession', fn ($query) => $query->where('coach_id', $request->user()->id))
+            ->whereHas('trainingSession', fn ($query) => $query->where('coach_id', $request->user()->id));
+
+        $counts = (clone $query)->whereIn('status', ['scheduled', 'completed'])
+            ->selectRaw('status, COUNT(*) AS total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $assignments = $query
             ->with(['trainingSession' => fn ($query) => $query->withCount('sections')])
             ->orderByDesc('scheduled_for')
             ->orderByDesc('id')
@@ -173,6 +176,10 @@ class ClientController extends Controller
 
         return response()->json([
             'ok' => true,
+            'summary' => [
+                'scheduled' => (int) ($counts['scheduled'] ?? 0),
+                'completed' => (int) ($counts['completed'] ?? 0),
+            ],
             'data' => $assignments->through(fn (TrainingAssignment $assignment) => [
                 'assignment_id' => $assignment->id,
                 'status' => $assignment->status,
@@ -309,6 +316,7 @@ class ClientController extends Controller
             'full_name' => $client->full_name,
             'email' => $client->email,
             'phone' => $client->phone,
+            'avatar_url' => $client->avatar ? url(Storage::disk('public')->url($client->avatar)) : null,
             'is_active' => (bool) $client->is_active,
             'app_account' => $client->userApp ? [
                 'id' => $client->userApp->id,
@@ -319,6 +327,10 @@ class ClientController extends Controller
             'active_membership' => $this->membershipSummary($client->activeMembership),
             'future_membership' => $this->membershipSummary($client->futureMembership),
         ];
+
+        if ($client->relationLoaded('latestMembership')) {
+            $payload['latest_membership'] = $this->membershipSummary($client->latestMembership);
+        }
 
         if ($includeDetails) {
             $payload['health_profile'] = $client->healthProfile;
@@ -336,6 +348,7 @@ class ClientController extends Controller
         return [
             'id' => $membership->id,
             'plan_name' => $membership->plan_name_snapshot,
+            'price' => (float) $membership->price_snapshot,
             'status' => $membership->status,
             'billing_status' => $membership->billing_status,
             'starts_at' => optional($membership->starts_at)->toDateString(),
@@ -359,7 +372,7 @@ class ClientController extends Controller
     {
         $token = Str::random(64);
 
-        DB::table('password_reset_tokens')->updateOrInsert(
+        DB::table('athlete_setup_tokens')->updateOrInsert(
             ['email' => $userApp->email],
             [
                 'token' => Hash::make($token),

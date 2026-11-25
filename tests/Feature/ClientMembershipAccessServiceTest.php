@@ -35,6 +35,7 @@ class ClientMembershipAccessServiceTest extends TestCase
             '2014_10_12_000000_create_users_table.php',
             '2026_01_05_044105_create_clients_table.php',
             '2026_01_05_050926_create_coach_client_plans_table.php',
+            '2026_05_28_000002_add_stripe_fields_to_coach_client_plans.php',
             '2026_05_31_000001_add_payment_provider_to_coach_client_plans_table.php',
             '2026_01_05_051109_create_client_memberships_table.php',
             '2026_01_05_230635_create_users_app.php',

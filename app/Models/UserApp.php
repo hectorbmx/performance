@@ -24,6 +24,8 @@ class UserApp extends Authenticatable
         'last_login_at',
         'stripe_customer_id',
         'stripe_customer_account_id',
+        'self_registered_at',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -36,6 +38,8 @@ class UserApp extends Authenticatable
         'activation_expires_at' => 'datetime',
         'activated_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'self_registered_at' => 'datetime',
+        'email_verified_at' => 'datetime',
     ];
 
     public function client()
@@ -45,5 +49,10 @@ class UserApp extends Authenticatable
     public function devices()
     {
         return $this->hasMany(UserDevice::class, 'user_id');
+    }
+
+    public function athleteProfile()
+    {
+        return $this->hasOne(AthleteProfile::class, 'user_app_id');
     }
 }

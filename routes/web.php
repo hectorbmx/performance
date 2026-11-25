@@ -84,6 +84,9 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('workout-catalog',[\App\Http\Controllers\Admin\WorkoutCatalogController::class,'index'])->name('workout-catalog.index');
+        Route::get('workout-catalog/{exercise}/edit',[\App\Http\Controllers\Admin\WorkoutCatalogController::class,'edit'])->whereNumber('exercise')->name('workout-catalog.edit');
+        Route::patch('workout-catalog/{exercise}',[\App\Http\Controllers\Admin\WorkoutCatalogController::class,'update'])->whereNumber('exercise')->name('workout-catalog.update');
         Route::get('tips/pending', [\App\Http\Controllers\Admin\TipController::class, 'pending'])->name('tips.pending');
         Route::resource('tips', \App\Http\Controllers\Admin\TipController::class)->except('destroy')->whereNumber('tip');
         Route::get('tips/{tip}/image', [\App\Http\Controllers\Admin\TipController::class, 'image'])->whereNumber('tip')->name('tips.image');

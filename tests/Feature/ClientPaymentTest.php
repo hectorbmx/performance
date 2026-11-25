@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -107,6 +108,42 @@ class ClientPaymentTest extends TestCase
             ->assertSessionHas('error', 'Esta membresía ya está pagada.');
 
         $this->assertDatabaseCount('client_payments', 1);
+    }
+
+    public function test_coach_api_registers_a_manual_payment_once(): void
+    {
+        $coach = $this->createCoach();
+        $membership = $this->createClientMembership($coach);
+        $otherClientMembership = $this->createClientMembership($coach);
+        $url = "/api/v1/coach/clients/{$membership->client_id}/memberships/{$membership->id}/payments";
+        $payload = [
+            'amount' => 500,
+            'discount' => 50,
+            'payment_method' => 'transferencia',
+            'payment_date' => now()->toDateString(),
+        ];
+
+        Sanctum::actingAs($coach);
+        $this->postJson("/api/v1/coach/clients/{$otherClientMembership->client_id}/memberships/{$membership->id}/payments", $payload)
+            ->assertNotFound();
+        $this->postJson($url, array_replace($payload, ['discount' => 501]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('discount');
+        $this->assertDatabaseCount('client_payments', 0);
+
+        $this->postJson($url, $payload)->assertCreated()->assertJsonPath('data.billing_status', 'paid');
+        $this->postJson($url, $payload)->assertOk()->assertJsonPath('data.billing_status', 'paid');
+        $this->assertDatabaseCount('client_payments', 1);
+        $this->assertDatabaseHas('client_payments', [
+            'client_membership_id' => $membership->id,
+            'payment_method' => 'transferencia',
+            'final_amount' => 450,
+        ]);
+        $this->assertDatabaseHas('client_memberships', [
+            'id' => $membership->id,
+            'billing_status' => 'paid',
+            'paid_at' => $payload['payment_date'],
+        ]);
     }
 
     private function createCoach(): User

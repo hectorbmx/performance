@@ -1,0 +1,882 @@
+{
+  "version": "upper-body-v1",
+  "review_status": "pending",
+  "exercises": [
+    {
+      "code": "bench_press",
+      "names": {
+        "es": "Press de banca con barra",
+        "en": "Barbell Bench Press"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "barbell",
+        "bench",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "incline_barbell_press",
+      "names": {
+        "es": "Press inclinado con barra",
+        "en": "Incline Barbell Press"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "barbell",
+        "adjustable_bench",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "bench_press"
+    },
+    {
+      "code": "dumbbell_bench_press",
+      "names": {
+        "es": "Press de banca con mancuernas",
+        "en": "Dumbbell Bench Press"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "bench_press"
+    },
+    {
+      "code": "incline_dumbbell_press",
+      "names": {
+        "es": "Press inclinado con mancuernas",
+        "en": "Incline Dumbbell Press"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "dumbbell",
+        "adjustable_bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "bench_press"
+    },
+    {
+      "code": "smith_bench_press",
+      "names": {
+        "es": "Press de banca en Smith",
+        "en": "Smith Machine Bench Press"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "smith_machine",
+        "bench"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "bench_press"
+    },
+    {
+      "code": "machine_chest_press",
+      "names": {
+        "es": "Press de pecho en máquina",
+        "en": "Machine Chest Press"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "chest_press_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "cable_fly",
+      "names": {
+        "es": "Aperturas de pecho en polea",
+        "en": "Cable Chest Fly"
+      },
+      "pattern": "horizontal_adduction",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids"
+      ],
+      "equipment": [
+        "dual_cable_machine"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "pec_deck",
+      "names": {
+        "es": "Aperturas en máquina pec deck",
+        "en": "Pec Deck Fly"
+      },
+      "pattern": "horizontal_adduction",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids"
+      ],
+      "equipment": [
+        "pec_deck_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "cable_fly"
+    },
+    {
+      "code": "dumbbell_fly",
+      "names": {
+        "es": "Aperturas con mancuernas",
+        "en": "Dumbbell Fly"
+      },
+      "pattern": "horizontal_adduction",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "anterior_deltoids"
+      ],
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "cable_fly"
+    },
+    {
+      "code": "push_up",
+      "names": {
+        "es": "Flexiones de brazos",
+        "en": "Push Up"
+      },
+      "pattern": "horizontal_push",
+      "primary_muscles": [
+        "pectorals"
+      ],
+      "secondary_muscles": [
+        "triceps",
+        "anterior_deltoids"
+      ],
+      "equipment": [
+        "bodyweight"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "bench_press"
+    },
+    {
+      "code": "lat_pulldown",
+      "names": {
+        "es": "Jalón al pecho en polea",
+        "en": "Lat Pulldown"
+      },
+      "pattern": "vertical_pull",
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "upper_back"
+      ],
+      "equipment": [
+        "lat_pulldown_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "neutral_lat_pulldown",
+      "names": {
+        "es": "Jalón al pecho con agarre neutro",
+        "en": "Neutral Grip Lat Pulldown"
+      },
+      "pattern": "vertical_pull",
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "upper_back"
+      ],
+      "equipment": [
+        "lat_pulldown_machine",
+        "neutral_grip_handle"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "lat_pulldown"
+    },
+    {
+      "code": "pull_up",
+      "names": {
+        "es": "Dominadas pronas",
+        "en": "Pull Up"
+      },
+      "pattern": "vertical_pull",
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "upper_back"
+      ],
+      "equipment": [
+        "pull_up_bar"
+      ],
+      "load_mode": "bodyweight",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": "lat_pulldown"
+    },
+    {
+      "code": "assisted_pull_up",
+      "names": {
+        "es": "Dominadas asistidas en máquina",
+        "en": "Assisted Pull Up"
+      },
+      "pattern": "vertical_pull",
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "upper_back"
+      ],
+      "equipment": [
+        "assisted_pull_up_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "lat_pulldown"
+    },
+    {
+      "code": "barbell_row",
+      "names": {
+        "es": "Remo inclinado con barra",
+        "en": "Bent Over Barbell Row"
+      },
+      "pattern": "horizontal_pull",
+      "primary_muscles": [
+        "upper_back",
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "posterior_deltoids",
+        "erectors"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "high",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "dumbbell_row",
+      "names": {
+        "es": "Remo unilateral con mancuerna",
+        "en": "One Arm Dumbbell Row"
+      },
+      "pattern": "horizontal_pull",
+      "primary_muscles": [
+        "latissimus_dorsi",
+        "upper_back"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "posterior_deltoids"
+      ],
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": true,
+      "variant_of": "barbell_row"
+    },
+    {
+      "code": "seated_cable_row",
+      "names": {
+        "es": "Remo sentado en polea",
+        "en": "Seated Cable Row"
+      },
+      "pattern": "horizontal_pull",
+      "primary_muscles": [
+        "upper_back",
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "posterior_deltoids"
+      ],
+      "equipment": [
+        "seated_row_cable"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "barbell_row"
+    },
+    {
+      "code": "chest_supported_row",
+      "names": {
+        "es": "Remo con mancuernas apoyado en banco",
+        "en": "Chest Supported Dumbbell Row"
+      },
+      "pattern": "horizontal_pull",
+      "primary_muscles": [
+        "upper_back",
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "posterior_deltoids"
+      ],
+      "equipment": [
+        "dumbbell",
+        "adjustable_bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "barbell_row"
+    },
+    {
+      "code": "machine_row",
+      "names": {
+        "es": "Remo en máquina",
+        "en": "Machine Row"
+      },
+      "pattern": "horizontal_pull",
+      "primary_muscles": [
+        "upper_back",
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "biceps",
+        "posterior_deltoids"
+      ],
+      "equipment": [
+        "row_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "barbell_row"
+    },
+    {
+      "code": "straight_arm_pulldown",
+      "names": {
+        "es": "Jalón de brazos rectos en polea",
+        "en": "Straight Arm Pulldown"
+      },
+      "pattern": "shoulder_extension",
+      "primary_muscles": [
+        "latissimus_dorsi"
+      ],
+      "secondary_muscles": [
+        "triceps"
+      ],
+      "equipment": [
+        "cable_machine"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "barbell_shoulder_press",
+      "names": {
+        "es": "Press militar con barra",
+        "en": "Barbell Overhead Press"
+      },
+      "pattern": "vertical_push",
+      "primary_muscles": [
+        "anterior_deltoids"
+      ],
+      "secondary_muscles": [
+        "lateral_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "barbell",
+        "rack"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "dumbbell_shoulder_press",
+      "names": {
+        "es": "Press de hombros sentado con mancuernas",
+        "en": "Seated Dumbbell Shoulder Press"
+      },
+      "pattern": "vertical_push",
+      "primary_muscles": [
+        "anterior_deltoids"
+      ],
+      "secondary_muscles": [
+        "lateral_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "dumbbell",
+        "adjustable_bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "barbell_shoulder_press"
+    },
+    {
+      "code": "machine_shoulder_press",
+      "names": {
+        "es": "Press de hombros en máquina",
+        "en": "Machine Shoulder Press"
+      },
+      "pattern": "vertical_push",
+      "primary_muscles": [
+        "anterior_deltoids"
+      ],
+      "secondary_muscles": [
+        "lateral_deltoids",
+        "triceps"
+      ],
+      "equipment": [
+        "shoulder_press_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": "barbell_shoulder_press"
+    },
+    {
+      "code": "dumbbell_lateral_raise",
+      "names": {
+        "es": "Elevaciones laterales con mancuernas",
+        "en": "Dumbbell Lateral Raise"
+      },
+      "pattern": "shoulder_abduction",
+      "primary_muscles": [
+        "lateral_deltoids"
+      ],
+      "secondary_muscles": [
+        "upper_trapezius"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "cable_lateral_raise",
+      "names": {
+        "es": "Elevación lateral unilateral en polea",
+        "en": "Single Arm Cable Lateral Raise"
+      },
+      "pattern": "shoulder_abduction",
+      "primary_muscles": [
+        "lateral_deltoids"
+      ],
+      "secondary_muscles": [
+        "upper_trapezius"
+      ],
+      "equipment": [
+        "cable_machine"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": "dumbbell_lateral_raise"
+    },
+    {
+      "code": "reverse_pec_deck",
+      "names": {
+        "es": "Aperturas inversas en máquina",
+        "en": "Reverse Pec Deck"
+      },
+      "pattern": "horizontal_abduction",
+      "primary_muscles": [
+        "posterior_deltoids"
+      ],
+      "secondary_muscles": [
+        "upper_back"
+      ],
+      "equipment": [
+        "reverse_fly_machine"
+      ],
+      "load_mode": "machine_indicated",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "rear_delt_fly",
+      "names": {
+        "es": "Pájaros con mancuernas",
+        "en": "Dumbbell Rear Delt Fly"
+      },
+      "pattern": "horizontal_abduction",
+      "primary_muscles": [
+        "posterior_deltoids"
+      ],
+      "secondary_muscles": [
+        "upper_back"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "reverse_pec_deck"
+    },
+    {
+      "code": "face_pull",
+      "names": {
+        "es": "Face pull en polea",
+        "en": "Cable Face Pull"
+      },
+      "pattern": "horizontal_pull",
+      "primary_muscles": [
+        "posterior_deltoids",
+        "upper_back"
+      ],
+      "secondary_muscles": [
+        "external_rotators"
+      ],
+      "equipment": [
+        "cable_machine",
+        "rope_attachment"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "dumbbell_shrug",
+      "names": {
+        "es": "Encogimientos con mancuernas",
+        "en": "Dumbbell Shrug"
+      },
+      "pattern": "scapular_elevation",
+      "primary_muscles": [
+        "upper_trapezius"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "moderate",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "barbell_curl",
+      "names": {
+        "es": "Curl de bíceps con barra",
+        "en": "Barbell Curl"
+      },
+      "pattern": "elbow_flexion",
+      "primary_muscles": [
+        "biceps"
+      ],
+      "secondary_muscles": [
+        "brachialis",
+        "brachioradialis"
+      ],
+      "equipment": [
+        "barbell"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "ez_bar_curl",
+      "names": {
+        "es": "Curl de bíceps con barra Z",
+        "en": "EZ Bar Curl"
+      },
+      "pattern": "elbow_flexion",
+      "primary_muscles": [
+        "biceps"
+      ],
+      "secondary_muscles": [
+        "brachialis",
+        "brachioradialis"
+      ],
+      "equipment": [
+        "ez_bar"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "barbell_curl"
+    },
+    {
+      "code": "dumbbell_curl",
+      "names": {
+        "es": "Curl de bíceps con mancuernas",
+        "en": "Dumbbell Curl"
+      },
+      "pattern": "elbow_flexion",
+      "primary_muscles": [
+        "biceps"
+      ],
+      "secondary_muscles": [
+        "brachialis",
+        "brachioradialis"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "barbell_curl"
+    },
+    {
+      "code": "incline_dumbbell_curl",
+      "names": {
+        "es": "Curl inclinado con mancuernas",
+        "en": "Incline Dumbbell Curl"
+      },
+      "pattern": "elbow_flexion",
+      "primary_muscles": [
+        "biceps"
+      ],
+      "secondary_muscles": [
+        "brachialis"
+      ],
+      "equipment": [
+        "dumbbell",
+        "adjustable_bench"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "barbell_curl"
+    },
+    {
+      "code": "hammer_curl",
+      "names": {
+        "es": "Curl martillo con mancuernas",
+        "en": "Dumbbell Hammer Curl"
+      },
+      "pattern": "elbow_flexion",
+      "primary_muscles": [
+        "brachialis",
+        "brachioradialis"
+      ],
+      "secondary_muscles": [
+        "biceps"
+      ],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "cable_curl",
+      "names": {
+        "es": "Curl de bíceps en polea",
+        "en": "Cable Curl"
+      },
+      "pattern": "elbow_flexion",
+      "primary_muscles": [
+        "biceps"
+      ],
+      "secondary_muscles": [
+        "brachialis"
+      ],
+      "equipment": [
+        "cable_machine"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "barbell_curl"
+    },
+    {
+      "code": "triceps_pushdown",
+      "names": {
+        "es": "Extensión de tríceps en polea",
+        "en": "Cable Triceps Pushdown"
+      },
+      "pattern": "elbow_extension",
+      "primary_muscles": [
+        "triceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "cable_machine"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "rope_pushdown",
+      "names": {
+        "es": "Extensión de tríceps con cuerda",
+        "en": "Rope Triceps Pushdown"
+      },
+      "pattern": "elbow_extension",
+      "primary_muscles": [
+        "triceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "cable_machine",
+        "rope_attachment"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "triceps_pushdown"
+    },
+    {
+      "code": "overhead_cable_extension",
+      "names": {
+        "es": "Extensión de tríceps sobre la cabeza en polea",
+        "en": "Overhead Cable Triceps Extension"
+      },
+      "pattern": "elbow_extension",
+      "primary_muscles": [
+        "triceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "cable_machine",
+        "rope_attachment"
+      ],
+      "load_mode": "external_total",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": null
+    },
+    {
+      "code": "lying_ez_extension",
+      "names": {
+        "es": "Press francés con barra Z",
+        "en": "Lying EZ Bar Triceps Extension"
+      },
+      "pattern": "elbow_extension",
+      "primary_muscles": [
+        "triceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "ez_bar",
+        "bench"
+      ],
+      "load_mode": "total_barbell",
+      "fatigue": "low",
+      "unilateral": false,
+      "variant_of": "overhead_cable_extension"
+    },
+    {
+      "code": "dumbbell_overhead_extension",
+      "names": {
+        "es": "Extensión de tríceps sobre la cabeza con mancuerna",
+        "en": "Single Arm Dumbbell Overhead Extension"
+      },
+      "pattern": "elbow_extension",
+      "primary_muscles": [
+        "triceps"
+      ],
+      "secondary_muscles": [],
+      "equipment": [
+        "dumbbell"
+      ],
+      "load_mode": "per_dumbbell",
+      "fatigue": "low",
+      "unilateral": true,
+      "variant_of": "overhead_cable_extension"
+    }
+  ]
+}

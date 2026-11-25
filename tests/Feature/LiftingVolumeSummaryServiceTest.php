@@ -43,6 +43,8 @@ class LiftingVolumeSummaryServiceTest extends TestCase
             '2026_07_28_120100_create_training_section_exercise_blocks_table.php',
             '2026_07_28_120200_create_training_section_lifting_rows_table.php',
             '2026_07_28_120300_create_training_lifting_set_logs_table.php',
+            '2026_01_20_003150_create_training_metrics_table.php',
+            '2026_01_20_003428_create_client_metric_records_table.php',
         ] as $file) {
             (require database_path('migrations/'.$file))->up();
         }
@@ -79,6 +81,8 @@ class LiftingVolumeSummaryServiceTest extends TestCase
             'reps_executed' => 0,
             'rep_adherence_pct' => 0,
             'relative_volume' => 0.0,
+            'intensity_reps'=>0,'average_intensity_pct'=>null,'estimated_tonnage'=>0.0,'tonnage_unit'=>'kg',
+            'missing_max_metrics'=>[],'unmapped_exercises'=>[],
             'chart' => [
                 'reps' => [
                     ['label' => 'Programadas', 'value' => 0],
@@ -92,13 +96,13 @@ class LiftingVolumeSummaryServiceTest extends TestCase
                 ],
             ],
             'zones' => [
-                ['key' => 'lt_60', 'label' => '<60%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
-                ['key' => '60_69', 'label' => '60-69%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
-                ['key' => '70_79', 'label' => '70-79%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
-                ['key' => '80_89', 'label' => '80-89%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
-                ['key' => '90_94', 'label' => '90-94%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
-                ['key' => '95_plus', 'label' => '95%+', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
-                ['key' => 'unknown', 'label' => 'Sin %', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0],
+                ['key' => 'lt_60', 'label' => '<60%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
+                ['key' => '60_69', 'label' => '60-69%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
+                ['key' => '70_79', 'label' => '70-79%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
+                ['key' => '80_89', 'label' => '80-89%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
+                ['key' => '90_94', 'label' => '90-94%', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
+                ['key' => '95_plus', 'label' => '95%+', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
+                ['key' => 'unknown', 'label' => 'Sin %', 'prescribed_reps' => 0, 'executed_reps' => 0, 'adherence_pct' => 0, 'distribution_pct'=>0],
             ],
             'by_exercise' => [],
         ], $summary);
@@ -178,6 +182,7 @@ class LiftingVolumeSummaryServiceTest extends TestCase
                 'reps_executed' => 9,
                 'rep_adherence_pct' => 47,
                 'relative_volume' => 400.0,
+                'intensity_reps'=>5,'average_intensity_pct'=>80.0,'estimated_tonnage'=>0.0,'metric_code'=>'back_squat_1rm',
             ],
         ], $summary['by_exercise']);
     }

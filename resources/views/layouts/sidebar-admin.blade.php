@@ -16,6 +16,7 @@
     :class="open ? 'w-64' : 'w-20'"
 >
 
+    <a href="{{route('admin.workout-catalog.index')}}" class="block px-4 py-3 text-white" title="Catálogo GYM de plataforma">GYM</a>
     <!-- Header -->
     <div class="flex items-center justify-between px-4 py-4 border-b border-gray-700">
         <span class="font-bold text-lg" x-show="open">CoachSaaS</span>

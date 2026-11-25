@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Coach;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\ClientMembership;
-use App\Models\ClientPayment;
+use App\Services\RecordClientPayment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ClientPaymentController extends Controller
@@ -33,7 +31,7 @@ class ClientPaymentController extends Controller
         return view('coach.client-payments.create', compact('membership', 'paymentIdempotencyKey'));
     }
 
-    public function store(Request $request, ClientMembership $membership)
+    public function store(Request $request, ClientMembership $membership, RecordClientPayment $payments)
     {
         $coachId = auth()->id();
 
@@ -48,12 +46,7 @@ class ClientPaymentController extends Controller
                 ->with('error', 'Esta membresía ya está pagada.');
         }
 
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0|lte:amount',
-            'payment_method' => 'required|string|in:efectivo,transferencia,tarjeta,paypal,otro',
-            'payment_date' => 'required|date',
-            'notes' => 'nullable|string|max:500',
+        $validated = $request->validate(RecordClientPayment::RULES + [
             'idempotency_key' => 'required|string|max:80',
         ]);
 
@@ -64,44 +57,7 @@ class ClientPaymentController extends Controller
                 ->with('error', 'No se pudo validar el intento de pago. Vuelve a intentarlo.');
         }
 
-        $paymentWasCreated = DB::transaction(function () use ($membership, $validated, $coachId) {
-            $lockedMembership = ClientMembership::query()
-                ->whereKey($membership->id)
-                ->where('coach_id', $coachId)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($lockedMembership->billing_status === 'paid') {
-                return false;
-            }
-
-            // Calcular monto final
-            $discount = $validated['discount'] ?? 0;
-            $final_amount = $validated['amount'] - $discount;
-
-            // Crear registro de pago
-            ClientPayment::create([
-                'coach_id' => $coachId,
-                'client_id' => $lockedMembership->client_id,
-                'client_membership_id' => $lockedMembership->id,
-                'amount' => $validated['amount'],
-                'discount' => $discount,
-                'final_amount' => $final_amount,
-                'payment_method' => $validated['payment_method'],
-                'payment_date' => $validated['payment_date'],
-                'notes' => $validated['notes'] ?? null,
-                'status' => 'completed',
-                'idempotency_key' => $validated['idempotency_key'],
-            ]);
-
-            // Actualizar membresía a pagada
-            $lockedMembership->update([
-                'billing_status' => 'paid',
-                'paid_at' => $validated['payment_date'],
-            ]);
-
-            return true;
-        });
+        $paymentWasCreated = $payments->record($membership, $coachId, $validated);
 
         session()->forget($sessionKey);
 

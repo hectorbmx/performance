@@ -89,7 +89,7 @@ class ClientController extends Controller
                     'client_id' => $client->id,
                     'email' => $client->email,
                     'password' => null,
-                    'is_active' => (bool) $client->is_active,
+                    'is_active' => true, // Platform identity is independent of the commercial client status.
                     'activation_code' => null,
                     'activation_expires_at' => null,
                     'activated_at' => null,
@@ -388,7 +388,7 @@ class ClientController extends Controller
     {
         $token = Str::random(64);
 
-        DB::table('password_reset_tokens')->updateOrInsert(
+        DB::table('athlete_setup_tokens')->updateOrInsert(
             ['email' => $userApp->email],
             [
                 'token' => Hash::make($token),
